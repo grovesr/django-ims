@@ -1,0 +1,16 @@
+{% extends "ims/imports.html" %}
+{% block breadcrumbs %}
+    {{ block.super }}
+    &raquo;
+    <a href="{% url 'ims:site_delete_all' %}">delete all sites</a>
+{% endblock breadcrumbs %}
+{% block content %}
+    <form action="{% url 'ims:site_delete_all' %}" method="post">
+        {% csrf_token %}
+        {% if canDelete %}
+            <input title="delete all sites from the database" type="submit" value="Delete All Sites" name="Delete All Sites">
+        {% endif %}
+        <input id="cancel-site-delete" type="submit" value="Cancel" name="Cancel">
+    </form>
+    
+{% endblock content %}

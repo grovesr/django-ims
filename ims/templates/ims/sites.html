@@ -1,0 +1,99 @@
+{% extends "ims/home.html" %}
+{% block breadcrumbs %}
+    {{ block.super }}
+    &raquo;
+    <a href="{% url 'ims:sites' %}">sites</a>
+{% endblock breadcrumbs %}
+{% block content %}
+    <table id="report-table">
+        <tr>
+            <th>
+                <h3>Inventory Sites:</h3>
+            </th>
+        </tr>
+        <tr>
+            <td class="cell-frame">
+                {% if pageNo and numPages and siteForms.total_form_count > 0 %}
+                    <div class="table-nav-pages">
+                        {% if numPages == 'all' %}
+                            {{ siteForms.total_form_count }} sites
+                            <a href="{% url 'ims:sites' page=1 %}">&nbsp;show pages</a>
+                        {% else %}
+                            <a href="{% url 'ims:sites' page=1 %}">&laquo;&nbsp;</a>
+                            <a href="{% url 'ims:sites' page=previousPageNo %}">&lsaquo;&nbsp;</a>
+                            {{ pageNo }} of {{ numPages }}
+                            <a href="{% url 'ims:sites' page=nextPageNo %}">&nbsp;&rsaquo;</a>
+                            <a href="{% url 'ims:sites' page=numPages %}">&nbsp;&raquo;</a>
+                            <a href="{% url 'ims:sites' page='all' %}">&nbsp;show all</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                {% if numSiteErrors %}
+                    Sites With Errors: {{ numSiteErrors }} of {{ siteForms.total_form_count }}<br/>
+                {% endif %}
+                {% if numPages == 'all' %}
+                    <form action="{% url 'ims:sites' page='all' %}" method="post">
+                {% else %}
+                    <form action="{% url 'ims:sites' page=pageNo %}" method="post">
+                {% endif %}
+                    {% csrf_token  %}
+                    <div class="detail-form">
+                        <table id="site-list-form">
+                            {{ siteForms.management_form }}
+                            <tr class="detail-form-header">
+                                <td colspan='4'>
+                                    {% if canAdd %}
+                                        <input title="add new site" class="cell-left-btn" type="submit" value="Add" name="Add">
+                                    {% endif %}
+                                    {% if canDelete and siteForms.total_form_count > 0 %}
+                                        <input title="delete checked site(s) from database" class="cell-right-btn" type="submit" value="Delete" name="Delete">
+                                    {% endif %}    
+                                </td>
+                            </tr>
+                            {% for siteForm in siteForms %}
+                                {% if forloop.first %}
+                                    <tr class="detail-form-header">
+                                        <th>Site</th>
+                                        <th>Number</th>
+                                        <th>Inventory</th>
+                                        {% for field in siteForm.visible_fields %}
+                                            <th>{{ field.label|capfirst }}</th>
+                                        {% endfor %}
+                                    </tr>
+                                {% endif %}
+                                <tr>
+                                    <td class=
+                                        {% if siteForm.instance.check_site %}
+                                            "detail-table-text cell-left"
+                                        {% else %}
+                                            "detail-table-error cell-left"
+                                        {% endif %}
+                                        title="{% if siteForm.instance.check_site %}edit site details{% else %}edit site details, this site has errors the need to be corrected{% endif %}">
+                                        <a href="{% url 'ims:site_detail' siteId=siteForm.instance.number page=1 %}">{{ siteForm.instance.name }}</a>
+                                    </td>
+                                    <td>
+                                        {{ siteForm.instance.pk }}
+                                    </td>
+                                    <td class="cell-left">
+                                        {{ siteForm.instance.total_inventory }}
+                                    </td>
+                                    {% for field in siteForm.visible_fields %}
+                                        <td class="{{ field.css_classes }} cell-left" title="{{ field.errors | escape}}">
+                                            {# Include the hidden fields in the form #}
+                                            {% if forloop.first %}
+                                                {% for hidden in siteForm.hidden_fields %}
+                                                    {{ hidden }}
+                                                {% endfor %}
+                                            {% endif %}
+                                            {{ field }}
+                                        </td>
+                                    {% endfor %}
+                                </tr>
+                            {% endfor %}
+                        </table>
+                    </div>
+                </form>
+            </td>
+        </tr>
+    </table>
+{% endblock content %}

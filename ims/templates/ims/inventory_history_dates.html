@@ -1,0 +1,78 @@
+{% extends "ims/sites.html" %}
+{% block breadcrumbs %}
+    {{ block.super }}
+    &raquo;
+    <a href="{% url 'ims:inventory_history_dates' siteId=site.pk code=product.pk page=pageNo startDate=startDate stopDate=stopDate %}">inventory history</a>
+{% endblock breadcrumbs %}
+{% block content %}
+    <table id="report-table">
+        <tr>
+            <th>
+                <h3>Inventory history for {{ product }} at {{ site }}:</h3>
+            </th>
+        </tr>
+        <tr>
+            <td class="cell-frame">
+                {% if pageNo and numPages and siteInventory %}
+                    <div class="table-nav-pages">
+                        {% if numPages == 'all' %}
+                            {{ siteInventory|length }} inventory changes
+                            <a href="{% url 'ims:inventory_history_dates' siteId=site.pk code=product.pk page=1 startDate=startDate stopDate=stopDate %}">&nbsp;show pages</a>
+                        {% else %}
+                            <a href="{% url 'ims:inventory_history_dates' siteId=site.pk code=product.pk page=1 startDate=startDate stopDate=stopDate %}">&laquo;&nbsp;</a>
+                            <a href="{% url 'ims:inventory_history_dates' siteId=site.pk code=product.pk page=previousPageNo startDate=startDate stopDate=stopDate %}">&lsaquo;&nbsp;</a>
+                            {{ pageNo }} of {{ numPages }}
+                            <a href="{% url 'ims:inventory_history_dates' siteId=site.pk code=product.pk page=nextPageNo startDate=startDate stopDate=stopDate %}">&nbsp;&rsaquo;</a>
+                            <a href="{% url 'ims:inventory_history_dates' siteId=site.pk code=product.pk page=numPages startDate=startDate stopDate=stopDate %}">&nbsp;&raquo;</a>
+                            <a href="{% url 'ims:inventory_history_dates' siteId=site.pk code=product.pk page='all' startDate=startDate stopDate=stopDate %}">&nbsp;show all</a>
+                        {% endif %}
+                    </div>
+                {% endif %}
+                <div class="detail-form">
+                    <table id="inventory-detail-form">
+                    <thead>
+                        <tr class="detail-form-header">
+                            <th>
+                                Item
+                            </th>
+                            <th>
+                                Quantity
+                            </th>
+                            <th>
+                                Modifier
+                            </th>
+                            <th>
+                                Modification Date
+                            </th>
+                        </tr>
+                    </thead>
+                    {% for item in siteInventory %}
+                        <tr class={% if forloop.counter0  >= startRow and forloop.counter <= stopRow %}
+                            "detail-table-row-visible"
+                        {% else %}
+                            "detail-table-row-invisible"
+                        {% endif %}>
+                            <td class="detail-table-text cell-left">
+                                {{ item.information }}
+                            </td>
+                            <td class="detail-table-text cell-left">
+                                {% if item.deleted %}
+                                    x
+                                {% else %}
+                                    {{ item.quantity }}
+                                {% endif %}
+                            </td>
+                            <td class="cell-left">
+                                {{ item.modifier }}
+                            </td>
+                            <td class="cell-left">
+                                {{ item.modified }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </table>
+                </div>
+            </td>
+        </tr>
+    </table>
+{% endblock content %}

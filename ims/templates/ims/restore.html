@@ -1,0 +1,18 @@
+{% extends "ims/imports.html" %}
+{% block breadcrumbs %}
+    {{ block.super }}
+    &raquo;
+    <a href="{% url 'ims:restore' %}">restore database</a>
+{% endblock breadcrumbs %}
+{% block content %}
+    <form action="{% url 'ims:restore' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% if canAdd and canDelete and canChange %}
+            <input id="submit-btn" title="restore database" type="submit" value="Restore" name="Restore">
+        {% endif %}
+        <input id="cancel-btn" type="submit" value="Cancel" name="Cancel">
+        <br/>
+        {{ fileSelectForm }}
+    </form>
+    
+{% endblock content %}

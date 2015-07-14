@@ -1,0 +1,58 @@
+{% load staticfiles %}
+<div id="ims-report-container"  class="cell-frame" >
+    <button id="printButton">Print</button>
+    <img class="announcement-close" src="{% static 'base/img/delete.png' %}"></img>
+    <div title="print report" id="ims-report">
+         <h3>Inventory Detail Report </h3>
+         <h4>as of {{ stopDate }}</h4>
+        <table>
+            <tr class="bottom-bordered-row">
+                <th>
+                    Product
+                </th>
+                <th>
+                    Site
+                </th>
+                <th>uom</th>
+                <th>qom</th>
+                <th>
+                    Cartons
+                </th>
+                <th>
+                    Pieces
+                </th>
+            </tr>
+            {% for product,siteQuantity in inventoryList.iteritems %}
+                {% comment %} 
+                    siteQuantity is a tuple containing a list of tuples and a tuple: 
+                    ([(site, quantity,extended quantity)],(total quantity for all sites, total extended quantity for all sites))
+                {% endcomment %}
+                <tr>
+                    <td colspan="3">
+                        <h4>{{ product.name }}:{{ product.code }} ({{ siteQuantity.1.1 }})</h4>
+                    </td>
+                </tr>
+                    {%for site,quantity,extendedQuantity in siteQuantity.0 %}
+                        <tr>
+                            <td></td>
+                            <td>
+                                {{ site.name }}
+                            </td>
+                            <td>
+                                {{ product.unitOfMeasure }}
+                            </td>
+                            <td>
+                                of {{ product.quantityOfMeasure }}
+                            </td>
+                            <td>
+                                {{ quantity }}
+                            </td>
+                            <td>
+                                {{ extendedQuantity }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+            {% endfor %}
+        </table>
+    </div>
+</div>

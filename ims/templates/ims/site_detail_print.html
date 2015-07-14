@@ -1,0 +1,71 @@
+{% load staticfiles %}
+<div id="ims-report-container"  class="cell-frame" >
+    <button id="printButton">Print</button>
+    <img class="announcement-close" src="{% static 'base/img/delete.png' %}"></img>
+    <div title="print report" id="ims-report">
+         <h3>Site Detail Report </h3>
+         <h4>as of {{ stopDate }}</h4>
+        <table id="report-table">
+            <tr class="bottom-bordered-row">
+                <th>
+                    Site
+                </th>
+                <th colspan="2">
+                    Details
+                </th>
+            </tr>
+            {% for site in sitesList %}
+                <tr>
+                    <td colspan="3">
+                         <h4>{{ site.name }}</h4>
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>
+                        Address1:
+                    </td>
+                    <td>
+                        {{ site.address1 }}
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>
+                        Address2:
+                    </td>
+                    <td>
+                        {{ site.address2 }}
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>
+                        Address3:
+                    </td>
+                    <td>
+                        {{ site.address3 }}
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>
+                        Contact Name:
+                    </td>
+                    <td>
+                        {{ site.contactName }}
+                    </td>
+                </tr>
+                <tr>
+                    <td></td>
+                    <td>
+                        Contact Phone:
+                    </td>
+                    <td>
+                        {{ site.contactPhone }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>

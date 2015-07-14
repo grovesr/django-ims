@@ -1,0 +1,56 @@
+{% load staticfiles %}
+<div id="ims-report-container"  class="cell-frame" >
+    <button id="printButton">Print</button>
+    <img class="announcement-close" src="{% static 'base/img/delete.png' %}"></img>
+    <div title="print report" id="ims-report">
+         <h3>Site Inventory Report </h3>
+         <h4>as of {{ stopDate }}</h4>
+        <table id="report-table">
+            <tr class="bottom-bordered-row">
+                <th>
+                    Site
+                </th>
+                <th>
+                    Inventory
+                </th>
+                <th>uom</th>
+                <th>qom</th>
+                <th>
+                    Cartons
+                </th>
+                <th>
+                    Pieces
+                </th>
+            </tr>
+            {% for site,inventory in sitesList.iteritems %}
+                {% if inventory %}
+                    <tr>
+                        <td colspan="3">
+                            <h4>{{ site.name }}</h4>
+                        </td>
+                    </tr>
+                        {%for item in inventory %}
+                            <tr>
+                                <td></td>
+                                <td>
+                                    {{ item.information.name }} ({{ item.information.code }})
+                                </td>
+                                <td>
+                                    {{ item.information.unitOfMeasure }}
+                                </td>
+                                <td>
+                                    of {{ item.information.quantityOfMeasure }}
+                                </td>
+                                <td>
+                                    {{ item.quantity }}
+                                </td>
+                                <td>
+                                    {{ item.pieces }}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    {% endif %}
+            {% endfor %}
+        </table>
+    </div>
+</div>

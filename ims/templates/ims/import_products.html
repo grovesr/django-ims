@@ -1,0 +1,17 @@
+{% extends "ims/imports.html" %}
+{% block breadcrumbs %}
+    {{ block.super }}
+    &raquo;
+    <a href="{% url 'ims:import_products' %}">import products</a>
+{% endblock breadcrumbs %}
+{% block content %}
+    <form action="{% url 'ims:import_products' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        {% if canImportProducts %}
+            {{ fileSelectForm.as_p }}
+            <input id="submit-btn" title="import products from Excel" type="submit" value="Import" name="Import">
+        {% endif %}
+        <input id="cancel-btn" type="submit" value="Cancel" name="Cancel">
+    </form>
+    
+{% endblock content %}

@@ -1,0 +1,59 @@
+{% extends "ims/site_detail.html" %}
+{% block breadcrumbs %}
+    {{ block.super }}
+    &raquo;
+    <a href="{% url 'ims:product_add_to_site_inventory' siteId=site.pk %}">add inventory</a>
+{% endblock breadcrumbs %}
+{% block content %}
+    <table id="report-table">
+        <tr class="cell-frame">
+            <td class="cell-frame">
+                <form action="{% url 'ims:product_add_to_site_inventory' siteId=site.pk %}" method="post">
+                    {% csrf_token %}
+                    {{ productForms.management_form }}
+                    {% for newProduct in newProductList %}
+                        <input type="hidden" name="newProduct" value="{{ newProduct.pk }}" />
+                    {% endfor %}
+                    <table id="product-list-form">
+                        {% for productForm in productForms %}
+                            {% if forloop.first %}
+                                <thead>
+                                    <tr>
+                                        <th colspan = "2">
+                                            {% if canAdd %}
+                                                <input title="save inventory to this site" class="cell-left-btn" type="submit" value="Save Inventory" name="Save Inventory">
+                                            {% endif %}
+                                            <input class="cell-right-btn" type="submit" value="Cancel" name="Cancel">
+                                        </th>
+                                    </tr>
+                                    <tr class="detail-form-header">
+                                    <th>Item</th>
+                                    {% for field in productForm.visible_fields %}
+                                        <th>{{ field.name | lower | capfirst }}</th>
+                                    {% endfor %}
+                                    </tr>
+                                </thead>
+                            {% endif %}
+                            <tr>
+                                <td>
+                                    {{ productForm.instance.name }}
+                                </td>
+                                {% for field in productForm.visible_fields %}
+                                    <td class="{{ field.css_classes }}" title="{{ field.errors | escape}}">
+                                        {# Include the hidden fields in the form #}
+                                        {% if forloop.first %}
+                                            {% for hidden in productForm.hidden_fields %}
+                                                {{ hidden }}
+                                            {% endfor %}
+                                        {% endif %}
+                                        {{ field }}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                    </table>
+                </form>
+            </td>
+        </tr>
+    </table>
+{% endblock content %}

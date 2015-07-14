@@ -1,0 +1,108 @@
+{% extends "ims/products.html" %}
+{% block breadcrumbs %}
+    {{ block.super }}
+    &raquo;
+    {% if product %}
+        <a href="{% url 'ims:product_detail' code=product.pk page=pageNo%}">product details</a>
+    {% else %}
+        <a href="{% url 'ims:product_add' %}">add product</a>
+    {% endif %}
+{% endblock breadcrumbs %}
+{% block content %}
+    <table id="report-table">
+        <tr>
+            <th>
+                {% if product %}
+                    <h3>Product: {{ product.name }}</h3>
+                {% else %}
+                    <h3>New product</h3>
+                {% endif %}
+            </th>
+            {% if sitesList %}
+                <th><h3>Sites Containing This Product:</h3></th>
+            {% endif %}
+            </tr>
+            <tr class="cell-frame">
+                <td class="cell-frame">
+                     {% if product %}
+                        <form action="{% url 'ims:product_detail' code=product.code page=pageNo %}" method="post">
+                            {% csrf_token  %}
+                            <table id="form-table">
+                                <tr>
+                                    <th colspan="2">
+                                        {% if canChange %}
+                                            <input title="save product information updates" class="cell-left-btn" type="submit" value="Save Product" name="Save">
+                                        {% endif %}
+                                    </th>
+                                </tr>
+                                 <tr>
+                                    <th>
+                                        <label>
+                                            Modified:
+                                        </label>
+                                    </th>
+                                    <td>
+                                        <input readonly="readonly" value="{{ productForm.instance.modified }}">
+                                        <br />
+                                        <span class="helptext">
+                                            last modified on this date
+                                        </span>
+                                    </td>
+                                </tr>
+                                {{ productForm }}
+                            </table>
+                        </form>
+                    {% else %}
+                        <form action="{% url 'ims:product_add' %}" method="post">
+                            {% csrf_token  %}
+                            <table id="form-table">
+                                <tr>
+                                    <th colspan="2">
+                                        {% if canAdd %}
+                                            <input title="save new product" class="cell-right-btn" type="submit" value="Save" name="Save">
+                                        {% endif %}
+                                    </th>
+                                </tr>
+                                {{ productForm }}
+                            </table>
+                        </form>
+                    {% endif %}
+                </td>
+                {% if sitesList %}
+                    <td class="cell-frame">
+                        {% if pageNo and numPages %}
+                            <div class="table-nav-pages">
+                                {% if numPages == 'all' %}
+                                    {{ sitesList | length }} sites
+                                    <a href="{% url 'ims:product_detail' code=product.pk page=1 %}">&nbsp;show pages</a>
+                                {% else %}
+                                    <a href="{% url 'ims:product_detail' code=product.pk page=1 %}">&laquo;&nbsp;</a>
+                                    <a href="{% url 'ims:product_detail' code=product.pk page=previousPageNo %}">&lsaquo;&nbsp;</a>
+                                    {{ pageNo }} of {{ numPages }}
+                                    <a href="{% url 'ims:product_detail' code=product.pk page=nextPageNo %}">&nbsp;&rsaquo;</a>
+                                    <a href="{% url 'ims:product_detail' code=product.pk page=numPages %}">&nbsp;&raquo;</a>
+                                    <a href="{% url 'ims:product_detail' code=product.pk page='all' %}">&nbsp;show all</a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        {% if sitesList %}
+                            <table>
+                                {% for site in sitesList %}
+                                    <tr>
+                                        <td class="cell-left">
+                                            <a title="edit site containing this product in inventory" href="{% url 'ims:site_detail' siteId=site.0.number page=1%}">
+                                                {{ site.0.name }}
+                                            </a>
+                                        </td>
+                                        <td class="cell-left">
+                                            ({{ site.1 }})
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        {% endif %}
+                    </td>
+                {% endif %}
+            </tr>
+        </table>
+{% endblock content %}

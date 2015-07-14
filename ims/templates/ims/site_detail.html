@@ -1,0 +1,164 @@
+{% extends "ims/sites.html" %}
+{% block breadcrumbs %}
+    {{ block.super }}
+    &raquo;
+    {% if site %}
+        <a href="{% url 'ims:site_detail' siteId=site.number %}">site details</a>
+    {% else %}
+        <a href="{% url 'ims:site_add' %}">add site</a>
+    {% endif %}
+{% endblock breadcrumbs %}
+{% block content %}
+    {% if site %}
+        <form action="{% url 'ims:site_detail' siteId=site.number  %}" method="post">
+    {% else %}
+        <form action="{% url 'ims:site_add' %}" method="post">
+    {% endif %}
+        <table id="form-table">
+            <tr>
+                <th>
+                    {% if site %}
+                        <h3>Site: {{ site.name }} (#{{ site.number }})</h3>
+                    {% else %}
+                        <h3>New site</h3>
+                    {% endif %}
+                </th>
+                {% if inventoryForms.total_form_count %}
+                    <th><h3>Inventory:</h3></th>
+                {% endif %}
+            </tr>
+            <tr class="cell-frame">
+                <td class="cell-frame">
+                    {% csrf_token  %}
+                    <table>
+                        <thead>
+                            <tr>
+                                <th colspan="2">
+                                    {% if canChangeSite %}
+                                        <input title="save changes to site information" class="cell-left-btn" type="submit" value="Save Site" name="Save Site">
+                                    {% endif %}
+                                    {% if inventoryForms.total_form_count == 0  and site and canAdd %}
+                                        <input title="add new products to site inventory" class="cell-right-btn" type="submit" value="Add New Inventory" name="Add New Inventory">
+                                    {% endif %}
+                                </th>
+                            </tr>
+                        </thead>
+                        <tr>
+                            <th>
+                                <label>
+                                    Modified:
+                                </label>
+                            </th>
+                            <td>
+                                <input readonly="readonly" value="{{ siteForm.instance.modified }}">
+                                <br />
+                                <span class="helptext">
+                                    last modified on this date
+                                </span>
+                            </td>
+                        </tr>
+                        {{ siteForm }}
+                    </table>
+                </td>
+                {% if inventoryForms.total_form_count %}
+                    <td class="cell-frame">
+                        {% csrf_token  %}
+                        {% if pageNo and numPages %}
+                            <div class="table-nav-pages">
+                                {% if numPages == 'all' %}
+                                    {{ inventoryForms.total_form_count }} inventory items
+                                    <a href="{% url 'ims:site_detail' siteId=site.number page=1 %}">&nbsp;show pages</a>
+                                {% else %}
+                                    <a href="{% url 'ims:site_detail' siteId=site.number page=1 %}">&laquo;&nbsp;</a>
+                                    <a href="{% url 'ims:site_detail' siteId=site.number page=previousPageNo %}">&lsaquo;&nbsp;</a>
+                                    {{ pageNo }} of {{ numPages }}
+                                    <a href="{% url 'ims:site_detail' siteId=site.number page=nextPageNo %}">&nbsp;&rsaquo;</a>
+                                    <a href="{% url 'ims:site_detail' siteId=site.number page=numPages %}">&nbsp;&raquo;</a>
+                                    <a href="{% url 'ims:site_detail' siteId=site.number page='all' %}">&nbsp;show all</a>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                        {% if site.num_inventory_errors > 0 %}
+                            Inventory Items With Errors: {{ site.num_inventory_errors }}
+                        {% endif %}
+                        <table id="inventory-detail-form">
+                        {{ inventoryForms.management_form }}
+                        {% for inventoryForm in inventoryForms %}
+                            {% if forloop.first %}
+                                <thead>
+                                    <tr class="detail-form-header">
+                                        <th colspan='6'>
+                                            {% if canAdd %}
+                                                <input title="add new products to site inventory" class="cell-left-btn" type="submit" value="Add New Inventory" name="Add New Inventory">
+                                            {% endif %}
+                                            {% if canChangeInventory and canDelete %}
+                                                <input title="save changes to checked inventory items" class="cell-right-btn" type="submit" value="Save Changes" name="Save Changes">
+                                            {% endif %}
+                                        </th>
+                                    </tr>
+                                    <tr class="detail-form-header">
+                                        <th>Item</th>
+                                        {% for field in inventoryForm.visible_fields %}
+                                            <th>{{ field.name | lower | capfirst }}</th>
+                                        {% endfor %}
+                                        <th>
+                                            Modifier
+                                        </th>
+                                        <th>
+                                            Modification Date
+                                        </th>
+                                        <th>
+                                            History
+                                        </th>
+                                    </tr>
+                                </thead>
+                            {% endif %}
+                            <tr class={% if forloop.counter0  >= startRow and forloop.counter <= stopRow %}
+                                    "detail-table-row-visible"
+                                {% else %}
+                                    "detail-table-row-invisible"
+                                {% endif %}>
+                                <td class=
+                                {% if inventoryForm.instance.check_quantity %}
+                                    "detail-table-text cell-left"
+                                {% else %}
+                                    "detail-table-error-text cell-left"
+                                {% endif %}
+                                ><a class="pkt-link" href="{% url 'ims:product_detail' code=inventoryForm.instance.information.code page=1%}"
+                                 title="{% if inventoryForm.instance.check_information %}edit item details{% else %}edit item details, this product has errors the need to be corrected{% endif %}">
+                                {{ inventoryForm.instance.information }}
+                                </a></td>
+                                {% for field in inventoryForm.visible_fields %}
+                                    <td class="{{ field.css_classes }} cell-left" title="{{ field.errors | escape}}">
+                                        {# Include the hidden fields in the form #}
+                                        {% if forloop.first %}
+                                            {% for hidden in inventoryForm.hidden_fields %}
+                                                {{ hidden }}
+                                            {% endfor %}
+                                        {% endif %}
+                                        {{ field }}
+                                    </td>
+                                {% endfor %}
+                                <td class="cell-left">
+                                    {{ inventoryForm.instance.modifier }}
+                                </td>
+                                <td class="cell-left">
+                                    {{ inventoryForm.instance.modified  }}
+                                </td>
+                                <td>
+                                    {% if inventoryForm.instance.inventory_history_count > 1 %}
+                                    <a title="history of inventory changes at this site for this product"
+                                    href="{% url 'ims:inventory_history' siteId=site.pk code=inventoryForm.instance.information.code page=1 %}">
+                                        history
+                                    </a> ({{ inventoryForm.instance.inventory_history_count }})
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                        </table>
+                    </td>
+                {% endif %}
+            </tr>
+        </table>
+    </form>
+{% endblock content %}

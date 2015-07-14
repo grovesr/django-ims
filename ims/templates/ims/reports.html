@@ -1,0 +1,159 @@
+{% extends "ims/home.html" %}
+{% load staticfiles %}
+{% block extra_scripts %}
+    <link rel="stylesheet" href="http://code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css"> 
+    <script src="http://code.jquery.com/jquery-1.9.1.js"></script>
+    <script src="http://code.jquery.com/ui/1.11.0/jquery-ui.js"></script>
+    <script>
+        $(document).ready(function() {
+            $('.datepicker').datepicker();
+            var startDate = "{{ startDate }}";
+            startDate = startDate.replace(/-/g,'/');
+            var stopDate = "{{ stopDate }}";
+            stopDate = stopDate.replace(/-/g,'/');
+            $( '#id_startDate' ).val( startDate );
+            $( '#id_stopDate' ).val( stopDate );
+            $("#printButton").click(function(){
+                printElem('#ims-report');
+            });
+        });
+        function printElem(elem) {
+            popup($(elem).html());
+        }
+
+        function popup(data) {
+            var mywindow = window.open('', 'report', 'height=300px,width=1000px');
+            mywindow.document.write('<html><head>');
+            mywindow.document.write('<link rel="stylesheet" href="{% static 'ims/style/style.css' %}" type="text/css" />');
+            mywindow.document.write('</head><body >');
+            mywindow.document.write(data);
+            mywindow.document.write('</body></html>');
+            mywindow.document.close(); // necessary for IE >= 10
+            mywindow.focus(); // necessary for IE >= 10
+            mywindow.print();
+            mywindow.close();
+            return true;
+        }
+    </script>
+{% endblock extra_scripts %}
+{% block breadcrumbs %}
+    {{ block.super }}
+    &raquo;
+    <a href="{% url 'ims:reports' %}">reports</a>
+{% endblock breadcrumbs %}
+{% block content %}
+    <form action="{% url 'ims:reports_dates' startDate=startDate stopDate=stopDate %}" method="post" enctype="multipart/form-data">
+    {% csrf_token %}
+        <table id="report-table">
+            <tr>
+                <th colspan="2">
+                    Report Dates
+                </th>
+            </tr>
+            <tr>
+                <td>
+                    {{ dateSpanForm }}
+                </td>
+            </tr>
+        </table>
+        <table id="report-table">
+            <tr>
+                <th colspan="2">
+                    <h3>Reports:</h3>
+                </th>
+            </tr>
+            <tr>
+                <td class="cell-frame">
+                    <table id="report-table">
+                        <tr class="bottom-bordered-row">
+                            <th class="left-column report-column">
+                                Site Reports
+                            </th>
+                            <th class="report-column">
+                                Product Reports
+                            </th>
+                        </tr>
+                        <tr>
+                            <th class="left-column cell-center-btn">
+                                Site Inventory
+                            </th>
+                            <th class="cell-center-btn">
+                                Inventory Detail
+                            </th>
+                        </tr>
+                        <tr class="bottom-bordered-row">
+                            <td class="left-column report-column">
+                                <input title="create site inventory print view" class="cell-left-btn" type="submit" name="Site Inventory Print" value="print view">
+                                <input title="create site inventory excel view" class="cell-right-btn" type="submit" name="Site Inventory XLS" value="xls">
+                            </td>
+                            <td>
+                                <input title="create inventory detail print view" class="cell-left-btn" type="submit" name="Inventory Detail Print" value="print view">
+                                <input title="create inventory detail excel view" class="cell-right-btn" type="submit" name="Inventory Detail XLS" value="xls">
+                            </td>
+                        </tr>
+                        <tr>
+                            <th class="left-column cell-center-btn">
+                                Site Detail
+                            </th>
+                            <th class="cell-center-btn">
+                                Inventory Status
+                            </th>
+                        </tr>
+                        <tr>
+                            <td class="left-column">
+                                <input  title="create site detail print view" class="cell-left-btn" type="submit" name="Site Detail Print" value="print view">
+                                <input title="create site detail excel view" class="cell-right-btn" type="submit" name="Site Detail XLS" value="xls">
+                            </td>
+                            <td>
+                                <input  title="create inventory status print view" class="cell-left-btn" type="submit" name="Inventory Status Print" value="print view">
+                                <input title="create inventory status excel view" class="cell-right-btn" type="submit" name="Inventory Status XLS" value="xls">
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    </form>
+    <br />
+    {% if report == "site_inventory_print" and sitesList %}
+        {% include "ims/site_inventory_print.html" %}
+    {% elif report == "site_inventory_xls" and sitesList %}
+        <div id="announcement">
+            <p id="warning-note" class="warningnote">
+                <img class="announcement-close" src="{% static 'base/img/delete.png' %}"></img>
+                <img class="announcement-icon" src="{% static 'base/img/icon_alert.gif' %}"></img>
+                Site Inventory Excel Report Not Yet Available
+            </p>
+        </div>
+    {% elif report == "site_detail_print" and sitesList %}
+        {% include "ims/site_detail_print.html" %}
+    {% elif report == "site_detail_xls" and sitesList %}
+        <div id="announcement">
+            <p id="warning-note" class="warningnote">
+                <img class="announcement-close" src="{% static 'base/img/delete.png' %}"></img>
+                <img class="announcement-icon" src="{% static 'base/img/icon_alert.gif' %}"></img>
+                Site Detail Excel Report Not Yet Available
+            </p>
+        </div>
+    {% elif report == "inventory_detail_print" and sitesList %}
+        {% include "ims/inventory_detail_print.html" %}
+    {% elif report == "inventory_detail_xls" and sitesList %}
+        <div id="announcement">
+            <p id="warning-note" class="warningnote">
+                <img class="announcement-close" src="{% static 'base/img/delete.png' %}"></img>
+                <img class="announcement-icon" src="{% static 'base/img/icon_alert.gif' %}"></img>
+                Inventory Detail Excel Report Not Yet Available
+            </p>
+        </div>
+    {% elif report == "inventory_status_print" and sitesList %}
+        {% include "ims/inventory_status_print.html" %}
+    {% elif report == "inventory_status_xls" and sitesList %}
+        <div id="announcement">
+            <p id="warning-note" class="warningnote">
+                <img class="announcement-close" src="{% static 'base/img/delete.png' %}"></img>
+                <img class="announcement-icon" src="{% static 'base/img/icon_alert.gif' %}"></img>
+                Inventory Status Excel Report Not Yet Available
+            </p>
+        </div>
+    {% endif %}
+{% endblock content %}

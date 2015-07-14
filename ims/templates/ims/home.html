@@ -1,0 +1,62 @@
+{% extends "base/base.html" %}
+{% load staticfiles %}
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'ims/css/style.css' %}" type="text/css" >
+{% endblock extrastyle %}
+{% block breadcrumbs %}
+    {{ block.super }}
+    &raquo;
+    <a href="{% url 'ims:home' %}">RIMS</a>
+{% endblock breadcrumbs %}
+{% block content %}
+    <table id="report-table">
+        <tr>
+            <th  colspan="2">
+                <h3>Inventory Home:</h3>
+            </th>
+        </tr>
+        <tr>
+            <td class="cell-frame">
+                <table id="report-table">
+                    <tr class="bottom-bordered-row">
+                        <th>
+                            <h3>Sites with Recently Edited Inventory</h3>
+                        </th>
+                    </tr>
+                    <tr>
+                        <td  class="report-column">
+                            <ul>
+                                {% for site in sitesList %}
+                                    <li>
+                                        <a title="edit site" href="{% url 'ims:site_detail' siteId=site.pk page=1 %}">{{ site.name }}</a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+            <td class="cell-frame">
+                <table id="report-table">
+                    <tr class="bottom-bordered-row">
+                        <th>
+                            <h3>Recently Edited Inventory</h3>
+                        </th>
+                    </tr>
+                    <tr>
+                        <td  class="report-column">
+                            <ul>
+                                {% for item in inventoryList %}
+                                    <li>
+                                        <a title="edit site containing this inventory" href="{% url 'ims:site_detail' siteId=item.site.pk page=1 %}">{{ item.information }}</a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+{% endblock content %}

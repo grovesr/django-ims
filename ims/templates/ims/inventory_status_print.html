@@ -1,0 +1,47 @@
+{% load staticfiles %}
+<div id="ims-report-container"  class="cell-frame" >
+    <button id="printButton">Print</button>
+    <img class="announcement-close" src="{% static 'base/img/delete.png' %}"></img>
+    <div title="print report" id="ims-report">
+         <h3>Inventory Status Report </h3>
+         <h4>as of {{ stopDate }}</h4>
+        <table>
+            <tr class="bottom-bordered-row">
+                <th>
+                    Product
+                </th>
+                <th>uom</th>
+                <th>qom</th>
+                <th>
+                    Cartons
+                </th>
+                <th>
+                    Pieces
+                </th>
+            </tr>
+            {% for product,siteQuantity in inventoryList.iteritems %}
+                {% comment %} 
+                    siteQuantity is a tuple containing a list of tuples and a tuple: 
+                    ([(site, quantity,extended quantity)],(total quantity for all sites, total extended quantity for all sites))
+                {% endcomment %}
+                <tr>
+                    <td>
+                        {{ product.name }}:{{ product.code }}
+                    </td>
+                     <td>
+                        {{ product.unitOfMeasure }}
+                    </td>
+                    <td>
+                        of {{ product.quantityOfMeasure }}
+                    </td>
+                    <td>
+                        {{ siteQuantity.1.0 }}
+                    </td>
+                    <td>
+                        {{ siteQuantity.1.1 }}
+                    </td>
+                </tr>
+            {% endfor %}
+        </table>
+    </div>
+</div>
