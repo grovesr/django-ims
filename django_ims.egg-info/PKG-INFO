@@ -1,6 +1,6 @@
 Metadata-Version: 1.1
 Name: django-ims
-Version: 1.2
+Version: 1.2.1
 Summary: django-ims is a simple Django app to for managing inventory
 Home-page: http://www.example.com/
 Author: Rob Groves
@@ -38,6 +38,8 @@ Description: =====
            to administer the ims models (you'll need the Admin app enabled).
         
         5. Visit http://127.0.0.1:8000/ims/ to work with inventory.
+        
+        6. To test run run_tests.py
         
 Platform: UNKNOWN
 Classifier: Environment :: Web Environment

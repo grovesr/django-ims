@@ -5,13 +5,13 @@ setup.py
 django_ims.egg-info/PKG-INFO
 django_ims.egg-info/SOURCES.txt
 django_ims.egg-info/dependency_links.txt
+django_ims.egg-info/pbr.json
 django_ims.egg-info/top_level.txt
 ims/__init__.py
 ims/admin.py
 ims/forms.py
 ims/models.py
 ims/settings.py
-ims/tests.py
 ims/urls.py
 ims/views.py
 ims/static/ims/css/style.css
