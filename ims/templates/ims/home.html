@@ -9,6 +9,31 @@
     &raquo;
     <a href="{% url 'ims:home' %}">RIMS</a>
 {% endblock breadcrumbs %}
+{% block announcement %}
+    <div id="announcement">
+        {% if errorMessage %}
+            <p id="error-note" class="errornote">
+                <img class="announcement-close" src="{% static 'base/img/delete.png' %}"></img>
+                <img class="announcement-icon" src="{% static 'base/img/icon_error.gif' %}"></img>
+                {{ errorMessage | safe }}
+            </p>
+        {%endif %}
+        {% if warningMessage %}
+            <p id="warning-note" class="warningnote">
+                <img class="announcement-close" src="{% static 'base/img/delete.png' %}"></img>
+                <img class="announcement-icon" src="{% static 'base/img/icon_alert.gif' %}"></img>
+                {{ warningMessage | safe }}
+            </p>
+        {%endif %}
+        {% if infoMessage %}
+            <p id="info-note" class="infonote">
+                <img class="announcement-close" src="{% static 'base/img/delete.png' %}"></img>
+                <img class="announcement-icon" src="{% static 'base/img/icon_success.gif' %}"></img>
+                {{ infoMessage | safe }}
+            </p>
+        {%endif %}
+    </div>
+{% endblock announcement %}
 {% block content %}
     <table id="report-table">
         <tr>

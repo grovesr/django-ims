@@ -617,6 +617,7 @@ class InventoryItem(models.Model):
         skipped = 0
         inventoryItemKeys=[]
         inventoryItems=[]
+        skippedItems = []
         for indx in range(len(data[keys[0]])):
             inventoryItem=InventoryItem()
             inventoryItem.modifier=modifier
@@ -646,6 +647,7 @@ class InventoryItem(models.Model):
                     continue
                 if inventoryItem.linkToInformation() == -1 or inventoryItem.linkToSite() == -1:
                     skipped += 1
+                    skippedItems.append('site %d, code %s'% (inventoryItem.site_id,inventoryItem.code))
                     break
             except AttributeError:
                 # no prefix was parsed from the Excel file
@@ -665,7 +667,7 @@ class InventoryItem(models.Model):
             if len(inventoryItems) != len(inventoryItemKeys):
                 warningMessage = 'Found duplicate inventory items'
         if skipped > 0:
-            warningMessage = 'One or more inventory items referenced product codes or site numbers not found in the database.  Maybe you need to import products and/or sites first?'
+            warningMessage = 'One or more inventory items referenced product codes or site numbers not found in the database.  Maybe you need to import products and/or sites first?' + repr(skippedItems)
         return inventoryItems, warningMessage
     
     def __unicode__(self):

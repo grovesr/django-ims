@@ -5,10 +5,10 @@ from django.contrib.auth.models import User, Permission
 from django.contrib.sessions.middleware import SessionMiddleware
 from collections import OrderedDict
 import os, re
-# Create your tests here.
-from .models import Site, ProductInformation, InventoryItem
-from .views import inventory_delete_all, site_delete_all, product_delete_all
-from .settings import PAGE_SIZE, APP_DIR
+# Create your ims_tests here.
+from ims.models import Site, ProductInformation, InventoryItem
+from ims.views import inventory_delete_all, site_delete_all, product_delete_all
+from ims.settings import PAGE_SIZE, APP_DIR
 
 TEST_LOG = os.path.join(APP_DIR,
                         'testData/redcross.log')
@@ -85,7 +85,7 @@ def add_session_to_request(request):
 
 class SiteMethodTests(TestCase):
     """
-    tests for Site instance methods
+    ims_tests for Site instance methods
     """
     
     def setUp(self):
@@ -94,7 +94,7 @@ class SiteMethodTests(TestCase):
         except OSError:
             pass
         settings.LOG_FILE=TEST_LOG
-    #Site inventory tests
+    #Site inventory ims_tests
     def test_latest_inventory_after_initial_creation(self):
         """
         site.latest_inventory should only return the latest change
@@ -353,7 +353,7 @@ class SiteMethodTests(TestCase):
     
 class ProductInformationMethodTests(TestCase):
     """
-    ProductInformation class method tests
+    ProductInformation class method ims_tests
     """
     
     def setUp(self):
@@ -453,7 +453,7 @@ class ProductInformationMethodTests(TestCase):
         
 class InventoryItemMethodTests(TestCase):
     """
-    InventoryItem class method tests
+    InventoryItem class method ims_tests
     """
     
     def setUp(self):
@@ -600,7 +600,7 @@ class InventoryItemMethodTests(TestCase):
         
 class HomeViewTests(TestCase):
     """
-    tests for Home view
+    ims_tests for Home view
     """
     
     def setUp(self):
@@ -697,10 +697,10 @@ class HomeViewTests(TestCase):
         
 class ImportSitesViewTests(TestCase):
     """
-    tests for import_sites view
+    ims_tests for import_sites view
     """
     def setUp(self):
-        # Most tests need access to the request factory and/or a user.
+        # Most ims_tests need access to the request factory and/or a user.
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
@@ -812,10 +812,10 @@ class ImportSitesViewTests(TestCase):
         
 class ImportProductsViewTests(TestCase):
     """
-    tests for import_products view
+    ims_tests for import_products view
     """
     def setUp(self):
-        # Most tests need access to the request factory and/or a user.
+        # Most ims_tests need access to the request factory and/or a user.
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
@@ -929,10 +929,10 @@ class ImportProductsViewTests(TestCase):
         
 class ImportInventoryViewTests(TestCase):
     """
-    tests for import_inventory view
+    ims_tests for import_inventory view
     """
     def setUp(self):
-        # Most tests need access to the request factory and/or a user.
+        # Most ims_tests need access to the request factory and/or a user.
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
@@ -1071,10 +1071,10 @@ class ImportInventoryViewTests(TestCase):
         
 class SiteDeleteAllViewTests(TestCase):
     """
-    tests for site_delete_all view
+    ims_tests for site_delete_all view
     """
     def setUp(self):
-        # Most tests need access to the request factory and/or a user.
+        # Most ims_tests need access to the request factory and/or a user.
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
@@ -1174,10 +1174,10 @@ class SiteDeleteAllViewTests(TestCase):
         
 class ProductDeleteAllViewTests(TestCase):
     """
-    tests for product_delete_all view
+    ims_tests for product_delete_all view
     """
     def setUp(self):
-        # Most tests need access to the request factory and/or a user.
+        # Most ims_tests need access to the request factory and/or a user.
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
@@ -1278,10 +1278,10 @@ class ProductDeleteAllViewTests(TestCase):
         
 class InventoryDeleteAllViewTests(TestCase):
     """
-    tests for product_delete_all view
+    ims_tests for product_delete_all view
     """
     def setUp(self):
-        # Most tests need access to the request factory and/or a user.
+        # Most ims_tests need access to the request factory and/or a user.
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
@@ -1354,10 +1354,10 @@ class InventoryDeleteAllViewTests(TestCase):
         
 class ImportsViewTests(TestCase):
     """
-    tests for Imports view
+    ims_tests for Imports view
     """
     def setUp(self):
-        # Most tests need access to the request factory and/or a user.
+        # Most ims_tests need access to the request factory and/or a user.
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
@@ -1929,11 +1929,11 @@ class ImportsViewTests(TestCase):
 
 class RestoreViewTests(TestCase):
     """
-    restore view tests
+    restore view ims_tests
     """
     
     def setUp(self):
-        # Most tests need access to the request factory and/or a user.
+        # Most ims_tests need access to the request factory and/or a user.
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')

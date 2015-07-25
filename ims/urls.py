@@ -1,5 +1,5 @@
 from django.conf.urls import patterns, url
-from . import views
+from ims import views
 
 urlpatterns = patterns('',
     # ex: /ups/
