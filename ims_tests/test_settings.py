@@ -5,7 +5,7 @@ from django.core.exceptions import ImproperlyConfigured
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 # JSON secrets module
-with open(os.path.join(BASE_DIR, '.redcross_eny_secret.json')) as f:
+with open(os.path.join(BASE_DIR, '.secret_file.json')) as f:
     secrets=json.loads(f.read())
 
 def get_secret(setting, secrets=secrets):
@@ -22,7 +22,7 @@ def get_secret(setting, secrets=secrets):
 # See https://docs.djangoproject.com/en/1.7/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = get_secret('REDCROSS_ENY_SECRET')
+SECRET_KEY = get_secret('IMS_SECRET')
 INSTALLED_APPS = [
     'django.contrib.admin',
     'django.contrib.auth',
@@ -51,9 +51,9 @@ USE_TZ = True
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.mysql',
-        'NAME': get_secret('REDCROSS_ENY_DB'),
-        'USER': get_secret('REDCROSS_ENY_DB_USER'),
-        'PASSWORD': get_secret('REDCROSS_ENY_DB_PASS'),
+        'NAME': get_secret('IMS_DB'),
+        'USER': get_secret('IMS_DB_USER'),
+        'PASSWORD': get_secret('IMS_DB_PASS'),
         'HOST': 'localhost',
     }
 }

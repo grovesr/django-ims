@@ -31,4 +31,25 @@ Quick start
 
 5. Visit http://127.0.0.1:8000/ims/ to work with inventory.
 
-6. To test run run_tests.py
+6. To run tests, you must have the following at the same level as ims:
+   run_test.py
+   .secret_file.json
+   ./ims_tests
+     __init__.py
+     test_settings.py
+     tests.py
+   ./templates
+     /base
+       base.html
+       
+7. .secret_file.json should include the following information set for your
+    environment
+    {
+        "IMS_SECRET":"secret_key",
+        "IMS_DB":"dbName",
+        "IMS_DB_USER":"dbUserName",
+        "IMS_DB_PASS":"dbPassword"
+    }
+       
+8. to run the tests:
+   python run_test.py

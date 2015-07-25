@@ -1,2 +1,2 @@
 *.pyc
-.redcross*.json
+.*secret*.json
