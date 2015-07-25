@@ -1,5 +1,7 @@
 include LICENSE
 include README.rst
+include ims_tests/.secret_file.json
+recursive-include ims_tests/templates *
 recursive-include ims/static *
 recursive-include ims/templates *
 recursive-include ims/testData *

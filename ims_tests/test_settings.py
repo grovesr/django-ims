@@ -5,7 +5,7 @@ from django.core.exceptions import ImproperlyConfigured
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
 
 # JSON secrets module
-with open(os.path.join(BASE_DIR, '.secret_file.json')) as f:
+with open(os.path.join(BASE_DIR, 'ims_tests/.secret_file.json')) as f:
     secrets=json.loads(f.read())
 
 def get_secret(setting, secrets=secrets):
@@ -44,7 +44,7 @@ MIDDLEWARE_CLASSES = (
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
 )
 
-ROOT_URLCONF = 'urls'
+ROOT_URLCONF = 'ims_tests.urls'
 STATIC_URL = '/static/'
 USE_TZ = True
 
@@ -58,7 +58,7 @@ DATABASES = {
     }
 }
 
-LOG_FILE=os.path.join(BASE_DIR, 'redcross_eny.log')
+LOG_FILE=os.path.join(BASE_DIR, 'ims.log')
 
-TEMPLATE_DIRS = [os.path.join(BASE_DIR, 'templates'),
+TEMPLATE_DIRS = [os.path.join(BASE_DIR, 'ims_tests/templates'),
                  'ims/templates',]

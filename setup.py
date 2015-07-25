@@ -9,8 +9,8 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django-ims',
-    version='1.2.2',
-    packages=['ims'],
+    version='1.2.3',
+    packages=['ims', 'ims_tests'],
     include_package_data=True,
     license='3-BSD License',  # example license
     description='django-ims is a simple Django app to for managing inventory',

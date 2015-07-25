@@ -1,6 +1,6 @@
 Metadata-Version: 1.1
 Name: django-ims
-Version: 1.2.2
+Version: 1.2.3
 Summary: django-ims is a simple Django app to for managing inventory
 Home-page: http://www.example.com/
 Author: Rob Groves
@@ -39,28 +39,24 @@ Description: =====
         
         5. Visit http://127.0.0.1:8000/ims/ to work with inventory.
         
-        6. To run tests, you must have the following at the same level as ims:
-           run_test.py
-           .secret_file.json
-           ./ims_tests
-             __init__.py
-             test_settings.py
-             tests.py
-           ./templates
-             /base
-               base.html
-               
-        7. .secret_file.json should include the following information set for your
-            environment
-            {
-                "IMS_SECRET":"secret_key",
-                "IMS_DB":"dbName",
-                "IMS_DB_USER":"dbUserName",
-                "IMS_DB_PASS":"dbPassword"
-            }
-               
-        8. to run the tests:
-           python run_test.py
+        6. To run tests:
+           replace the dummy .secret_file.json in the ims_tests package with a file
+           containing your Django environment secret information.
+           The default file "ims_tests/.secret_file.json" looks like this:
+           {
+               "IMS_SECRET":"secret_key",
+               "IMS_DB":"dbName",
+               "IMS_DB_USER":"dbUserName",
+               "IMS_DB_PASS":"dbPassword"
+           }
+        
+        7. Be careful with the .secret_file.json, once you have populated it with your
+           secret environment variables.  You don't want unauthorized users to be able
+           to read them.
+        
+        8. to run the tests in the ims_tests package dir:
+           python run_tests.py
+        
 Platform: UNKNOWN
 Classifier: Environment :: Web Environment
 Classifier: Framework :: Python
