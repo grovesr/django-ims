@@ -93,26 +93,6 @@ li, #form-table th, #form-table td {
     margin: 0px;
 }
 
-#nav-bar-1 a, #nav-bar-2 a {
-    text-decoration: none;
-    padding: 0px 10px;
-    border: 0px;
-}
-
-#nav-bar-1 a.nav-1-selected, #nav-bar-2 a.nav-2-selected {
-    background: #aaa;
-    color: #000;
-}
-
-#nav-bar-1 a.nav-1-unselected, #nav-bar-2 a.nav-2-unselected {
-    background: #ccc;
-    color: #000;
-}
-
-#nav-bar-1 a:hover, #nav-bar-2 a:hover {
-    text-decoration: underline;
-    color: #ff0000;
-}
 
 ul.parse-errors, ul.faq-list, li.faq-list {
     list-style-type:none;
@@ -152,7 +132,7 @@ input[type="submit"].cell-right-btn {
 }
 
 input[type="submit"].cell-center-btn {
-    text-align:center;;
+    text-align:center;
     cursor:pointer;
 }
 
