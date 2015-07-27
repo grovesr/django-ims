@@ -9,7 +9,7 @@ os.chdir(os.path.normpath(os.path.join(os.path.abspath(__file__), os.pardir)))
 
 setup(
     name='django-ims',
-    version='1.2.4',
+    version='1.2.5',
     packages=['ims', 'ims_tests'],
     include_package_data=True,
     license='3-BSD License',  # example license
