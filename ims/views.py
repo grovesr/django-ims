@@ -124,7 +124,7 @@ def imports(request):
         elif 'Backup' in request.POST:
             return create_backup_xls_response()
         elif 'Log File' in request.POST:
-            return create_log_file_response()
+            return create_log_file_response(request)
         elif 'Import Sites' in request.POST:
             if canAddSites and canChangeSites:
                 return redirect(reverse('ims:import_sites'))
@@ -1007,14 +1007,13 @@ def inventory_delete_all(request):
                                                 'canDelete':canDelete,
                                                 })
     
-def create_log_file_response():
+def create_log_file_response(request):
     try:
         with open(settings.LOG_FILE, 'r') as fStr:
             logFileList = fStr.readlines()
-            
-    except IOError as e:
-        e = IOError('File Error:<br/>Unable to open %s' % settings.LOG_FILE)
-        raise e
+    except IOError:
+        request.session['errorMessage'] = 'File Error:<br/>Unable to open %s' % settings.LOG_FILE
+        return redirect('ims:imports')
     xls = xlwt.Workbook(encoding="utf-8")
     sheet1 = xls.add_sheet("Admin Log")
     sheet1.write(0,0,'Date')
