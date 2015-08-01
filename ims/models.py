@@ -241,7 +241,11 @@ class Site(models.Model):
             count += product.num_errors()
         return count
     
-    def latest_inventory(self, startDate=None, stopDate=None, orderBy = 'name'):
+    def latest_inventory(self,
+                         startDate=None, 
+                         stopDate=None, 
+                         orderBy = 'name',
+                         orderDir = 'asc'):
         # get the inventory entries associated with this site. These are records
         # detailing the history of inventory states for products at this site.  Includes
         # adjustments to inventory as well as deletions
@@ -271,10 +275,14 @@ class Site(models.Model):
         # as its last state.  We do this because we need a queryset, not a list
         # because we are using it to generate a formset later
         siteInventory=InventoryItem.objects.filter(pk__in=latestInventoryIds)
-        if orderBy == 'name':
-            siteInventory=siteInventory.order_by('information__name')
+        if orderDir == 'asc':
+            dir = ''
         else:
-            siteInventory=siteInventory.order_by('information__code')
+            dir = '-'
+        if orderBy == 'name':
+            siteInventory=siteInventory.order_by(dir + 'information__name')
+        else:
+            siteInventory=siteInventory.order_by(dir + 'information__code')
         return siteInventory
     
     def inventory_history_for_product(self,code=None, stopDate=None):

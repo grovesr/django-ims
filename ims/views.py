@@ -157,7 +157,8 @@ def imports(request):
 def get_sorted_inventory(report = '', 
                          startDate = None, 
                          stopDate = None, 
-                         orderBy = 'asc',
+                         orderBy = 'name',
+                         orderDir = 'asc',
                          sortReverse = False):
     sitesList=None
     inventoryList=None
@@ -174,7 +175,7 @@ def get_sorted_inventory(report = '',
             # other reports require information about the inventory at each site
             for site in sites:
                 siteInventory = site.latest_inventory(stopDate=parsedStopDate, 
-                    orderBy=orderBy)
+                    orderBy=orderBy, orderDir = orderDir)
                 sitesList[site] = siteInventory
                 if re.match('inventory_detail', report) or re.match('inventory_status', report):
                     # these reports require details about each inventory item
@@ -236,6 +237,7 @@ def reports_dates(request,
                                                     startDate = startDate, 
                                                     stopDate = stopDate, 
                                                     orderBy = orderBy, 
+                                                    orderDir = orderDir,
                                                     sortReverse = sortReverse)
         if 'Site Inventory Print' in request.POST:
             return redirect(reverse('ims:reports_dates',
@@ -295,6 +297,7 @@ def reports_dates(request,
                                                     startDate = startDate, 
                                                     stopDate = stopDate, 
                                                     orderBy = orderBy, 
+                                                    orderDir = orderDir,
                                                     sortReverse = sortReverse)
     return render(request,'ims/reports.html', {'nav_reports':1,
                                                 'warningMessage':warningMessage,
