@@ -154,60 +154,109 @@ def imports(request):
                                                 'canDeleteInventory':canDeleteInventory,
                                                 })
 
-@login_required()
-def reports_dates(request, report=None, page=1, startDate=None, stopDate=None):
-    errorMessage, warningMessage, infoMessage = get_session_messages(request)
-    dateSpanForm=DateSpanQueryForm()
+def get_sorted_inventory(report = '', 
+                         startDate = None, 
+                         stopDate = None, 
+                         orderBy = 'asc',
+                         sortReverse = False):
     sitesList=None
     inventoryList=None
     if report and startDate and stopDate:
-        parsedStartDate=parse_datestr_tz(reorder_date_mdy_to_ymd(startDate,'-'),0,0)
-        parsedStopDate=parse_datestr_tz(reorder_date_mdy_to_ymd(stopDate,'-'),23,59)
-        sites=Site.objects.all().order_by('name')
+        parsedStartDate = parse_datestr_tz(reorder_date_mdy_to_ymd(startDate, '-'), 0, 0)
+        parsedStopDate = parse_datestr_tz(reorder_date_mdy_to_ymd(stopDate, '-'), 23, 59)
+        sites = Site.objects.all().order_by('name')
         sitesList = OrderedDict()
         inventoryList = {}
-        if re.match('site_detail',report):
-            # site detail reports don't contain inventory details, just get
+        if re.match('site_detail', report): # site detail reports don't contain inventory details, just get
             # the site data and pass it to the template for rendering
-            sitesList=sites
+            sitesList = sites
         else:
             # other reports require information about the inventory at each site
             for site in sites:
-                siteInventory = site.latest_inventory(stopDate=parsedStopDate)
-                sitesList[site]=siteInventory
-                if re.match('inventory_detail',report) or re.match('inventory_status',report):
+                siteInventory = site.latest_inventory(stopDate=parsedStopDate, 
+                    orderBy=orderBy)
+                sitesList[site] = siteInventory
+                if re.match('inventory_detail', report) or re.match('inventory_status', report):
                     # these reports require details about each inventory item
                     # contained at each site
                     for item in siteInventory:
                         if item.information not in inventoryList:
                             # accumulation list
-                            inventoryList[item.information]=(list(),(0,0))
-                        siteQuantityList=inventoryList[item.information][0]
-                        siteQuantityList.append((site,item.quantity,item.quantity * item.information.quantityOfMeasure))
-                        newSiteQuantity = (inventoryList[item.information][1][0] + item.quantity,
-                                           inventoryList[item.information][1][1] + item.quantity * item.information.quantityOfMeasure)
-                        inventoryList[item.information] = (siteQuantityList, newSiteQuantity)
+                            inventoryList[item.information] = list(), (0, 0)
+                        siteQuantityList = inventoryList[item.information][0]
+                        siteQuantityList.append((site, item.quantity, item.quantity * item.information.quantityOfMeasure))
+                        newSiteQuantity = inventoryList[item.information][1][0] + item.quantity, inventoryList[item.information][1][1] + item.quantity * item.information.quantityOfMeasure
+                        inventoryList[item.information] = siteQuantityList, newSiteQuantity
+            
+            sortedInventory = OrderedDict()
+            informationItems = inventoryList.keys()
+            if orderBy == 'code':
+                # sort by code
+                sortedCodes = [information.code for information in informationItems]
+                sortedCodes.sort(reverse=sortReverse)
+                for code in sortedCodes:
+                    thisInfo = [information for information in inventoryList.keys() if information.code == code]
+                    sortedInventory[thisInfo[0]] = inventoryList[thisInfo[0]]
+            else:
+                
+                sortedNames = [information.name for information in informationItems]
+                sortedNames.sort(reverse=sortReverse)
+                for name in sortedNames:
+                    thisInfo = [information for information in inventoryList.keys() if information.name == name]
+                    sortedInventory[thisInfo[0]] = inventoryList[thisInfo[0]] #sortProductByName
+            
+            inventoryList = sortedInventory
+    return sitesList, inventoryList
+
+@login_required()
+
+def reports_dates(request, 
+                  report = None,
+                  page = 1, 
+                  startDate = None, 
+                  stopDate = None,
+                  orderBy = 'name', 
+                  orderDir = 'asc'):
+    errorMessage, warningMessage, infoMessage = get_session_messages(request)
+    dateSpanForm=DateSpanQueryForm()
+    if orderDir == 'asc':
+        sortReverse = False
+        altOrderDir = 'desc'
+    else:
+        sortReverse = True
+        altOrderDir = 'asc'
+    if orderBy == 'name':
+        altOrderBy = 'code'
+    else:
+        altOrderBy = 'name'
     if request.method == 'POST':
-        beginDate=request.POST.get('startDate').replace('/','-')
-        endDate=request.POST.get('stopDate').replace('/','-')
+        beginDate = startDate
+        endDate = stopDate
+        sitesList, inventoryList = get_sorted_inventory(report = report, 
+                                                    startDate = startDate, 
+                                                    stopDate = stopDate, 
+                                                    orderBy = orderBy, 
+                                                    sortReverse = sortReverse)
         if 'Site Inventory Print' in request.POST:
             return redirect(reverse('ims:reports_dates',
                              kwargs={'report':'site_inventory_print',
                                      'page':page,
                                      'startDate':beginDate,
-                                     'stopDate':endDate}))
+                                     'stopDate':endDate,
+                                     'orderBy':orderBy,
+                                     'orderDir':orderDir}))
         elif 'Site Inventory XLS' in request.POST:
             return redirect(reverse('ims:reports_dates',
                              kwargs={'report':'site_inventory_xls',
                                      'page':page,
                                      'startDate':beginDate,
-                                     'stopDate':endDate}))
+                                     'stopDate':endDate,}))
         elif 'Site Detail Print' in request.POST:
             return redirect(reverse('ims:reports_dates',
                              kwargs={'report':'site_detail_print',
                                      'page':page,
                                      'startDate':beginDate,
-                                     'stopDate':endDate}))
+                                     'stopDate':endDate,}))
         elif 'Site Detail XLS' in request.POST:
             return redirect(reverse('ims:reports_dates',
                              kwargs={'report':'site_detail_xls',
@@ -219,7 +268,9 @@ def reports_dates(request, report=None, page=1, startDate=None, stopDate=None):
                              kwargs={'report':'inventory_detail_print',
                                      'page':page,
                                      'startDate':beginDate,
-                                     'stopDate':endDate}))
+                                     'stopDate':endDate,
+                                     'orderBy':orderBy,
+                                     'orderDir':orderDir}))
         elif 'Inventory Detail XLS' in request.POST:
             return redirect(reverse('ims:reports_dates',
                              kwargs={'report':'inventory_detail_xls',
@@ -231,13 +282,20 @@ def reports_dates(request, report=None, page=1, startDate=None, stopDate=None):
                              kwargs={'report':'inventory_status_print',
                                      'page':page,
                                      'startDate':beginDate,
-                                     'stopDate':endDate}))
+                                     'stopDate':endDate,
+                                     'orderBy':orderBy,
+                                     'orderDir':orderDir}))
         elif 'Inventory Status XLS' in request.POST:
             return redirect(reverse('ims:reports_dates',
                              kwargs={'report':'inventory_status_xls',
                                      'page':page,
                                      'startDate':beginDate,
                                      'stopDate':endDate}))
+    sitesList, inventoryList = get_sorted_inventory(report = report, 
+                                                    startDate = startDate, 
+                                                    stopDate = stopDate, 
+                                                    orderBy = orderBy, 
+                                                    sortReverse = sortReverse)
     return render(request,'ims/reports.html', {'nav_reports':1,
                                                 'warningMessage':warningMessage,
                                                 'infoMessage':infoMessage,
@@ -248,7 +306,11 @@ def reports_dates(request, report=None, page=1, startDate=None, stopDate=None):
                                                 'stopDate':stopDate,
                                                 'pageNo':page,
                                                 'sitesList':sitesList,
-                                                'inventoryList':inventoryList,})
+                                                'inventoryList':inventoryList,
+                                                'orderBy':orderBy,
+                                                'altOrderBy':altOrderBy,
+                                                'orderDir':orderDir,
+                                                'altOrderDir':altOrderDir})
 
 @login_required()
 def reports(request):
@@ -911,7 +973,6 @@ def product_delete(request, productsToDelete={}, page=1):
         if 'Cancel' in request.POST:
             return redirect(reverse('ims:products', kwargs={'page':1}))
     if canDeleteProduct and canDeleteInventory:
-        print productsToDelete
         if any(productsToDelete[k].count() > 0  for k in productsToDelete):
             warningMessage='One or more products contain inventory.  Deleting the products will delete all inventory in all sites containing this product as well. Delete anyway?'
         else:
