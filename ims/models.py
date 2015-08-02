@@ -276,13 +276,13 @@ class Site(models.Model):
         # because we are using it to generate a formset later
         siteInventory=InventoryItem.objects.filter(pk__in=latestInventoryIds)
         if orderDir == 'asc':
-            dir = ''
+            direction = ''
         else:
-            dir = '-'
+            direction = '-'
         if orderBy == 'name':
-            siteInventory=siteInventory.order_by(dir + 'information__name')
+            siteInventory=siteInventory.order_by(direction + 'information__name')
         else:
-            siteInventory=siteInventory.order_by(dir + 'information__code')
+            siteInventory=siteInventory.order_by(direction + 'information__code')
         return siteInventory
     
     def inventory_history_for_product(self,code=None, stopDate=None):
