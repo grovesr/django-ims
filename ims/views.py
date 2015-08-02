@@ -233,12 +233,6 @@ def reports_dates(request,
     if request.method == 'POST':
         beginDate = startDate
         endDate = stopDate
-        sitesList, inventoryList = get_sorted_inventory(report = report, 
-                                                    startDate = startDate, 
-                                                    stopDate = stopDate, 
-                                                    orderBy = orderBy, 
-                                                    orderDir = orderDir,
-                                                    sortReverse = sortReverse)
         if 'Site Inventory Print' in request.POST:
             return redirect(reverse('ims:reports_dates',
                              kwargs={'report':'site_inventory_print',
