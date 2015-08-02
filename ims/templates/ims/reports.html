@@ -42,7 +42,7 @@
     <a href="{% url 'ims:reports' %}">reports</a>
 {% endblock breadcrumbs %}
 {% block content %}
-    <form action="{% url 'ims:reports_dates' startDate=startDate stopDate=stopDate %}" method="post" enctype="multipart/form-data">
+    <form action="{% url 'ims:reports_dates' startDate=startDate stopDate=stopDate report=report%}" method="post" enctype="multipart/form-data">
     {% csrf_token %}
         <table id="report-table">
             <tr>

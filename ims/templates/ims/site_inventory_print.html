@@ -1,9 +1,11 @@
 {% load staticfiles %}
 <div id="ims-report-container"  class="cell-frame" >
-    <button id="printButton">Print</button>
+    <button title="print report" id="printButton" class="report-sort">Print</button>
+    {% include "ims/report_sort_controls.html" %}
     <img class="announcement-close" src="{% static 'base/img/delete.png' %}"></img>
     <div title="print report" id="ims-report">
          <h3>Site Inventory Report </h3>
+         <span class="body">(inventory ordered by: product {{ orderBy | capfirst }} in {{ orderDir }}ending order)</span>
          <h4>as of {{ stopDate }}</h4>
         <table id="report-table">
             <tr class="bottom-bordered-row">

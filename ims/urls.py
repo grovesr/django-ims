@@ -26,12 +26,16 @@ urlpatterns = patterns('',
     url(r'^reports$', views.reports, name='reports'),
     # this will display reports page with no report with dates
     url(r'^reports/(?P<startDate>\d{2}-\d{2}-\d{4})/(?P<stopDate>\d{2}-\d{2}-\d{4})$', views.reports_dates, name='reports_dates'),
-    # this will display reports paged from page 1 with dates
+    # this will display reports page with no report with dates
     url(r'^reports/(?P<report>[\w\_]+)/(?P<startDate>\d{2}-\d{2}-\d{4})/(?P<stopDate>\d{2}-\d{2}-\d{4})$', views.reports_dates, name='reports_dates'),
-    # this will display reports paged with dates
+    # this will display reports page with with dates paged
     url(r'^reports/(?P<report>[\w\_]+)/(?P<startDate>\d{2}-\d{2}-\d{4})/(?P<stopDate>\d{2}-\d{2}-\d{4})/page_(?P<page>\d+)$', views.reports_dates, name='reports_dates'),
+    # this will display reports paged from page 1 with dates
+    url(r'^reports/(?P<report>[\w\_]+)/(?P<startDate>\d{2}-\d{2}-\d{4})/(?P<stopDate>\d{2}-\d{2}-\d{4})/orderby_(?P<orderBy>\w+)/orderdir_(?P<orderDir>\w+)$', views.reports_dates, name='reports_dates'),
+    # this will display reports paged with dates
+    url(r'^reports/(?P<report>[\w\_]+)/(?P<startDate>\d{2}-\d{2}-\d{4})/(?P<stopDate>\d{2}-\d{2}-\d{4})/page_(?P<page>\d+)/orderby_(?P<orderBy>\w+)/orderdir_(?P<orderDir>\w+)$', views.reports_dates, name='reports_dates'),
     # this will display reports un-paged with dates
-    url(r'^reports/(?P<report>[\w\_]+)/(?P<startDate>\d{2}-\d{2}-\d{4})/(?P<stopDate>\d{2}-\d{2}-\d{4})/page_(?P<page>all)$', views.reports_dates, name='reports_dates'),
+    url(r'^reports/(?P<report>[\w\_]+)/(?P<startDate>\d{2}-\d{2}-\d{4})/(?P<stopDate>\d{2}-\d{2}-\d{4})/page_(?P<page>all)/orderby_(?P<orderBy>\w+)/orderdir_(?P<orderDir>\w+)$', views.reports_dates, name='reports_dates'),
     # this will display sites, paged from page 1
     url(r'^sites$', views.sites, name='sites'),
     # this will display all sites un-paged
