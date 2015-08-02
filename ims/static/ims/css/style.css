@@ -79,6 +79,17 @@ li, #form-table th, #form-table td {
     text-decoration: none;
 }
 
+a.report-sort, button.report-sort {
+	text-decoration: none;
+	color:#000;
+	background: #EEE;
+	-moz-appearance: button;
+	-moz-padding-end: 6px;
+	-moz-padding-start: 6px;
+	border: 2px outset #F9F9F8;
+	cursor:pointer;
+}
+
 #nav-bar-1, #nav-bar-2 {
     border-spacing: 0px;
 }

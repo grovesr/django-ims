@@ -1,8 +1,7 @@
 {% load staticfiles %}
 <div id="ims-report-container"  class="cell-frame" >
-    <button id="printButton">Print</button>
-    <a title="change field used for ordering report" class="table-nav-pages" href="{% url 'ims:reports_dates' startDate=startDate stopDate=stopDate report=report orderBy=altOrderBy orderDir=orderDir%}">Order by {{altOrderBy | capfirst}}</a>
-    <a title="change direction of report order" class="table-nav-pages" href="{% url 'ims:reports_dates' startDate=startDate stopDate=stopDate report=report orderBy=orderBy orderDir=altOrderDir%}">Sort {{altOrderDir | capfirst}}ending</a>
+    <button title="print report" id="printButton" class="report-sort">Print</button>
+    {% include "ims/report_sort_controls.html" %}
     <img class="announcement-close" src="{% static 'base/img/delete.png' %}"></img>
     <div title="print report" id="ims-report">
          <h3>Inventory Status Report </h3>
