@@ -1,2 +1,3 @@
-*.pyc
+ims/*.pyc
+ims_tests/*.pyc
 .*secret*.json
