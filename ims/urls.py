@@ -15,13 +15,13 @@ urlpatterns = patterns('',
     # restore the database
     url(r'^restore$', views.restore, name='restore'),
     # this will display inventory history un-paged with no report without dates
-    url(r'^sites/(?P<siteId>\d+)/product/\s*(?P<code>[\w\d\_]+)\s*/page_(?P<page>all)$', views.inventory_history, name='inventory_history'),
+    url(r'^sites/(?P<siteId>\d+)/product/\s*(?P<code>[\w\d\_\-]+)\s*/page_(?P<page>all)$', views.inventory_history, name='inventory_history'),
     # this will display inventory history un-paged with no report without dates
-    url(r'^sites/(?P<siteId>\d+)/product/\s*(?P<code>[\w\d\_]+)\s*/(?P<startDate>\d{2}-\d{2}-\d{4})/(?P<stopDate>\d{2}-\d{2}-\d{4})/page_(?P<page>all)$', views.inventory_history_dates, name='inventory_history_dates'),
+    url(r'^sites/(?P<siteId>\d+)/product/\s*(?P<code>[\w\d\_\-]+)\s*/(?P<startDate>\d{2}-\d{2}-\d{4})/(?P<stopDate>\d{2}-\d{2}-\d{4})/page_(?P<page>all)$', views.inventory_history_dates, name='inventory_history_dates'),
     # this will display inventory history paged from page 1 with no report without dates
-    url(r'^sites/(?P<siteId>\d+)/product/\s*(?P<code>[\w\d\_]+)\s*/page_(?P<page>\d+)$', views.inventory_history, name='inventory_history'),
+    url(r'^sites/(?P<siteId>\d+)/product/\s*(?P<code>[\w\d\_\-]+)\s*/page_(?P<page>\d+)$', views.inventory_history, name='inventory_history'),
      # this will display inventory history paged from paged with no report without dates
-    url(r'^sites/(?P<siteId>\d+)/product/\s*(?P<code>[\w\d\_]+)\s*/(?P<startDate>\d{2}-\d{2}-\d{4})/(?P<stopDate>\d{2}-\d{2}-\d{4})/page_(?P<page>\d+)$', views.inventory_history_dates, name='inventory_history_dates'),
+    url(r'^sites/(?P<siteId>\d+)/product/\s*(?P<code>[\w\d\_\-]+)\s*/(?P<startDate>\d{2}-\d{2}-\d{4})/(?P<stopDate>\d{2}-\d{2}-\d{4})/page_(?P<page>\d+)$', views.inventory_history_dates, name='inventory_history_dates'),
     # this will display reports page with no report without dates
     url(r'^reports$', views.reports, name='reports'),
     # this will display reports page with no report with dates
@@ -67,11 +67,11 @@ urlpatterns = patterns('',
     # this will display products, paged from the given page
     url(r'^products/page_(?P<page>\d+)$', views.products, name='products'),
     # this will display details of a particular product paged from page 1
-    url(r'^products/product_detail/\s*(?P<code>[\w\d\_]+)\s*$', views.product_detail, name='product_detail'),
+    url(r'^products/product_detail/\s*(?P<code>[\w\d\_\-]+)\s*$', views.product_detail, name='product_detail'),
     # this will display details of a particular product un-paged
-    url(r'^products/product_detail/\s*(?P<code>[\w\d\_]+)\s*/page_(?P<page>all)$', views.product_detail, name='product_detail'),
+    url(r'^products/product_detail/\s*(?P<code>[\w\d\_\-]+)\s*/page_(?P<page>all)$', views.product_detail, name='product_detail'),
     # this will display details of a particular product paged
-    url(r'^products/product_detail/\s*(?P<code>[\w\d\_]+)\s*/page_(?P<page>\d+)$', views.product_detail, name='product_detail'),
+    url(r'^products/product_detail/\s*(?P<code>[\w\d\_\-]+)\s*/page_(?P<page>\d+)$', views.product_detail, name='product_detail'),
     # this is the add product page
     url(r'^products/product_add$', views.product_add, name='product_add'),
     # this is the delete products page
