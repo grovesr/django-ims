@@ -190,13 +190,17 @@ tr.cell-frame {
     vertical-align: top;
 }
 
-.detail-table-error-text, .detail-table-error-text input, 
-.detail-error-text, .detail-error-text input{
+.detail-table-error-text, .detail-table-error-text td, 
+ .detail-error-text td{
     color: red;
 }
 
 .detail-table-error td, .detail-error td {
     border: 2px solid red;
+}
+
+.helptext {
+	color: #000000;
 }
 
 .detail-table-row-visible {

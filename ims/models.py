@@ -550,6 +550,16 @@ class ProductInformation(models.Model):
             return 1
         return 0
 
+    def update_related(self, oldCode = None):
+        relatedItems = InventoryItem.objects.filter(information = oldCode)
+        for item in relatedItems:
+            item.information = self
+            item.save()
+        oldProduct = ProductInformation.objects.filter(code = oldCode)
+        if oldProduct:
+            oldProduct[0].delete()
+        
+
 ###########################################################
 #  The below models have relations to the base models above
 ###########################################################

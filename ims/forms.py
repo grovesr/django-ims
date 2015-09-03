@@ -1,7 +1,9 @@
 from django import forms
 from django.forms.utils import ErrorList
+from django.core.exceptions import ValidationError
 from ims.models import InventoryItem, ProductInformation, Site
 from functools import partial
+import re
 
 class UploadFileForm(forms.Form):
     file = forms.FileField()
@@ -30,16 +32,31 @@ class InventoryItemFormNoSite(forms.ModelForm):
     error_css_class = 'detail-table-error-text'
     required_css_class = 'ims-required-field'
     
+def validate_product_code(code):
+    m=re.findall(r'[^\w\d\_\-]+', code)
+    print code
+    print m
+    if m:
+        raise ValidationError('Invalid character(s).  Use only numbers, letters, dashes, or underscores')
+    
 class ProductInformationForm(forms.ModelForm):
     class Meta:
         model = ProductInformation
         fields=['modifier', 'name', 'code', 'unitOfMeasure', 'quantityOfMeasure','expendable',
                 'cartonsPerPallet', 'doubleStackPallets', 'warehouseLocation',
                 'canExpire', 'expirationDate', 'expirationNotes', 'costPerItem',]
-        widgets = {'modifier':forms.TextInput(attrs = {'readonly':'readonly'}),
+        widgets = {'modifier':forms.TextInput(attrs = {'readonly':'readonly'})
                    }
     error_css_class = 'detail-table-error-text'
     required_css_class = 'ims-required-field'
+    
+    def clean_code(self):
+        code = self.cleaned_data['code']
+        m=re.findall(r'[^\w\d\_\-]+', code)
+        validate_product_code(code)
+        if m:
+            raise ValidationError('Use only numbers, letters, dashes, or underscores')
+        return code
     
 class ProductInformationFormWithQuantity(forms.ModelForm):
     class Meta:

@@ -824,13 +824,22 @@ def product_detail(request, page=1, code='-1',):
         if not site[0].check_site():
             numSiteErrors += 1
     if request.method == "POST":
+        print "pre-POST"
+        print product
+    if request.method == "POST":
         productForm=ProductInformationForm(request.POST,instance=product, error_class=TitleErrorList)
+        if request.method == "POST":
+            print "post-Form"
+            print product
         if 'Save' in request.POST:
             if canChange:
+                print productForm.is_valid()
+                print product
                 if productForm.is_valid():
                     if productForm.has_changed():
                         productForm.instance.modifier=request.user.username
                         productForm.save()
+                        product.update_related(oldCode = code)
                         request.session['infoMessage'] = 'Successfully saved product information changes'
                         logStatus = log_actions(modifier=request.user.username,
                                                 modificationDate=timezone.now(),
@@ -844,7 +853,10 @@ def product_detail(request, page=1, code='-1',):
             else:
                 errorMessage='You don''t have permission to change product information'
     else:
-        productForm=ProductInformationForm(product.__dict__,instance=product, error_class=TitleErrorList)
+        productForm=ProductInformationForm(instance=product, error_class=TitleErrorList)
+    if request.method == "POST":
+        print "post-POST"
+        print product
     return render(request, 'ims/product_detail.html',
                             {"nav_products":1,
                              'pageNo':str(pageNo),
