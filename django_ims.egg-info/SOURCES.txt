@@ -37,6 +37,8 @@ ims/templates/ims/site_delete.html
 ims/templates/ims/site_delete_all.html
 ims/templates/ims/site_detail.html
 ims/templates/ims/site_detail_print.html
+ims/templates/ims/site_inventory_add_subtract.html
+ims/templates/ims/site_inventory_adjust_total.html
 ims/templates/ims/site_inventory_print.html
 ims/templates/ims/sites.html
 ims/testData/backup_3site_3prod_inventory10.xls
