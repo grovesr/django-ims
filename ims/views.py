@@ -9,7 +9,7 @@ from django.conf import settings
 from django.db import transaction
 from .settings import PAGE_SIZE
 from .models import Site, InventoryItem, ProductInformation
-from .forms import InventoryItemFormNoSite,\
+from .forms import InventoryItemFormNoSite, InventoryItemFormAddSubtractNoSite,\
 ProductInformationForm, ProductInformationFormWithQuantity, SiteForm, \
 SiteFormReadOnly, SiteListForm,ProductListFormWithDelete, TitleErrorList, \
 DateSpanQueryForm, ProductListFormWithAdd, UploadFileForm, \
@@ -446,9 +446,6 @@ def site_detail(request, siteId=1, page=1):
     canDelete=request.user.has_perm('ims.delete_inventoryitem')
     site=Site.objects.get(pk=siteId)
     siteInventory=site.latest_inventory()
-    InventoryFormset=modelformset_factory(InventoryItem,extra=0, can_delete=False,
-                                                 form=InventoryItemFormNoSite)
-    inventoryForms=InventoryFormset(queryset=siteInventory, error_class=TitleErrorList)
     siteForm=SiteForm(site.__dict__,instance=site, error_class=TitleErrorList)
     if page == 'all':
         pageSize = siteInventory.count()
@@ -469,6 +466,15 @@ def site_detail(request, siteId=1, page=1):
         pageIndicator=pageNo
     startRow=(pageNo-1) * pageSize
     stopRow=startRow+pageSize
+    if 'adjust' in request.GET:
+        adjust = 'adjust'
+        InventoryFormset=modelformset_factory(InventoryItem,extra=0, can_delete=False,
+                                                 form=InventoryItemFormNoSite)
+    else:
+        adjust = ''
+        InventoryFormset=modelformset_factory(InventoryItem,extra=0, can_delete=False,
+                                                 form=InventoryItemFormAddSubtractNoSite)
+    inventoryForms=InventoryFormset(queryset=siteInventory, error_class=TitleErrorList)
     if request.method == "POST":
         siteForm=SiteForm(request.POST,instance=site, error_class=TitleErrorList)
         if siteInventory.count() > 0:
@@ -493,7 +499,7 @@ def site_detail(request, siteId=1, page=1):
                             request.session['infoMessage'] = infoMessage
                             return redirect(reverse('ims:site_detail',
                                                     kwargs={'siteId':site.pk, 
-                                                            'page':pageIndicator,},))
+                                                            'page':pageIndicator,},) + "?%s" % adjust)
                         else:
                             warningMessage = 'No changes made to the site information'
                     else:
@@ -509,6 +515,8 @@ def site_detail(request, siteId=1, page=1):
                                 inventoryForm.instance.modifier=request.user.username
                                 if inventoryForm.prefix+'-'+'deleteItem' in request.POST:
                                     inventoryForm.instance.deleted=True
+                                if adjust == '':
+                                    inventoryForm.instance.quantity += inventoryForm.cleaned_data['addSubtract']
                             inventoryItems=inventoryForms.save(commit=False)
                             for inventoryItem in inventoryItems:
                                 newItem=inventoryItem.copy()
@@ -518,11 +526,9 @@ def site_detail(request, siteId=1, page=1):
                             inventoryForms=InventoryFormset(queryset=siteInventory, error_class=TitleErrorList)
                             return redirect(reverse('ims:site_detail',
                                                     kwargs={'siteId':site.pk, 
-                                                            'page':pageIndicator,},))
+                                                            'page':pageIndicator,},) + "?%s" % adjust)
                         else:
                             warningMessage = 'No changes made to the site inventory'
-                    else:
-                        warningMessage='More information required before the inventory can be changed'
                 else:
                     errorMessage='You don''t have permission to change or delete inventory'
             if 'Add New Inventory' in request.POST:
@@ -530,8 +536,8 @@ def site_detail(request, siteId=1, page=1):
                     return redirect(reverse('ims:site_add_inventory',kwargs={'siteId':site.pk, 'page':1}))
                 else:
                     errorMessage='You don''t have permission to add inventory'
-        siteForm=SiteForm(site.__dict__,instance=site, error_class=TitleErrorList)
-        inventoryForms=InventoryFormset(queryset=siteInventory, error_class=TitleErrorList)
+        #siteForm=SiteForm(site.__dict__,instance=site, error_class=TitleErrorList)
+        #inventoryForms=InventoryFormset(request.POST, queryset=siteInventory, error_class=TitleErrorList)
     return render(request, 'ims/site_detail.html', {"nav_sites":1,
                                                 'site': site,
                                                 'siteForm':siteForm,
@@ -542,6 +548,7 @@ def site_detail(request, siteId=1, page=1):
                                                 'nextPageNo':str(min(pageNo+1,numPages)),
                                                 'numPages': numPagesIndicator,
                                                 'inventoryForms':inventoryForms,
+                                                'adjust':adjust,
                                                 'canAdd':canAdd,
                                                 'canChangeInventory':canChangeInventory,
                                                 'canChangeSite':canChangeSite,
@@ -550,6 +557,10 @@ def site_detail(request, siteId=1, page=1):
                                                 'infoMessage':infoMessage,
                                                 'errorMessage':errorMessage,
                                                 })
+
+def add_subtract_inventory(inventoryForms):
+    for inventoryForm in inventoryForms:
+        None
 
 @login_required()
 def site_add(request):

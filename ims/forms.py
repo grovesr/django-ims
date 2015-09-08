@@ -28,9 +28,31 @@ class InventoryItemFormNoSite(forms.ModelForm):
         fields=['information','quantity','site','deleteItem']
         widgets = {'information': forms.HiddenInput(),
                    'site':forms.HiddenInput(),}
-    deleteItem=forms.BooleanField(required=False)
-    error_css_class = 'detail-table-error-text'
+    deleteItem=forms.BooleanField(required=False, label = "Delete")
+    error_css_class = 'detail-error-text'
     required_css_class = 'ims-required-field'
+    
+    def clean_quantity(self):
+        quantity = self.cleaned_data['quantity']
+        if quantity < 0:
+            raise ValidationError('quantity must be >= 0')
+        return quantity
+    
+class InventoryItemFormAddSubtractNoSite(forms.ModelForm):
+    class Meta:
+        model = InventoryItem
+        fields=['information','site','addSubtract']
+        widgets = {'information': forms.HiddenInput(),
+                   'site':forms.HiddenInput(),}
+    addSubtract=forms.IntegerField(initial = 0, required=False, label = "Add/Subtract")
+    error_css_class = 'detail-error-text'
+    required_css_class = 'ims-required-field'
+    
+    def clean_addSubtract(self):
+        addSubtract = self.cleaned_data['addSubtract']
+        if self.instance.quantity + addSubtract < 0:
+            raise ValidationError('final quantity must be >= 0')
+        return addSubtract
     
 def validate_product_code(code):
     m=re.findall(r'[^\w\d\_\-]+', code)

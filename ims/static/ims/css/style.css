@@ -191,7 +191,7 @@ tr.cell-frame {
 }
 
 .detail-table-error-text, .detail-table-error-text td, 
- .detail-error-text td{
+ .detail-error-text td, .detail-error-text span{
     color: red;
 }
 
@@ -239,3 +239,56 @@ tr.detail-form-header:hover {
     float:left;
     margin-top:-5px;
 }
+
+th.tabbed {
+    align:left;
+    margin-bottom:0px;
+    padding-bottom:0px;
+    padding-left: 7px;
+}
+
+.tabbed ul {
+    padding-left:0px;
+    margin-bottom:0px;
+    margin-top:0px;
+    height: 2em;
+}
+
+li.tabbed, li.tabbed-left {
+	background-color: #DDD;
+    display:inline;
+    padding: 5px;
+    padding-left:10px;
+    padding-right:10px;
+    font-weight:normal;
+    border-top-left-radius:10px;
+    border-top-right-radius:10px;
+    position:relative;
+    bottom:-6px;
+    left:-5px;
+    z-index:99;
+}
+
+li.tabbed-left {
+	position:relative;
+	left:7px;
+}
+
+.tabbed a, .tabbed-left a {
+	text-decoration:none;
+	color: #000;
+}
+
+li.tabbed:hover,
+li.tabbed-left:hover,
+.tabbed a:hover {
+	background-color: #999;
+	color: #fff;
+}
+
+li.tabbed-selected {
+    background-color: #999;
+    font-weight:bold;
+    z-index:100;
+}
+
