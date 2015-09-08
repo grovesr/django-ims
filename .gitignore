@@ -1,3 +1,4 @@
 ims/*.pyc
+ims/migrations/*.pyc
 ims_tests/*.pyc
 .*secret*.json
