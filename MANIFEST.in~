@@ -5,4 +5,3 @@ recursive-include ims_tests/templates *
 recursive-include ims/static *
 recursive-include ims/templates *
 recursive-include ims/testData *
-recursive-include ims/migrations *
