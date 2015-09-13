@@ -1,5 +1,6 @@
 from django.contrib import admin
-from ims.models import InventoryItem, Site, ProductInformation
+from ims.models import InventoryItem, Site, ProductInformation, \
+ProductCategory
     
 class ProductInline(admin.TabularInline):
     model = InventoryItem
@@ -33,10 +34,16 @@ class ProductAdmin(admin.ModelAdmin):
     ]
     list_display = ['information', 'site', 'quantity']
     search_fields = []
+    
+class ProductCategoryAdmin(admin.ModelAdmin):
+    fieldsets = [
+    ]
+    list_display = ['category']
+    search_fields = ['category']
      
 # Register your models here.
 admin.site.register(ProductInformation, ProductInformationAdmin)
 admin.site.register(Site, SiteAdmin)
-#admin.site.register(DRNumber)
+admin.site.register(ProductCategory, ProductCategoryAdmin)
 #admin.site.register(TransactionPrefix)
 admin.site.register(InventoryItem, ProductAdmin)

@@ -1,0 +1,23 @@
+<div id="product-picture">
+    {% if product.picture %}
+        <div id="picture-controls">
+                <table>
+                    <tr>
+                        <td id="rotate-control" >
+                            <button  id="rotate-button" title="Click to rotate the picture in 90 degree steps">Rotate</button>
+                        </td>
+                        <td>
+                            <form action="{% url 'ims:product_detail' code=product.code page=pageNo %}" method="post">
+                                {% csrf_token  %}
+                                <input id="save-picture" title="save changes to picture orientation" class="cell-center-btn" type="submit" value="Save" name="SavePicture">
+                                <input id="rotation" type="hidden" name="rotation" value="0">
+                            </form>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <div id="product-image">
+                <img id="image" src="{{ productForm.instance.picture.url }}" alt="{{ productForm.instance.picture.name }}"/>
+        </div>
+    {% endif %}
+</div>

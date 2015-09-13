@@ -15,6 +15,8 @@ ims/settings.py
 ims/urls.py
 ims/views.py
 ims/static/ims/css/style.css
+ims/static/ims/js/rotate_picture.js
+ims/static/ims/js/tabbed_view.js
 ims/templates/ims/home.html
 ims/templates/ims/import_inventory.html
 ims/templates/ims/import_products.html
@@ -28,6 +30,8 @@ ims/templates/ims/product_add_to_site_inventory.html
 ims/templates/ims/product_delete.html
 ims/templates/ims/product_delete_all.html
 ims/templates/ims/product_detail.html
+ims/templates/ims/product_details_detail.html
+ims/templates/ims/product_details_picture.html
 ims/templates/ims/products.html
 ims/templates/ims/report_sort_controls.html
 ims/templates/ims/reports.html

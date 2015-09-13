@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.core.urlresolvers import reverse
+from django.core.files import File
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.forms.models import modelformset_factory
@@ -15,6 +16,9 @@ SiteFormReadOnly, SiteListForm,ProductListFormWithDelete, TitleErrorList, \
 DateSpanQueryForm, ProductListFormWithAdd, UploadFileForm, \
 ProductListFormWithoutDelete
 from collections import OrderedDict
+from subprocess import check_call, check_output, CalledProcessError
+from time import time
+from os import path, remove
 import datetime
 import pytz
 import re
@@ -48,21 +52,25 @@ def log_actions(modifier='unknown', modificationDate=None, modificationMessage='
 def get_session_messages(request):
     if 'errorMessage' in request.session:
         errorMessage = request.session['errorMessage']
+        errorMessage = errorMessage.replace('\n','<br />')
         del request.session['errorMessage']
     else:
         errorMessage = ''
     if 'warningMessage' in request.session:
         warningMessage = request.session['warningMessage']
+        warningMessage = warningMessage.replace('\n','<br />')
         del request.session['warningMessage']
     else:
         warningMessage = ''
     if 'infoMessage' in request.session:
         infoMessage = request.session['infoMessage']
+        infoMessage = infoMessage.replace('\n','<br />')
         del request.session['infoMessage']
     else:
         infoMessage = ''
     return errorMessage, warningMessage, infoMessage
 
+#TODO: rename to Ims from Rims
 # Error classes 
 class RimsError(Exception): pass
 
@@ -73,6 +81,8 @@ class RimsImportInventoryError(RimsError): pass
 class RimsImportProductsError(RimsError): pass
     
 class RimsImportSitesError(RimsError): pass
+
+class RimsImageProcessingError(RimsError): pass
 
 # Create your views here.
 def home(request):
@@ -318,6 +328,7 @@ def reports(request):
 
 @login_required()
 def inventory_history_dates(request, siteId=None, code=None,  page=1, startDate=None, stopDate=None):
+    #TODO: handle invalid code
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     site=Site.objects.get(pk=siteId)
     product=ProductInformation.objects.get(pk=code)
@@ -439,6 +450,11 @@ def sites(request, page=1):
 
 @login_required()
 def site_detail(request, siteId=1, page=1):
+    #TODO: handle invalid sites
+    if 'adjust' in request.GET:
+        adjust = 'adjust'
+    else:
+        adjust = ''
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canAdd=request.user.has_perm('ims.add_inventoryitem')
     canChangeInventory=request.user.has_perm('ims.change_inventoryitem')
@@ -466,19 +482,17 @@ def site_detail(request, siteId=1, page=1):
         pageIndicator=pageNo
     startRow=(pageNo-1) * pageSize
     stopRow=startRow+pageSize
-    if 'adjust' in request.GET:
-        adjust = 'adjust'
-        InventoryFormset=modelformset_factory(InventoryItem,extra=0, can_delete=False,
-                                                 form=InventoryItemFormNoSite)
-    else:
-        adjust = ''
-        InventoryFormset=modelformset_factory(InventoryItem,extra=0, can_delete=False,
-                                                 form=InventoryItemFormAddSubtractNoSite)
-    inventoryForms=InventoryFormset(queryset=siteInventory, error_class=TitleErrorList)
+    InventoryAdjustFormset=modelformset_factory(InventoryItem,extra=0, can_delete=False,
+                                             form=InventoryItemFormNoSite)
+    InventoryAddSubtractFormset=modelformset_factory(InventoryItem,extra=0, can_delete=False,
+                                             form=InventoryItemFormAddSubtractNoSite)
+    inventoryAdjustForms=InventoryAdjustFormset(queryset=siteInventory, error_class=TitleErrorList)
+    inventoryAddSubtractForms=InventoryAddSubtractFormset(queryset=siteInventory, error_class=TitleErrorList)
     if request.method == "POST":
         siteForm=SiteForm(request.POST,instance=site, error_class=TitleErrorList)
         if siteInventory.count() > 0:
-            inventoryForms=InventoryFormset(request.POST, queryset=siteInventory, error_class=TitleErrorList)
+            inventoryAdjustForms=InventoryAdjustFormset(request.POST, queryset=siteInventory, error_class=TitleErrorList)
+            inventoryAddSubtractForms=InventoryAddSubtractFormset(request.POST, queryset=siteInventory, error_class=TitleErrorList)
         if 'Save Site' or 'Save Changes' in request.POST:
             if 'Save Site' in request.POST:
                 if canChangeSite:
@@ -499,34 +513,55 @@ def site_detail(request, siteId=1, page=1):
                             request.session['infoMessage'] = infoMessage
                             return redirect(reverse('ims:site_detail',
                                                     kwargs={'siteId':site.pk, 
-                                                            'page':pageIndicator,},) + "?%s" % adjust)
+                                                            'page':pageIndicator,},))
                         else:
                             warningMessage = 'No changes made to the site information'
                     else:
                         warningMessage='More information required before the site can be saved'
                 else:
                     errorMessage='You don''t have permission to change site information'
-            if ('Save Changes' in request.POST):
+            if ('Save Adjust Changes' in request.POST):
+                adjust = 'adjust'
                 if canChangeInventory and canDelete:
-                    if inventoryForms.is_valid():
-                        if inventoryForms.has_changed():
+                    if inventoryAdjustForms.is_valid():
+                        if inventoryAdjustForms.has_changed():
                             inventoryItems=[]
-                            for inventoryForm in inventoryForms:
+                            for inventoryForm in inventoryAdjustForms:
                                 inventoryForm.instance.modifier=request.user.username
                                 if inventoryForm.prefix+'-'+'deleteItem' in request.POST:
                                     inventoryForm.instance.deleted=True
-                                if adjust == '':
-                                    inventoryForm.instance.quantity += inventoryForm.cleaned_data['addSubtract']
-                            inventoryItems=inventoryForms.save(commit=False)
+                            inventoryItems=inventoryAdjustForms.save(commit=False)
                             for inventoryItem in inventoryItems:
                                 newItem=inventoryItem.copy()
                                 newItem.save()
                             siteInventory=site.latest_inventory()
                             request.session['infoMessage'] = 'Successfully changed site inventory'
-                            inventoryForms=InventoryFormset(queryset=siteInventory, error_class=TitleErrorList)
+                            inventoryAdjustForms=InventoryAdjustFormset(queryset=siteInventory, error_class=TitleErrorList)
                             return redirect(reverse('ims:site_detail',
                                                     kwargs={'siteId':site.pk, 
-                                                            'page':pageIndicator,},) + "?%s" % adjust)
+                                                            'page':pageIndicator,},) + "?adjust")
+                        else:
+                            warningMessage = 'No changes made to the site inventory'
+            elif ('Save Add Subtract Changes' in request.POST):
+                if canChangeInventory and canDelete:
+                    if inventoryAddSubtractForms.is_valid():
+                        if inventoryAddSubtractForms.has_changed():
+                            inventoryItems=[]
+                            for inventoryForm in inventoryAddSubtractForms:
+                                inventoryForm.instance.modifier=request.user.username
+                                if inventoryForm.prefix+'-'+'deleteItem' in request.POST:
+                                    inventoryForm.instance.deleted=True
+                                inventoryForm.instance.quantity += inventoryForm.cleaned_data['addSubtract']
+                            inventoryItems=inventoryAddSubtractForms.save(commit=False)
+                            for inventoryItem in inventoryItems:
+                                newItem=inventoryItem.copy()
+                                newItem.save()
+                            siteInventory=site.latest_inventory()
+                            request.session['infoMessage'] = 'Successfully changed site inventory'
+                            inventoryAddSubtractForms=InventoryAddSubtractFormset(queryset=siteInventory, error_class=TitleErrorList)
+                            return redirect(reverse('ims:site_detail',
+                                                    kwargs={'siteId':site.pk, 
+                                                            'page':pageIndicator,},))
                         else:
                             warningMessage = 'No changes made to the site inventory'
                 else:
@@ -547,7 +582,8 @@ def site_detail(request, siteId=1, page=1):
                                                 'previousPageNo':str(max(1,pageNo-1)),
                                                 'nextPageNo':str(min(pageNo+1,numPages)),
                                                 'numPages': numPagesIndicator,
-                                                'inventoryForms':inventoryForms,
+                                                'inventoryAdjustForms':inventoryAdjustForms,
+                                                'inventoryAddSubtractForms':inventoryAddSubtractForms,
                                                 'adjust':adjust,
                                                 'canAdd':canAdd,
                                                 'canChangeInventory':canChangeInventory,
@@ -557,10 +593,6 @@ def site_detail(request, siteId=1, page=1):
                                                 'infoMessage':infoMessage,
                                                 'errorMessage':errorMessage,
                                                 })
-
-def add_subtract_inventory(inventoryForms):
-    for inventoryForm in inventoryForms:
-        None
 
 @login_required()
 def site_add(request):
@@ -596,6 +628,7 @@ def site_add(request):
     
 @login_required()
 def site_add_inventory(request, siteId=1, page=1):
+    #TODO: handle invalid sites
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canAdd=request.user.has_perm('ims.add_inventoryitem')
     site=Site.objects.get(pk=siteId)
@@ -806,6 +839,7 @@ def products(request, page=1):
 
 @login_required()
 def product_detail(request, page=1, code='-1',):
+    #TODO: handle invalid codes
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canChange=request.user.has_perm('ims.change_productinformation')
     product = ProductInformation.objects.get(pk=code)
@@ -834,40 +868,82 @@ def product_detail(request, page=1, code='-1',):
     for site in slicedSitesList:
         if not site[0].check_site():
             numSiteErrors += 1
+    if 'picture' in request.GET:
+        picture = 'picture'
+    else:
+        picture = ''
     if request.method == "POST":
-        print "pre-POST"
-        print product
-    if request.method == "POST":
-        productForm=ProductInformationForm(request.POST,instance=product, error_class=TitleErrorList)
-        if request.method == "POST":
-            print "post-Form"
-            print product
+        if 'SavePicture' in request.POST and 'rotation' in request.POST and canChange:
+            try:
+                with transaction.atomic():
+                    rotate_picture(request, product, float(request.POST['rotation']))
+            except:
+                pass
+            if 'errorMessage' not in request.session:
+                request.session['infoMessage'] = 'Successfully saved picture rotation'
+                logStatus = log_actions(modifier=request.user.username,
+                                        modificationDate=timezone.now(),
+                                        modificationMessage='changed picture rotation for ' + str(product))
+            else:
+                logStatus = log_actions(modifier=request.user.username,
+                                        modificationDate=timezone.now(),
+                                        modificationMessage='unable to change picture rotation for %s due to image processing error' %
+                                         str(product))
+            if logStatus:
+                request.session['errorMessage'] = logStatus
+            return redirect(reverse('ims:product_detail',
+                                                kwargs={'code':product.code,})+ picture)
         if 'Save' in request.POST:
+            productForm=ProductInformationForm(request.POST,
+                                               request.FILES,
+                                               instance=product,
+                                               error_class=TitleErrorList)
+            if product.picture:
+                productForm.fields['picture'].widget.fileUrl = reverse('ims:product_detail',
+                                                    kwargs={'code':product.code,})+ '?picture'
             if canChange:
-                print productForm.is_valid()
-                print product
                 if productForm.is_valid():
                     if productForm.has_changed():
                         productForm.instance.modifier=request.user.username
-                        productForm.save()
-                        product.update_related(oldCode = code)
-                        request.session['infoMessage'] = 'Successfully saved product information changes'
-                        logStatus = log_actions(modifier=request.user.username,
-                                                modificationDate=timezone.now(),
-                                                modificationMessage='changed product information for ' + str(productForm.instance))
+                        originalPicture = product.picture.name
+                        try:
+                            with transaction.atomic():
+                                product = productForm.save(commit = False)
+                                product.update_related(oldCode = code)
+                                if  product.code != code:
+                                    oldProduct = ProductInformation.objects.filter(code = code)
+                                    if oldProduct:
+                                        oldProduct[0].delete()
+                                product.save()                                
+                                process_picture(request, product)
+                        except RimsImageProcessingError:
+                            pass
+                        if 'errorMessage' not in request.session:
+                            request.session['infoMessage'] = 'Successfully saved product information changes.'
+                            logStatus = log_actions(modifier=request.user.username,
+                                                    modificationDate=timezone.now(),
+                                                    modificationMessage='changed product information for ' + str(productForm.instance))
+                            if product.picture.name != originalPicture:
+                                #picture has changed, offer opportunity to edit it
+                                picture='?picture'
+                                request.session['infoMessage'] += '\nAdjust picture rotation if needed and save.'
+                        else:
+                            logStatus = log_actions(modifier=request.user.username,
+                                                    modificationDate=timezone.now(),
+                                                    modificationMessage='unable to change product information for %s .' %
+                                                     str(productForm.instance))
                         if logStatus:
                             request.session['errorMessage'] = logStatus
                     else:
-                        request.session['warningMessage'] = 'No changes made to the product information'
-                    return redirect(reverse('ims:product_detail', 
-                                                kwargs={'code':product.code,}))
+                        request.session['warningMessage'] = 'No changes made to the product information.'
+                    return redirect(reverse('ims:product_detail',
+                                                kwargs={'code':product.code,})+ picture)
             else:
-                errorMessage='You don''t have permission to change product information'
-    else:
-        productForm=ProductInformationForm(instance=product, error_class=TitleErrorList)
-    if request.method == "POST":
-        print "post-POST"
-        print product
+                errorMessage='You don''t have permission to change product information.'
+    productForm=ProductInformationForm(instance=product, error_class=TitleErrorList)
+    if product.picture:
+        productForm.fields['picture'].widget.fileUrl = reverse('ims:product_detail',
+                                            kwargs={'code':product.code,})+ '?picture'
     return render(request, 'ims/product_detail.html',
                             {"nav_products":1,
                              'pageNo':str(pageNo),
@@ -877,6 +953,7 @@ def product_detail(request, page=1, code='-1',):
                              'product': product,
                              'productForm':productForm,
                              'sitesList':sitesList,
+                             'picture':picture,
                              'canChange':canChange,
                              'warningMessage':warningMessage,
                              'infoMessage':infoMessage,
@@ -1669,3 +1746,83 @@ def restore(request):
                                                 'canChange':canChange,
                                                 'fileSelectForm':fileSelectForm,
                                                 })
+    
+def process_picture(request, product):
+    '''
+    set size of uploaded picture file and create associated thumbnail image.
+    '''
+    if product.picture:
+        product.originalPictureName = product.picture.file.name
+        product.save()
+        aspectRatio = get_picture_aspect_ratio(request, product = product)
+        pictureHeight = int(settings.PICTURE_SIZE / aspectRatio)
+        pictureWidth = aspectRatio * pictureHeight
+        try:
+            check_call(['convert', 
+                                   '-resize', 
+                                   '%dx%d' % 
+                                   (pictureWidth,pictureHeight),
+                                   product.picture.file.name, 
+                                   product.picture.file.name])
+        except CalledProcessError as e:
+            request.session['errorMessage'] = 'Unable to resize picture. Nothing was saved. %s' % e.message
+            raise RimsImageProcessingError
+        create_thumbnail(request, product = product)
+        
+def create_thumbnail(request, product = None):
+    if product and product.picture:
+        aspectRatio = get_picture_aspect_ratio(request, product = product)
+        thumbnailHeight = int(settings.THUMBNAIL_SIZE / aspectRatio)
+        thumbnailWidth = aspectRatio * thumbnailHeight
+        thumbnailPieces = product.picture.file.name.rsplit('.',1)
+        thumbnailFile = thumbnailPieces[0] + 'thumb.' + thumbnailPieces[1]
+        try:
+            check_call(['convert', 
+                                   '-resize', 
+                                   '%dx%d' % 
+                                   (thumbnailWidth,thumbnailHeight),
+                                   product.picture.file.name, 
+                                   thumbnailFile])
+        except CalledProcessError as e:
+            request.session['errorMessage'] = 'Unable to create thumbnail. Nothing was saved. %s' % e.message
+            raise RimsImageProcessingError
+        
+def get_picture_aspect_ratio(request, product = None):
+    aspectRatio = 1.0
+    if product and product.picture:
+        try:
+            geometry = check_output(['identify','-format','%wx%h', product.picture.file.name])
+        except CalledProcessError as e:
+            request.session['errorMessage'] = 'Unable to open picture. Nothing was saved. %s' % e.message
+            raise RimsImageProcessingError
+        imageW, imageH = geometry.strip().split('x')
+        aspectRatio = float(imageW) / float(imageH)
+    return aspectRatio
+
+def rotate_picture(request, product, rotation):
+    '''
+    set rotation of inventory picture and its thumbnail
+    '''
+    if product.picture:
+        previousPictureName = product.picture.file.name
+        previousThumbnailName = product.thumbnail_name()
+        try:
+            check_call(['convert', 
+                                   '-rotate', 
+                                   '%f' % 
+                                   rotation,
+                                   previousPictureName, 
+                                   previousPictureName])
+        except CalledProcessError as e:
+            request.session['errorMessage'] = 'Unable to rotate picture. Nothing was saved. %s' % e.message
+            raise RimsImageProcessingError
+        with open(previousPictureName) as p:
+            product.picture.save(product.originalPictureName, File(p))
+        product.save()
+        # we now know the actual picture file name and can create a matching
+        # thumbnail
+        create_thumbnail(request, product = product)
+        if path.isfile(previousPictureName):
+            remove(previousPictureName)
+        if path.isfile(previousThumbnailName):
+            remove(previousThumbnailName)

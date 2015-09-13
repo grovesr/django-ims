@@ -263,6 +263,7 @@ li.tabbed, li.tabbed-left {
     font-weight:normal;
     border-top-left-radius:10px;
     border-top-right-radius:10px;
+    border: none;
     position:relative;
     bottom:-6px;
     left:-5px;
@@ -279,16 +280,73 @@ li.tabbed-left {
 	color: #000;
 }
 
-li.tabbed:hover,
-li.tabbed-left:hover,
-.tabbed a:hover {
-	background-color: #999;
-	color: #fff;
-}
-
 li.tabbed-selected {
-    background-color: #999;
+    background-color: #fff;
+    border-bottom: 2px solid #fff;
+    border-top: 2px solid #888;
+    border-left: 2px solid #888;
+    border-right: 2px solid #888; 
     font-weight:bold;
     z-index:100;
 }
 
+#product-edit-form, #product-picture,
+#adjust-quantity-form, #add-subtract-form {
+	width: 600px;
+}
+
+#product-image {
+	width: 600px;
+	height:600px;
+	display: table-cell;
+	text-align: center;
+	vertical-align: middle;
+}
+
+#product-image img {
+	max-width:600px;
+	max-height:600px;
+    margin-left: auto;
+    margin-right: auto
+}
+
+#image {
+    transform-origin: center center; /* IE 10+, Firefox, etc. */
+    -webkit-transform-origin: center center; /* Chrome */
+    -ms-transform-origin: center center; /* IE 9 */
+}
+
+td#rotate-control {
+	text-align:center;
+}
+
+#product-image.rotate90 #image {
+    transform: rotate(90deg);
+    -webkit-transform: rotate(90deg);
+    -ms-transform: rotate(90deg);
+}
+#product-image.rotate180 #image {
+    transform: rotate(180deg);
+    -webkit-transform: rotate(180deg);
+    -ms-transform: rotate(180deg);
+}
+#product-image.rotate270 #image {
+    transform: rotate(270deg);
+    -webkit-transform: rotate(270deg);
+    -ms-transform: rotate(270deg);
+}
+
+div#picture-controls {
+	width:600px;
+}
+#picture-controls table {
+	width:100%;
+}
+
+#picture-controls a {
+	text-decoration: none;
+}
+
+th#product-thumbnail {
+	text-align:center;
+}

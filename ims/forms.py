@@ -1,34 +1,76 @@
-from django import forms
+from django.forms import Form, ClearableFileInput, FileField, DateInput, \
+DateField, ModelForm, HiddenInput, BooleanField, IntegerField, TextInput, \
+Textarea, CheckboxInput
+from django.utils.safestring import mark_safe
+from django.utils.encoding import force_text
+from django.utils.html import conditional_escape, format_html
 from django.forms.utils import ErrorList
 from django.core.exceptions import ValidationError
 from ims.models import InventoryItem, ProductInformation, Site
 from functools import partial
 import re
 
-class UploadFileForm(forms.Form):
-    file = forms.FileField()
+class ImsClearableFileInput(ClearableFileInput):
+    fileUrl = ''
+    def __init__(self, fileUrl = ''):
+        self.fileUrl = fileUrl
+        super(ImsClearableFileInput, self).__init__()
+        
+    def render(self, name, value, attrs=None):
+        substitutions = {
+            'initial_text': self.initial_text,
+            'input_text': self.input_text,
+            'clear_template': '',
+            'clear_checkbox_label': self.clear_checkbox_label,
+        }
+        template = '%(input)s'
+        substitutions['input'] = super(ClearableFileInput, self).render(name, value, attrs)
+        if value and (hasattr(value, "url") or self.fileUrl != ''):
+            template = self.template_with_initial
+            urlPieces = force_text(value).rsplit('/',1)
+            urlText = urlPieces[1]
+            if not self.fileUrl and hasattr(value, "url"):
+                substitutions['initial'] = format_html(self.url_markup_template,
+                                                       value.url,
+                                                       urlText)
+            else:
+                substitutions['initial'] = format_html(self.url_markup_template,
+                                                       self.fileUrl,
+                                                       urlText)
+            if not self.is_required:
+                checkbox_name = self.clear_checkbox_name(name)
+                checkbox_id = self.clear_checkbox_id(checkbox_name)
+                substitutions['clear_checkbox_name'] = conditional_escape(checkbox_name)
+                substitutions['clear_checkbox_id'] = conditional_escape(checkbox_id)
+                substitutions['clear'] = CheckboxInput().render(checkbox_name, False, attrs={'id': checkbox_id})
+                substitutions['clear_template'] = self.template_with_clear % substitutions
 
-class DateSpanQueryForm(forms.Form):
-    DateInput = partial(forms.DateInput, {'class': 'datepicker'})
-    startDate=forms.DateField(widget=DateInput(), label="start")
-    stopDate=forms.DateField(widget=DateInput(), label="end")
+        return mark_safe(template % substitutions)
     
-class InventoryItemForm(forms.ModelForm):
+class UploadFileForm(Form):
+    file = FileField()
+
+class DateSpanQueryForm(Form):
+    DateInput = partial(DateInput, {'class': 'datepicker'})
+    startDate=DateField(widget=DateInput(), label="start")
+    stopDate=DateField(widget=DateInput(), label="end")
+    
+class InventoryItemForm(ModelForm):
     class Meta:
         model = InventoryItem
         fields=['information','quantity','site','modifier',]
-        widgets = {'information': forms.HiddenInput(),
-                   'modifier': forms.HiddenInput()}
+        widgets = {'information': HiddenInput(),
+                   'modifier': HiddenInput()}
     error_css_class = 'detail-table-error-text'
     required_css_class = 'ims-required-field'
     
-class InventoryItemFormNoSite(forms.ModelForm):
+class InventoryItemFormNoSite(ModelForm):
     class Meta:
         model = InventoryItem
         fields=['information','quantity','site','deleteItem']
-        widgets = {'information': forms.HiddenInput(),
-                   'site':forms.HiddenInput(),}
-    deleteItem=forms.BooleanField(required=False, label = "Delete")
+        widgets = {'information': HiddenInput(),
+                   'site':HiddenInput(),}
+    deleteItem=BooleanField(required=False, label = "Delete")
     error_css_class = 'detail-error-text'
     required_css_class = 'ims-required-field'
     
@@ -38,37 +80,39 @@ class InventoryItemFormNoSite(forms.ModelForm):
             raise ValidationError('quantity must be >= 0')
         return quantity
     
-class InventoryItemFormAddSubtractNoSite(forms.ModelForm):
+class InventoryItemFormAddSubtractNoSite(ModelForm):
     class Meta:
         model = InventoryItem
         fields=['information','site','addSubtract']
-        widgets = {'information': forms.HiddenInput(),
-                   'site':forms.HiddenInput(),}
-    addSubtract=forms.IntegerField(initial = 0, required=False, label = "Add/Subtract")
+        widgets = {'information': HiddenInput(),
+                   'site':HiddenInput(),}
+    addSubtract=IntegerField(initial = 0, required=False, label = "Add/Subtract")
     error_css_class = 'detail-error-text'
     required_css_class = 'ims-required-field'
     
     def clean_addSubtract(self):
         addSubtract = self.cleaned_data['addSubtract']
+        if not addSubtract:
+            addSubtract = 0;
         if self.instance.quantity + addSubtract < 0:
             raise ValidationError('final quantity must be >= 0')
         return addSubtract
     
 def validate_product_code(code):
     m=re.findall(r'[^\w\d\_\-]+', code)
-    print code
-    print m
     if m:
         raise ValidationError('Invalid character(s).  Use only numbers, letters, dashes, or underscores')
     
-class ProductInformationForm(forms.ModelForm):
+class ProductInformationForm(ModelForm):
     class Meta:
         model = ProductInformation
-        fields=['modifier', 'name', 'code', 'unitOfMeasure', 'quantityOfMeasure','expendable',
+        fields=['modifier', 'category', 'name', 'code', 'unitOfMeasure', 
+                'quantityOfMeasure','expendable',
                 'cartonsPerPallet', 'doubleStackPallets', 'warehouseLocation',
-                'canExpire', 'expirationDate', 'expirationNotes', 'costPerItem',]
-        widgets = {'modifier':forms.TextInput(attrs = {'readonly':'readonly'})
-                   }
+                'canExpire', 'expirationDate', 'expirationNotes', 'costPerItem',
+                'picture']
+        widgets = {'modifier':TextInput(attrs = {'readonly':'readonly'}),
+                   'picture':ImsClearableFileInput(fileUrl = '#')}
     error_css_class = 'detail-table-error-text'
     required_css_class = 'ims-required-field'
     
@@ -80,72 +124,72 @@ class ProductInformationForm(forms.ModelForm):
             raise ValidationError('Use only numbers, letters, dashes, or underscores')
         return code
     
-class ProductInformationFormWithQuantity(forms.ModelForm):
+class ProductInformationFormWithQuantity(ModelForm):
     class Meta:
         model = ProductInformation
         fields = [ 'code',]
-        widgets = {'code':forms.HiddenInput()
+        widgets = {'code':HiddenInput()
                    }
-    Quantity=forms.IntegerField(initial=0)
+    Quantity=IntegerField(initial=0)
     error_css_class = 'detail-table-error-text'
     required_css_class = 'ims-required-field'
     
-class SiteForm(forms.ModelForm):
+class SiteForm(ModelForm):
     class Meta:
         model = Site
         fields = ['modifier','name','county','address1','address2','address3','contactName',
                   'contactPhone','notes',]
-        widgets = {'modifier':forms.TextInput(attrs = {'readonly':'readonly'}),
+        widgets = {'modifier':TextInput(attrs = {'readonly':'readonly'}),
                    }
     error_css_class = 'detail-error-text'
     required_css_class = 'ims-required-field'
 
-class SiteFormReadOnly(forms.ModelForm):
+class SiteFormReadOnly(ModelForm):
     class Meta:
         model = Site
         fields = ['name','county','address1','address2','address3','contactName',
                   'contactPhone','modifier','notes']
-        widgets = {'name':forms.TextInput(attrs = {'readonly':1}),
-                   'county':forms.TextInput(attrs = {'readonly':1}),
-                   'address1':forms.TextInput(attrs = {'readonly':1}),
-                   'address2':forms.TextInput(attrs = {'readonly':1}),
-                   'address3':forms.TextInput(attrs = {'readonly':1}),
-                   'contactName':forms.TextInput(attrs = {'readonly':1}),
-                   'contactPhone':forms.TextInput(attrs = {'readonly':1}),
-                   'modifier':forms.TextInput(attrs = {'readonly':'readonly'}),
-                   'notes':forms.Textarea(attrs = {'readonly':1}),
+        widgets = {'name':TextInput(attrs = {'readonly':1}),
+                   'county':TextInput(attrs = {'readonly':1}),
+                   'address1':TextInput(attrs = {'readonly':1}),
+                   'address2':TextInput(attrs = {'readonly':1}),
+                   'address3':TextInput(attrs = {'readonly':1}),
+                   'contactName':TextInput(attrs = {'readonly':1}),
+                   'contactPhone':TextInput(attrs = {'readonly':1}),
+                   'modifier':TextInput(attrs = {'readonly':'readonly'}),
+                   'notes':Textarea(attrs = {'readonly':1}),
                    }
     error_css_class = 'detail-error-text'
     required_css_class = 'ims-required-field'
 
-class SiteListForm(forms.ModelForm):
+class SiteListForm(ModelForm):
     class Meta:
         model = Site
         fields=['Delete',]
-    Delete=forms.BooleanField(initial = False,)
+    Delete=BooleanField(initial = False,)
     error_css_class = 'detail-error-text'
     required_css_class = 'ims-required-field'
 
-class ProductListFormWithDelete(forms.ModelForm):
+class ProductListFormWithDelete(ModelForm):
     class Meta:
         model = ProductInformation
         fields=['Delete']
-    Delete=forms.BooleanField(initial = False,)
+    Delete=BooleanField(initial = False,)
     error_css_class = 'detail-error-text'
     required_css_class = 'ims-required-field'
     
-class ProductListFormWithoutDelete(forms.ModelForm):
+class ProductListFormWithoutDelete(ModelForm):
     class Meta:
         model = ProductInformation
         fields=[]
     error_css_class = 'detail-error-text'
     required_css_class = 'ims-required-field'
     
-class ProductListFormWithAdd(forms.ModelForm):
+class ProductListFormWithAdd(ModelForm):
     class Meta:
         model = ProductInformation
         fields=['Add']
-    Add=forms.BooleanField(initial = False,)
+    Add=BooleanField(initial = False,)
     error_css_class = 'detail-error-text'
     required_css_class = 'ims-required-field'
 

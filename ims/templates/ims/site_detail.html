@@ -1,4 +1,9 @@
 {% extends "ims/sites.html" %}
+{% load staticfiles %}
+{% block extra_scripts %}
+    {{ block.super }}
+    <script src="{% static 'ims/js/tabbed_view.js' %}" ></script>
+{% endblock extra_scripts %}
 {% block breadcrumbs %}
     {{ block.super }}
     &raquo;
@@ -9,11 +14,6 @@
     {% endif %}
 {% endblock breadcrumbs %}
 {% block content %}
-    {% if site %}
-        <form action="{% url 'ims:site_detail' siteId=site.number  %}?{{ adjust }}" method="post">
-    {% else %}
-        <form action="{% url 'ims:site_add' %}" method="post">
-    {% endif %}
         <table id="form-table">
             <tr>
                 <th>
@@ -23,61 +23,66 @@
                         <h3>New site</h3>
                     {% endif %}
                 </th>
-                {% if inventoryForms.total_form_count %}
+                {% if inventoryAdjustForms.total_form_count %}
                     <th><h3>Inventory:</h3></th>
                 {% endif %}
             </tr>
-            {% if inventoryForms.total_form_count %}
+            {% if inventoryAdjustForms.total_form_count %}
                 <tr>
                     <th></th>
                     <th class="tabbed">
                         <ul>
-                            <li class="tabbed-left {% if adjust == 'adjust' %}tabbed-selected{% endif %}"><a href="{% url 'ims:site_detail' siteId=site.number %}?adjust">Adjust Total Inventory</a></li>
-                            <li class="tabbed {% if adjust == '' %}tabbed-selected{% endif %}"><a href="{% url 'ims:site_detail' siteId=site.number %}">Add/Subtract Inventory</a></li>
+                            <li meta="adjust-quantity-form" title="Change total quantity for this item" class="tabbed-left {% if adjust == 'adjust' %}tabbed-selected{% endif %}">Adjust Total Inventory</li>
+                            <li meta="add-subtract-form" title="Add or subtract inventory from the total quantity of this product" class="tabbed {% if adjust == '' %}tabbed-selected{% endif %}">Add/Subtract Inventory</li>
                         </ul>
                     </th>
                 </tr>
             {% endif %}
             <tr class="cell-frame">
                 <td class="cell-frame">
+                    {% if site %}
+                        <form action="{% url 'ims:site_detail' siteId=site.number  %}" method="post">
+                    {% else %}
+                        <form action="{% url 'ims:site_add' %}" method="post">
+                    {% endif %}
                     {% csrf_token  %}
-                    <table>
-                        <thead>
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th colspan="2">
+                                        {% if canChangeSite %}
+                                            <input title="save changes to site information" class="cell-left-btn" type="submit" value="Save Site" name="Save Site">
+                                        {% endif %}
+                                        {% if inventoryAdjustForms.total_form_count == 0  and site and canAdd %}
+                                            <input title="add new products to site inventory" class="cell-right-btn" type="submit" value="Add New Inventory" name="Add New Inventory">
+                                        {% endif %}
+                                    </th>
+                                </tr>
+                            </thead>
                             <tr>
-                                <th colspan="2">
-                                    {% if canChangeSite %}
-                                        <input title="save changes to site information" class="cell-left-btn" type="submit" value="Save Site" name="Save Site">
-                                    {% endif %}
-                                    {% if inventoryForms.total_form_count == 0  and site and canAdd %}
-                                        <input title="add new products to site inventory" class="cell-right-btn" type="submit" value="Add New Inventory" name="Add New Inventory">
-                                    {% endif %}
+                                <th>
+                                    <label>
+                                        Modified:
+                                    </label>
                                 </th>
+                                <td>
+                                    <input readonly="readonly" value="{{ siteForm.instance.modified }}">
+                                    <br />
+                                    <span class="helptext">
+                                        last modified on this date
+                                    </span>
+                                </td>
                             </tr>
-                        </thead>
-                        <tr>
-                            <th>
-                                <label>
-                                    Modified:
-                                </label>
-                            </th>
-                            <td>
-                                <input readonly="readonly" value="{{ siteForm.instance.modified }}">
-                                <br />
-                                <span class="helptext">
-                                    last modified on this date
-                                </span>
-                            </td>
-                        </tr>
-                        {{ siteForm }}
-                    </table>
+                            {{ siteForm }}
+                        </table>
+                    </form>
                 </td>
-                {% if inventoryForms.total_form_count %}
+                {% if inventoryAdjustForms.total_form_count %}
                     <td class="cell-frame">
-                        {% csrf_token  %}
                         {% if pageNo and numPages %}
                             <div class="table-nav-pages">
                                 {% if numPages == 'all' %}
-                                    {{ inventoryForms.total_form_count }} inventory items
+                                    {{ inventoryAdjustForms.total_form_count }} inventory items
                                     <a href="{% url 'ims:site_detail' siteId=site.number page=1 %}">&nbsp;show pages</a>
                                 {% else %}
                                     <a href="{% url 'ims:site_detail' siteId=site.number page=1 %}">&laquo;&nbsp;</a>
@@ -89,11 +94,8 @@
                                 {% endif %}
                             </div>
                         {% endif %}
-                        {% if adjust == 'adjust' %}
-                            {% include "ims/site_inventory_adjust_total.html" %}
-                        {% else %}
-                            {% include "ims/site_inventory_add_subtract.html" %}
-                        {% endif %}
+                        {% include "ims/site_inventory_adjust_total.html" %}
+                        {% include "ims/site_inventory_add_subtract.html" %}
                     </td>
                 {% endif %}
             </tr>

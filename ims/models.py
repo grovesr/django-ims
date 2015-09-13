@@ -335,6 +335,15 @@ class Site(models.Model):
             return None
         return lastInventory[0]
 
+class ProductCategory(models.Model):
+    """
+    Product Category class to categorize ProductInformation objects
+    """
+    category = models.CharField(max_length=100, default="")
+    
+    def __unicode__(self):
+        return self.category
+
 class ProductInformation(models.Model):
     """
     Red Cross inventory InventoryItem Information model
@@ -359,6 +368,8 @@ class ProductInformation(models.Model):
                                  help_text="Unique Red Cross code for this product")
     name=models.CharField(max_length=50, default="",
                                  help_text="Name of this product")
+    category = models.OneToOneField(ProductCategory, blank=True, null=True,
+                                help_text = "Category")
     expendable=models.BooleanField(default=False, help_text="Is this product expendable?")
     quantityOfMeasure=models.IntegerField(default=1,
                                           help_text="How many individual items in each package?")
@@ -377,6 +388,12 @@ class ProductInformation(models.Model):
     expirationDate=models.DateField(blank=True, null=True, help_text="What is the expiration date, if any?")
     expirationNotes=models.TextField(default="", blank=True, null=True,
                                      help_text="Special expiration notes for this product")
+    picture = models.ImageField(max_length = 256,
+                                blank = True, null = True, 
+                                upload_to = 'inventory_pictures/%Y/%m',
+                                help_text = "Picture of this product")
+    originalPictureName = models.CharField(max_length = 256, 
+                                           default=None, blank=True,)
     modified=models.DateTimeField(default=None, blank=True,
                                   help_text='last modified on this date')
     modifiedMicroseconds=models.IntegerField(default=0,
@@ -555,10 +572,18 @@ class ProductInformation(models.Model):
         for item in relatedItems:
             item.information = self
             item.save()
-        oldProduct = ProductInformation.objects.filter(code = oldCode)
-        if oldProduct:
-            oldProduct[0].delete()
         
+    def thumbnail_url(self):
+        if self.picture:
+            filePieces = self.picture.url.rsplit('.',1)
+            return filePieces[0] + 'thumb.' + filePieces[1]
+        return ''
+        
+    def thumbnail_name(self):
+        if self.picture:
+            filePieces = self.picture.file.name.rsplit('.',1)
+            return filePieces[0] + 'thumb.' + filePieces[1]
+        return ''
 
 ###########################################################
 #  The below models have relations to the base models above
