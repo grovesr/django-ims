@@ -694,7 +694,282 @@ class HomeViewTests(TestCase):
         self.assertListEqual(itemsResponseList,
                              sortedCreatedInventoryItems[:PAGE_SIZE])
         
+    def test_home_for_no_inventory(self):
+        """
+        If there is no inventory, ims:home should display nothing
+        """
+        print 'running HomeViewTests.test_home_for_no_inventory... '
+        response=self.client.get(reverse('ims:home'))
+        resultWarning = get_announcement_from_response(response=response,
+                                                       cls="warningnote")
+        self.assertIn('No inventory found', resultWarning,
+                         'IMS Home view didn''t generate the correct warning when there is no inventory.\nactual warning message = %s' 
+                         % resultWarning)
         
+class InventoryHistoryViewTests(TestCase):
+    """
+    ims_tests for inventory_history view
+    """
+    def setUp(self):
+        # Most ims_tests need access to the request factory and/or a user.
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(
+            username='testUser', password='12345678')
+        try:
+            os.remove(TEST_LOG)
+        except OSError:
+            pass
+        settings.LOG_FILE=TEST_LOG
+        
+    def test_inventory_history_with_invalid_site(self):
+        print 'running InventoryHistoryViewTests.test_inventory_history_with_invalid_site... '
+        self.client.login(username='testUser', password='12345678')
+        siteId = 1
+        code="D11"
+        response=self.client.get(reverse('ims:inventory_history',
+                                 kwargs = 
+                                  {'siteId':siteId,
+                                   'code':code,
+                                   'page':1}),
+                                  follow=True)
+        resultError = get_announcement_from_response(response=response,
+                                                       cls="errornote")
+        self.assertIn('Unable to check inventory history.<br />Site %d does not exist' % 
+                      siteId, resultError,
+                      'IMS inventory_history view didn''t generate the correct warning when an invalid site was requested.\nactual message = %s' %
+                      resultError)
+    
+    def test_inventory_history_with_invalid_code(self):
+        print 'running InventoryHistoryViewTests.test_inventory_history_with_invalid_code... '
+        self.client.login(username='testUser', password='12345678')
+        siteId = 1
+        code="D11"
+        site=Site(number = siteId)
+        site.save()
+        response=self.client.get(reverse('ims:inventory_history',
+                                 kwargs = 
+                                  {'siteId':siteId,
+                                   'code':code,
+                                   'page':1}),
+                                  follow=True)
+        resultError = get_announcement_from_response(response=response,
+                                                       cls="errornote")
+        self.assertIn('Unable to check inventory history.<br />Item %s does not exist' % 
+                      code, resultError,
+                      'IMS inventory_history view didn''t generate the correct warning when an invalid code was requested.\nactual message = %s' %
+                      resultError)
+    
+    def test_inventory_history_with_valid_history(self):
+        print 'running InventoryHistoryViewTests.test_inventory_history_with_valid_history... '
+        self.client.login(username='testUser', password='12345678')
+        # create initial inventory item
+        site, product, inventoryItem = create_inventory_item_for_site(quantity=1)
+        # change it to create a history
+        site, product, inventoryItem = create_inventory_item_for_site(
+                                       site = site,
+                                       product = product,
+                                       quantity=2)
+        response=self.client.get(reverse('ims:inventory_history',
+                                 kwargs = 
+                                  {'siteId':site.number,
+                                   'code':product.code,
+                                   'page':1}),
+                                  follow=True)
+        self.assertEqual(response.status_code, 200,
+                         'Inventory History generated a non-200 response code')
+        resultError = get_announcement_from_response(response=response,
+                                                       cls="errornote")
+        self.assertEqual(resultError, '',
+                         'IMS inventory_history view generated an error with a valid request.\nactual message = %s' %
+                          resultError)
+        resultWarning = get_announcement_from_response(response=response,
+                                                       cls="warningnote")
+        self.assertEqual(resultWarning, '',
+                         'IMS inventory_history view generated a warning with a valid request.\nactual message = %s' %
+                          resultWarning)
+        resultInfo = get_announcement_from_response(response=response,
+                                                       cls="infonote")
+        self.assertEqual(resultInfo, '',
+                         'IMS inventory_history view generated info with a valid request.\nactual message = %s' %
+                          resultInfo)
+
+class SitesViewTests(TestCase):
+    """
+    ims_tests for sites view
+    """
+    def setUp(self):
+        # Most ims_tests need access to the request factory and/or a user.
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(
+            username='testUser', password='12345678')
+        try:
+            os.remove(TEST_LOG)
+        except OSError:
+            pass
+        settings.LOG_FILE=TEST_LOG
+        
+    def test_sites_with_no_sites(self):
+        print 'running SitesViewTests.test_sites_with_no_sites... '
+        self.client.login(username='testUser', password='12345678')
+        response=self.client.get(reverse('ims:sites'),
+                                  follow=True)
+        resultWarning = get_announcement_from_response(response=response,
+                                                       cls="warningnote")
+        self.assertIn('No sites found',
+                      'IMS sites view didn''t generate the correct warning when no sites were found.\nactual message = %s' %
+                      resultWarning)
+
+class SiteDetailViewTests(TestCase):
+    """
+    ims_tests for site_detail view
+    """
+    def setUp(self):
+        # Most ims_tests need access to the request factory and/or a user.
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(
+            username='testUser', password='12345678')
+        try:
+            os.remove(TEST_LOG)
+        except OSError:
+            pass
+        settings.LOG_FILE=TEST_LOG
+        
+    def test_site_detail_with_invalid_site(self):
+        print 'running SiteDetailViewTests.test_site_detail_with_invalid_site... '
+        self.client.login(username='testUser', password='12345678')
+        siteId = 1
+        code="D11"
+        response=self.client.get(reverse('ims:site_detail',
+                                 kwargs = 
+                                  {'siteId':siteId,
+                                   'page':1}),
+                                  follow=True)
+        resultError = get_announcement_from_response(response=response,
+                                                       cls="errornote")
+        self.assertIn('Site %d does not exist' % 
+                      siteId, resultError,
+                      'IMS site detail view didn''t generate the correct error when an invalid site was requested.\nactual message = %s' %
+                      resultError)
+
+class SiteAddInventoryViewTests(TestCase):
+    """
+    ims_tests for site_add_inventory view
+    """
+    def setUp(self):
+        # Most ims_tests need access to the request factory and/or a user.
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(
+            username='testUser', password='12345678')
+        try:
+            os.remove(TEST_LOG)
+        except OSError:
+            pass
+        settings.LOG_FILE=TEST_LOG
+        
+    def test_site_add_inventory_with_invalid_site(self):
+        print 'running SiteAddInventoryViewTests.test_site_add_inventory_with_invalid_site... '
+        self.client.login(username='testUser', password='12345678')
+        siteId = 1
+        page = 1
+        response=self.client.get(reverse('ims:site_add_inventory',
+                                         kwargs = {'siteId':siteId,
+                                                   'page':page,
+                                                   }),
+                                  follow=True)
+        resultError = get_announcement_from_response(response=response,
+                                                       cls="errornote")
+        self.assertIn('Site %d does not exist' % 
+                      siteId, resultError,
+                      'IMS site_add_inventory view didn''t generate the correct error when an invalid site was requested.\nactual message = %s' %
+                      resultError)
+
+class ProductsViewTests(TestCase):
+    """
+    ims_tests for products view
+    """
+    def setUp(self):
+        # Most ims_tests need access to the request factory and/or a user.
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(
+            username='testUser', password='12345678')
+        try:
+            os.remove(TEST_LOG)
+        except OSError:
+            pass
+        settings.LOG_FILE=TEST_LOG
+        
+    def test_products_with_no_products(self):
+        print 'running ProductsViewTests.test_products_with_no_products... '
+        self.client.login(username='testUser', password='12345678')
+        response=self.client.get(reverse('ims:products'),
+                                  follow=True)
+        resultWarning = get_announcement_from_response(response=response,
+                                                       cls="warningnote")
+        self.assertIn('No products found',
+                      'IMS products view didn''t generate the correct warning when no products were found.\nactual message = %s' %
+                      resultWarning)
+
+class ProductDetailViewTests(TestCase):
+    """
+    ims_tests for product_detail view
+    """
+    def setUp(self):
+        # Most ims_tests need access to the request factory and/or a user.
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(
+            username='testUser', password='12345678')
+        try:
+            os.remove(TEST_LOG)
+        except OSError:
+            pass
+        settings.LOG_FILE=TEST_LOG
+        
+    def test_product_detail_with_invalid_product(self):
+        print 'running ProductDetailViewTests.test_product_detail_with_invalid_product... '
+        self.client.login(username='testUser', password='12345678')
+        code="D11"
+        response=self.client.get(reverse('ims:product_detail',
+                                 kwargs = 
+                                  {'code':code,
+                                   'page':1}),
+                                  follow=True)
+        resultError = get_announcement_from_response(response=response,
+                                                       cls="errornote")
+        self.assertIn('Product %s does not exist' % 
+                      code, resultError,
+                      'IMS product_detail view didn''t generate the correct error when an invalid code was requested.\nactual message = %s' %
+                      resultError)
+
+class ProductAddToSiteInventoryViewTests(TestCase):
+    """
+    ims_tests for product_add_to_site_inventory view
+    """
+    def setUp(self):
+        # Most ims_tests need access to the request factory and/or a user.
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(
+            username='testUser', password='12345678')
+        try:
+            os.remove(TEST_LOG)
+        except OSError:
+            pass
+        settings.LOG_FILE=TEST_LOG
+        
+    def test_product_add_to_site_inventory_with_invalid_site(self):
+        print 'running ProductAddToSiteInventoryViewTests.test_product_add_to_site_inventory_with_invalid_site... '
+        self.client.login(username='testUser', password='12345678')
+        siteId = 1
+        response=self.client.get(reverse('ims:product_add_to_site_inventory',
+                                         kwargs = {'siteId':siteId,
+                                                   }),
+                                  follow=True)
+        resultError = get_announcement_from_response(response=response,
+                                                       cls="errornote")
+        self.assertIn('Site %d does not exist' % 
+                      siteId, resultError,
+                      'IMS product_add_to_site_inventory view didn''t generate the correct error when an invalid site was requested.\nactual message = %s' %
+                      resultError)
+
 class ImportSitesViewTests(TestCase):
     """
     ims_tests for import_sites view

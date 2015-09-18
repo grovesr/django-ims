@@ -87,11 +87,17 @@ class RimsImageProcessingError(RimsError): pass
 # Create your views here.
 def home(request):
     # display most recently edited sites and inventory
+    errorMessage, warningMessage, infoMessage = get_session_messages(request)
     recentSites = Site.recently_changed_inventory(PAGE_SIZE)
     recentInventory = InventoryItem.recently_changed(PAGE_SIZE)
+    if len(recentInventory) == 0:
+        warningMessage += 'No inventory found.'
     return render(request,'ims/home.html', {'nav_rims':1,
                                              'sitesList':recentSites,
-                                             'inventoryList':recentInventory
+                                             'inventoryList':recentInventory,
+                                             'errorMessage':errorMessage,
+                                             'warningMessage':warningMessage,
+                                             'infoMessage':infoMessage,
                                              })
 
 @login_required()
@@ -328,10 +334,21 @@ def reports(request):
 
 @login_required()
 def inventory_history_dates(request, siteId=None, code=None,  page=1, startDate=None, stopDate=None):
-    #TODO: handle invalid code
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
-    site=Site.objects.get(pk=siteId)
-    product=ProductInformation.objects.get(pk=code)
+    try:
+        site=Site.objects.get(pk=siteId)
+    except Site.DoesNotExist:
+        errorMessage += ('Unable to check inventory history.\nSite %s does not exist.' % 
+        siteId)
+        request.session['errorMessage'] = errorMessage
+        return redirect(reverse('ims:sites'))
+    try:
+        product=ProductInformation.objects.get(pk=code)
+    except ProductInformation.DoesNotExist:
+        errorMessage += ('Unable to check inventory history.\nItem %s does not exist.' % 
+        code)
+        request.session['errorMessage'] = errorMessage
+        return redirect(reverse('ims:site_detail', kwargs = {'siteId':siteId,}))
     parsedStartDate=parse_datestr_tz(reorder_date_mdy_to_ymd(startDate,'-'),0,0)
     parsedStopDate=parse_datestr_tz(reorder_date_mdy_to_ymd(stopDate,'-'),23,59)
     inventoryList=site.inventory_history_for_product(code=product.code, stopDate=parsedStopDate)
@@ -433,7 +450,7 @@ def sites(request, page=1):
                 errorMessage='You don''t have permission to add sites'
     siteForms=SiteFormset(queryset=slicedSitesList, error_class=TitleErrorList)
     if len(slicedSitesList) == 0:
-        warningMessage='No sites found'
+        warningMessage += 'No sites found'
     return render(request,'ims/sites.html', {'nav_sites':1,
                                               'pageNo':str(pageNo),
                                               'previousPageNo':str(max(1,pageNo-1)),
@@ -450,17 +467,22 @@ def sites(request, page=1):
 
 @login_required()
 def site_detail(request, siteId=1, page=1):
-    #TODO: handle invalid sites
+    errorMessage, warningMessage, infoMessage = get_session_messages(request)
+    try:
+        site=Site.objects.get(pk=siteId)
+    except Site.DoesNotExist:
+        errorMessage += ('Site %s does not exist.' % 
+        siteId)
+        request.session['errorMessage'] = errorMessage
+        return redirect(reverse('ims:sites'))
     if 'adjust' in request.GET:
         adjust = 'adjust'
     else:
         adjust = ''
-    errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canAdd=request.user.has_perm('ims.add_inventoryitem')
     canChangeInventory=request.user.has_perm('ims.change_inventoryitem')
     canChangeSite=request.user.has_perm('ims.change_site')
     canDelete=request.user.has_perm('ims.delete_inventoryitem')
-    site=Site.objects.get(pk=siteId)
     siteInventory=site.latest_inventory()
     siteForm=SiteForm(site.__dict__,instance=site, error_class=TitleErrorList)
     if page == 'all':
@@ -628,10 +650,15 @@ def site_add(request):
     
 @login_required()
 def site_add_inventory(request, siteId=1, page=1):
-    #TODO: handle invalid sites
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
+    try:
+        site=Site.objects.get(pk=siteId)
+    except Site.DoesNotExist:
+        errorMessage += ('Site %s does not exist.' % 
+        siteId)
+        request.session['errorMessage'] = errorMessage
+        return redirect(reverse('ims:sites'))
     canAdd=request.user.has_perm('ims.add_inventoryitem')
-    site=Site.objects.get(pk=siteId)
     productsList=ProductInformation.objects.all().order_by('name')
     ProductFormset=modelformset_factory( ProductInformation, form=ProductListFormWithAdd, extra=0)
     if page == 'all':
@@ -839,10 +866,16 @@ def products(request, page=1):
 
 @login_required()
 def product_detail(request, page=1, code='-1',):
-    #TODO: handle invalid codes
+    errorMessage, warningMessage, infoMessage = get_session_messages(request)
+    try:
+        product = ProductInformation.objects.get(pk=code)
+    except ProductInformation.DoesNotExist:
+        errorMessage += ('Product %s does not exist.' % 
+        code)
+        request.session['errorMessage'] = errorMessage
+        return redirect(reverse('ims:products'))
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canChange=request.user.has_perm('ims.change_productinformation')
-    product = ProductInformation.objects.get(pk=code)
     inventorySites=product.inventoryitem_set.all().values('site').distinct()
     sitesList=[]
     for siteNumber in inventorySites:
@@ -992,8 +1025,14 @@ def product_add(request):
 @login_required()
 def product_add_to_site_inventory(request, siteId=1, productToAdd=None, productList=None):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
+    try:
+        site=Site.objects.get(pk=siteId)
+    except Site.DoesNotExist:
+        errorMessage += ('Site %s does not exist.' % 
+        siteId)
+        request.session['errorMessage'] = errorMessage
+        return redirect(reverse('ims:sites'))
     canAdd=request.user.has_perm('ims.add_inventoryitem')
-    site=Site.objects.get(pk=siteId)
     ProductFormset=modelformset_factory(ProductInformation,extra=0,
                                                 form=ProductInformationFormWithQuantity)
     newProduct = ProductInformation.objects.all()
