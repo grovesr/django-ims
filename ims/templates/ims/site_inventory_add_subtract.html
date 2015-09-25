@@ -62,7 +62,7 @@
                 {% endfor %}
                 <td>{{ inventoryForm.instance.quantity }}</td>
                 <td>
-                    {% if inventoryForm.instance.inventory_history_count > 1 %}
+                    {% if inventoryForm.instance.inventory_history_count >= 1 %}
                     <a title="history of inventory changes at this site for this product"
                     href="{% url 'ims:inventory_history' siteId=site.pk code=inventoryForm.instance.information.code page=1 %}">
                         history
