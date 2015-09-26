@@ -1,17 +1,15 @@
 from django.test import TestCase, RequestFactory
 from django.core.urlresolvers import reverse
-from django.conf import settings
 from django.contrib.auth.models import User, Permission
 from django.contrib.sessions.middleware import SessionMiddleware
 from collections import OrderedDict
-import os, re
-# Create your ims_tests here.
+import os 
+import re
+import logging
 from ims.models import Site, ProductInformation, InventoryItem
 from ims.views import inventory_delete_all, site_delete_all, product_delete_all
 from ims.settings import PAGE_SIZE, APP_DIR
-
-TEST_LOG = os.path.join(APP_DIR,
-                        'testData/redcross.log')
+logging.disable(logging.CRITICAL)
 
 # test helper functions
 def create_inventory_item_for_site(site=None,
@@ -88,12 +86,6 @@ class SiteMethodTests(TestCase):
     ims_tests for Site instance methods
     """
     
-    def setUp(self):
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
     #Site inventory ims_tests
     def test_latest_inventory_after_initial_creation(self):
         """
@@ -356,12 +348,6 @@ class ProductInformationMethodTests(TestCase):
     ProductInformation class method ims_tests
     """
     
-    def setUp(self):
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
         
     def test_parse_product_information_from_xls_initial(self):
         """
@@ -455,13 +441,6 @@ class InventoryItemMethodTests(TestCase):
     """
     InventoryItem class method ims_tests
     """
-    
-    def setUp(self):
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
         
     def test_parse_inventory_from_xls_initial(self):
         """
@@ -603,12 +582,6 @@ class HomeViewTests(TestCase):
     ims_tests for Home view
     """
     
-    def setUp(self):
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
         
     def test_home_for_latest_changes_1(self):
         """
@@ -715,11 +688,7 @@ class InventoryHistoryViewTests(TestCase):
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
+        
         
     def test_inventory_history_with_invalid_site(self):
         print 'running InventoryHistoryViewTests.test_inventory_history_with_invalid_site... '
@@ -802,11 +771,7 @@ class SitesViewTests(TestCase):
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
+        
         
     def test_sites_with_no_sites(self):
         print 'running SitesViewTests.test_sites_with_no_sites... '
@@ -828,11 +793,7 @@ class SiteDetailViewTests(TestCase):
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
+        
         
     def test_site_detail_with_invalid_site(self):
         print 'running SiteDetailViewTests.test_site_detail_with_invalid_site... '
@@ -860,11 +821,7 @@ class SiteAddInventoryViewTests(TestCase):
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
+        
         
     def test_site_add_inventory_with_invalid_site(self):
         print 'running SiteAddInventoryViewTests.test_site_add_inventory_with_invalid_site... '
@@ -892,11 +849,7 @@ class ProductsViewTests(TestCase):
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
+        
         
     def test_products_with_no_products(self):
         print 'running ProductsViewTests.test_products_with_no_products... '
@@ -918,11 +871,7 @@ class ProductDetailViewTests(TestCase):
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
+        
         
     def test_product_detail_with_invalid_product(self):
         print 'running ProductDetailViewTests.test_product_detail_with_invalid_product... '
@@ -949,11 +898,7 @@ class ProductAddToSiteInventoryViewTests(TestCase):
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
+        
         
     def test_product_add_to_site_inventory_with_invalid_site(self):
         print 'running ProductAddToSiteInventoryViewTests.test_product_add_to_site_inventory_with_invalid_site... '
@@ -979,11 +924,7 @@ class ImportSitesViewTests(TestCase):
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
+        
     
     def test_import_sites_warning_with_file_and_perms(self):
         print 'running ImportSitesViewTests.test_import_sites_warning_with_file_and_perms... '
@@ -1094,11 +1035,7 @@ class ImportProductsViewTests(TestCase):
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
+        
         
     def test_import_products_error_with_file_and_perms(self):
         print 'running ImportProductsViewTests.test_import_products_error_with_file_and_perms... '
@@ -1116,7 +1053,7 @@ class ImportProductsViewTests(TestCase):
         # check that we saved 3 sites
         self.assertEqual(queriedProducts.count(),
                          3,
-                         'Number of imported products mismatch. Some products didn''t get stored.')
+                         'Number of imported products mismatch. Some products didn''t get stored. Found %d expected 3' % queriedProducts.count())
         resultWarning = get_announcement_from_response(response=response,
                                                        cls="errornote")
         self.assertEqual(resultWarning, 
@@ -1211,11 +1148,7 @@ class ImportInventoryViewTests(TestCase):
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
+        
         
     def test_import_inventory_error_with_file_and_perms(self):
         print 'running ImportInventoryViewTests.test_import_inventory_error_with_file_and_perms... '
@@ -1353,11 +1286,7 @@ class SiteDeleteAllViewTests(TestCase):
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
+        
         
     def test_site_delete_all_confirmed_with_perms(self):
         print 'running SiteDeleteAllViewTests.test_site_delete_all_confirmed_with_perms... '
@@ -1456,11 +1385,7 @@ class ProductDeleteAllViewTests(TestCase):
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
+        
         
     def test_product_delete_all_confirmed_with_perms(self):
         print 'running ProductDeleteAllViewTests.test_product_delete_all_confirmed_with_perms... '
@@ -1560,11 +1485,7 @@ class InventoryDeleteAllViewTests(TestCase):
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
+        
         
     def test_inventory_delete_all_confirmed_with_perms(self):
         print 'running InventoryDeleteAllViewTests.test_inventory_delete_all_confirmed_with_perms... '
@@ -1636,11 +1557,7 @@ class ImportsViewTests(TestCase):
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
+        
     
     def test_delete_sites_warning_with_perms(self):
         print 'running ImportsViewTests.test_delete_sites_warning_with_perms... '
@@ -2212,11 +2129,7 @@ class RestoreViewTests(TestCase):
         self.factory = RequestFactory()
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
-        try:
-            os.remove(TEST_LOG)
-        except OSError:
-            pass
-        settings.LOG_FILE=TEST_LOG
+        
         
     def test_restore_get_warning_with_perms(self):
         print 'running RestoreViewTests.test_restore_get_warning_with_perms... '
