@@ -1191,7 +1191,8 @@ def create_log_file_response(request):
             except IOError:
                 request.session['errorMessage'] = 'File Error:<br/>Unable to open %s' % logFile
                 return redirect('ims:imports')
-            logEntries = re.split(r'(\[\d{2}\/\w+\/\d{4}\s\d{2}:\d{2}:\d{2}\])',logFileString)
+            logEntries = re.split(r'(\[\d{2}\/\w+\/\d{4}\s\d{2}:\d{2}:\d{2}\])',
+                                  logFileString)
             sheets.append(xls.add_sheet(fileName.rsplit('.',1)[0]))
             sheets[sheetIndex].write(0,0,'Timestamp')
             sheets[sheetIndex].write(0,1,'Type')
@@ -1203,7 +1204,7 @@ def create_log_file_response(request):
                             ):
                     match = re.match(r'^(\w+)\s(.*$)',
                                         logEntries[logIndex+1].strip(),
-                                        flags=re.MULTILINE)
+                                        flags=re.DOTALL)
                     sheets[sheetIndex].write(rowIndex,0,logEntries[logIndex].strip())
                     if not match.lastindex or match.lastindex < 2:
                         sheets[sheetIndex].write(rowIndex,1,'LOG READ ERROR')
