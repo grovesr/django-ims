@@ -14,6 +14,11 @@
     {% endif %}
 {% endblock breadcrumbs %}
 {% block content %}
+    {% if site %}
+        <form action="{% url 'ims:site_detail' siteId=site.number  %}" method="post">
+    {% else %}
+        <form action="{% url 'ims:site_add' %}" method="post">
+    {% endif %}
         <table id="form-table">
             <tr>
                 <th>
@@ -40,11 +45,7 @@
             {% endif %}
             <tr class="cell-frame">
                 <td class="cell-frame">
-                    {% if site %}
-                        <form action="{% url 'ims:site_detail' siteId=site.number  %}" method="post">
-                    {% else %}
-                        <form action="{% url 'ims:site_add' %}" method="post">
-                    {% endif %}
+                    
                     {% csrf_token  %}
                         <table>
                             <thead>
@@ -75,7 +76,7 @@
                             </tr>
                             {{ siteForm }}
                         </table>
-                    </form>
+                    
                 </td>
                 {% if inventoryAdjustForms.total_form_count %}
                     <td class="cell-frame">
