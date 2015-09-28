@@ -855,7 +855,6 @@ def product_detail(request, page=1, code='-1',):
         code)
         request.session['errorMessage'] = errorMessage
         return redirect(reverse('ims:products'))
-    errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canChange=request.user.has_perm('ims.change_productinformation')
     inventorySites=product.inventoryitem_set.all().values('site').distinct()
     sitesList=[]
