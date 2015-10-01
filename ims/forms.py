@@ -28,7 +28,10 @@ class ImsClearableFileInput(ClearableFileInput):
         if value and (hasattr(value, "url") or self.fileUrl != ''):
             template = self.template_with_initial
             urlPieces = force_text(value).rsplit('/',1)
-            urlText = urlPieces[1]
+            if len(urlPieces) > 1:
+                urlText = urlPieces[1]
+            else:
+                urlText = 'Invalid'
             if not self.fileUrl and hasattr(value, "url"):
                 substitutions['initial'] = format_html(self.url_markup_template,
                                                        value.url,
@@ -131,7 +134,7 @@ class ProductInformationFormWithQuantity(ModelForm):
         widgets = {'code':HiddenInput()
                    }
     Quantity=IntegerField(initial=0)
-    error_css_class = 'detail-table-error-text'
+    error_css_class = 'detail-error-text'
     required_css_class = 'ims-required-field'
     
 class SiteForm(ModelForm):

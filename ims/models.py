@@ -127,12 +127,12 @@ class Site(models.Model):
     def __unicode__(self):
         return self.name + ' (' + str(self.number) + ')'
     
-    def save(self):
+    def save(self, *args, **kwargs):
         # add in microseconds offset to make sure we can distinguish order of saves
         if not self.modified:
             self.modified=timezone.now()
         self.modifiedMicroseconds=self.modified.microsecond
-        super(self.__class__,self).save()
+        super(self.__class__,self).save(*args, **kwargs)
     
     def __lt__(self,other):
         return self.timestamp() < other.timestamp()
@@ -470,13 +470,13 @@ class ProductInformation(models.Model):
     def __unicode__(self):
         return self.name+" ("+self.code+")"
     
-    def save(self):
+    def save(self, *args, **kwargs):
         # add in microseconds offset to make sure we can distinguish order of saves
         if not self.modified:
             self.modified=timezone.now()
         self.code=self.code.strip().upper()
         self.modifiedMicroseconds=self.modified.microsecond
-        super(self.__class__,self).save()
+        super(self.__class__,self).save(*args, **kwargs)
     
     def timestamp(self):
         return parse_datetime(self.modified.strftime("%FT%H:%M:%S")+"." + '%06d' % self.modifiedMicroseconds+self.modified.strftime("%z"))
@@ -566,7 +566,7 @@ class ProductInformation(models.Model):
         if self.expendable:
             return 1
         return 0
-
+    
     def update_related(self, oldCode = None):
         relatedItems = InventoryItem.objects.filter(information = oldCode)
         for item in relatedItems:
@@ -719,14 +719,14 @@ class InventoryItem(models.Model):
     def __unicode__(self):
         return self.information.name+"("+str(self.information.code)+"-"+str(self.quantity)+")"
     
-    def save(self):
+    def save(self, *args, **kwargs):
         # add in microseconds offset to make sure we can distinguish order of saves
         if not self.modified:
             self.modified=timezone.now()
         self.modifiedMicroseconds=self.modified.microsecond
         if self.deleted:
             self.quantity=0
-        super(self.__class__,self).save()
+        super(self.__class__,self).save(*args, **kwargs)
         
     def __lt__(self,other):
         return self.timestamp() < other.timestamp()

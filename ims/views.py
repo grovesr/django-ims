@@ -17,7 +17,7 @@ DateSpanQueryForm, ProductListFormWithAdd, UploadFileForm, \
 ProductListFormWithoutDelete
 from collections import OrderedDict
 from subprocess import check_call, check_output, CalledProcessError
-from os import path, remove, listdir
+from os import path, remove, sep
 import datetime
 import pytz
 import re
@@ -77,6 +77,8 @@ class RimsImportProductsError(RimsError): pass
 class RimsImportSitesError(RimsError): pass
 
 class RimsImageProcessingError(RimsError): pass
+
+class RimsDuplicateKeyError(RimsError): pass
 
 # Create your views here.
 def home(request):
@@ -885,6 +887,7 @@ def product_detail(request, page=1, code='-1',):
         picture = 'picture'
     else:
         picture = ''
+    productForm=ProductInformationForm(instance=product, error_class=TitleErrorList)
     if request.method == "POST":
         if 'SavePicture' in request.POST and 'rotation' in request.POST and canChange:
             try:
@@ -907,9 +910,6 @@ def product_detail(request, page=1, code='-1',):
                                                request.FILES,
                                                instance=product,
                                                error_class=TitleErrorList)
-            if product.picture:
-                productForm.fields['picture'].widget.fileUrl = reverse('ims:product_detail',
-                                                    kwargs={'code':product.code,})+ '?picture'
             if canChange:
                 if productForm.is_valid():
                     if productForm.has_changed():
@@ -918,14 +918,23 @@ def product_detail(request, page=1, code='-1',):
                         try:
                             with transaction.atomic():
                                 product = productForm.save(commit = False)
-                                product.update_related(oldCode = code)
                                 if  product.code != code:
+                                    # we've changed the primary key
+                                    existingProducts = ProductInformation.objects.filter(pk = product.code)
+                                    if existingProducts.count():
+                                        request.session['errorMessage'] = (
+                                        'Another product "%s" already has code "%s".' % 
+                                        (existingProducts[0].name, product.code))
+                                        raise RimsDuplicateKeyError
+                                    product.save(force_insert = True)
+                                    product.update_related(oldCode = code)
                                     oldProduct = ProductInformation.objects.filter(code = code)
                                     if oldProduct:
                                         oldProduct[0].delete()
-                                product.save()                                
+                                else:
+                                    product.save()                                
                                 process_picture(request, product)
-                        except RimsImageProcessingError:
+                        except (RimsImageProcessingError, RimsDuplicateKeyError):
                             pass
                         if 'errorMessage' not in request.session:
                             request.session['infoMessage'] = 'Successfully saved product information changes.'
@@ -937,15 +946,18 @@ def product_detail(request, page=1, code='-1',):
                                 request.session['infoMessage'] += '\nAdjust picture rotation if needed and save.'
                         else:
                             log_actions(modifier=request.user.username,
-                                        modificationMessage='unable to change product information for %s .' %
-                                         str(productForm.instance))
+                                        modificationMessage='unable to change product information for %s .  %s' %
+                                         (str(productForm.instance), request.session['errorMessage']))
+                            return redirect(reverse('ims:product_detail',
+                                                kwargs={'code':code,})+ picture)
                     else:
                         request.session['warningMessage'] = 'No changes made to the product information.'
                     return redirect(reverse('ims:product_detail',
                                                 kwargs={'code':product.code,})+ picture)
+                else:
+                    warningMessage = 'More information required before the product can be saved'
             else:
                 errorMessage='You don''t have permission to change product information.'
-    productForm=ProductInformationForm(instance=product, error_class=TitleErrorList)
     if product.picture:
         productForm.fields['picture'].widget.fileUrl = reverse('ims:product_detail',
                                             kwargs={'code':product.code,})+ '?picture'
@@ -1181,38 +1193,37 @@ def create_log_file_response(request):
     xls = xlwt.Workbook(encoding="utf-8")
     sheets = []
     sheetIndex = 0
-    for fileName in listdir(logDir):
-        if re.match(r'^.*\.log$', fileName):
-            logFile = path.join(logDir, fileName)
-            try:
-                with open(logFile, 'r') as fStr:
-                    logFileString = fStr.read()
-            except IOError:
-                request.session['errorMessage'] = 'File Error:<br/>Unable to open %s' % logFile
-                return redirect('ims:imports')
-            logEntries = re.split(r'(\[\d{2}\/\w+\/\d{4}\s\d{2}:\d{2}:\d{2}\])',
-                                  logFileString)
-            sheets.append(xls.add_sheet(fileName.rsplit('.',1)[0]))
-            sheets[sheetIndex].write(0,0,'Timestamp')
-            sheets[sheetIndex].write(0,1,'Type')
-            sheets[sheetIndex].write(0,2,'Log Contents')
-            rowIndex = 1
-            for logIndex in range(1,len(logEntries)-1,2):
-                if re.match(r'\[\d{2}\/\w+\/\d{4}\s\d{2}:\d{2}:\d{2}\]',
-                            logEntries[logIndex],
-                            ):
-                    match = re.match(r'^(\w+)\s(.*$)',
-                                        logEntries[logIndex+1].strip(),
-                                        flags=re.DOTALL)
-                    sheets[sheetIndex].write(rowIndex,0,logEntries[logIndex].strip())
-                    if not match.lastindex or match.lastindex < 2:
-                        sheets[sheetIndex].write(rowIndex,1,'LOG READ ERROR')
-                        sheets[sheetIndex].write(rowIndex,2,'Unable to read log line')
-                    else:
-                        sheets[sheetIndex].write(rowIndex,1,match.group(1))
-                        sheets[sheetIndex].write(rowIndex,2,match.group(2))
-                    rowIndex += 1
-            sheetIndex += 1
+    for logFile in (settings.LOG_FILES):
+        try:
+            with open(logFile, 'r') as fStr:
+                logFileString = fStr.read()
+        except IOError:
+            request.session['errorMessage'] = 'File Error:<br/>Unable to open %s' % logFile
+            return redirect('ims:imports')
+        logEntries = re.split(r'(\[\d{2}\/\w+\/\d{4}\s\d{2}:\d{2}:\d{2}\])',
+                              logFileString)
+        fileName = logFile.rsplit(sep)[-1]
+        sheets.append(xls.add_sheet(fileName.rsplit('.',1)[0]))
+        sheets[sheetIndex].write(0,0,'Timestamp')
+        sheets[sheetIndex].write(0,1,'Type')
+        sheets[sheetIndex].write(0,2,'Log Contents')
+        rowIndex = 1
+        for logIndex in range(1,len(logEntries)-1,2):
+            if re.match(r'\[\d{2}\/\w+\/\d{4}\s\d{2}:\d{2}:\d{2}\]',
+                        logEntries[logIndex],
+                        ):
+                match = re.match(r'^(\w+)\s(.*$)',
+                                    logEntries[logIndex+1].strip(),
+                                    flags=re.DOTALL)
+                sheets[sheetIndex].write(rowIndex,0,logEntries[logIndex].strip())
+                if not match.lastindex or match.lastindex < 2:
+                    sheets[sheetIndex].write(rowIndex,1,'LOG READ ERROR')
+                    sheets[sheetIndex].write(rowIndex,2,'Unable to read log line')
+                else:
+                    sheets[sheetIndex].write(rowIndex,1,match.group(1))
+                    sheets[sheetIndex].write(rowIndex,2,match.group(2))
+                rowIndex += 1
+        sheetIndex += 1
     response = HttpResponse(content_type="application/ms-excel")
     dateStamp=timezone.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
     response['Content-Disposition'] = ('attachment; filename=%s_%s.xls' % 
