@@ -39,29 +39,36 @@ def parse_datestr_tz(dateTimeString,hours=0,minutes=0):
         naive=parse_datetime(dateTimeString)
     return pytz.utc.localize(naive)
 
-def log_actions(modifier='unknown', modificationMessage='no message'):
-    logger.info(modifier + ', ' + modificationMessage)
-    return modifier + ', ' + modificationMessage
+def log_actions(request = None, modifier='unknown', modificationMessage='no message'):
+    try:
+        logger.info(modifier + ', ' + modificationMessage)
+    except IOError as e:
+        if request:
+            if 'errorMessage' not in request.session:
+                request.session['errorMessage'] =  str(IOError('Error writing status to log file:<br/>%s' % str(e)))
+            else:
+                request.session['errorMessage'] +=  str(IOError('Error writing status to log file:<br/>%s' % str(e)))
+        pass
 
 def get_session_messages(request):
     if 'errorMessage' in request.session:
         errorMessage = request.session['errorMessage']
         errorMessage = errorMessage.replace('\n','<br />')
-        del request.session['errorMessage']
     else:
         errorMessage = ''
+    request.session['errorMessage'] = ''
     if 'warningMessage' in request.session:
         warningMessage = request.session['warningMessage']
         warningMessage = warningMessage.replace('\n','<br />')
-        del request.session['warningMessage']
     else:
         warningMessage = ''
+    request.session['warningMessage'] = ''
     if 'infoMessage' in request.session:
         infoMessage = request.session['infoMessage']
         infoMessage = infoMessage.replace('\n','<br />')
-        del request.session['infoMessage']
     else:
         infoMessage = ''
+    request.session['infoMessage'] = ''
     return errorMessage, warningMessage, infoMessage
 
 #TODO: rename to Ims from Rims
@@ -519,9 +526,9 @@ def site_detail(request, siteId=1, page=1):
                             siteForm.instance.modifier=request.user.username
                             siteForm.save()
                             infoMessage = 'Successfully added site or changed site information'
-                            log_actions(modifier=request.user.username,
+                            log_actions(request = request, modifier=request.user.username,
                                         modificationMessage='changed site information for ' + str(siteForm.instance))
-                            request.session['errorMessage'] = errorMessage
+                            request.session['errorMessage'] += errorMessage
                             request.session['warningMessage'] = warningMessage
                             request.session['infoMessage'] = infoMessage
                             return redirect(reverse('ims:site_detail',
@@ -724,10 +731,10 @@ def site_delete(request, sitesToDelete={}, page=1):
                         item.delete()
                     site.delete()
                     infoMessage = 'Successfully deleted %d sites' % numSites
-                    log_actions(modifier=request.user.username,
+                    log_actions(request = request, modifier=request.user.username,
                                 modificationMessage='deleted site and all associated inventory for site number ' + 
                                 str(site.pk) + ' with name ' + site.name)
-                request.session['errorMessage'] = errorMessage
+                request.session['errorMessage'] += errorMessage
                 request.session['warningMessage'] = warningMessage
                 request.session['infoMessage'] = infoMessage
                 return redirect(reverse('ims:sites', kwargs={'page':1}))
@@ -763,7 +770,7 @@ def site_delete_all(request):
                 inventoryItems=InventoryItem.objects.all()
                 sites.delete()
                 inventoryItems.delete()
-                log_actions(modifier=request.user.username,
+                log_actions(request = request, modifier=request.user.username,
                             modificationMessage='deleted all sites and inventory')
                 request.session['infoMessage'] = 'Successfully deleted all sites'
                 return redirect(reverse('ims:imports'))
@@ -895,12 +902,12 @@ def product_detail(request, page=1, code='-1',):
                     rotate_picture(request, product, float(request.POST['rotation']))
             except:
                 pass
-            if 'errorMessage' not in request.session:
+            if 'errorMessage' not in request.session or request.session['errorMessage'] == '':
                 request.session['infoMessage'] = 'Successfully saved picture rotation'
-                log_actions(modifier=request.user.username,
+                log_actions(request = request, modifier=request.user.username,
                             modificationMessage='changed picture rotation for ' + str(product))
             else:
-                log_actions(modifier=request.user.username,
+                log_actions(request = request, modifier=request.user.username,
                             modificationMessage='unable to change picture rotation for %s due to image processing error' %
                              str(product))
             return redirect(reverse('ims:product_detail',
@@ -936,16 +943,16 @@ def product_detail(request, page=1, code='-1',):
                                 process_picture(request, product)
                         except (RimsImageProcessingError, RimsDuplicateKeyError):
                             pass
-                        if 'errorMessage' not in request.session:
+                        if 'errorMessage' not in request.session or request.session['errorMessage'] == '':
                             request.session['infoMessage'] = 'Successfully saved product information changes.'
-                            log_actions(modifier=request.user.username,
+                            log_actions(request = request, modifier=request.user.username,
                                         modificationMessage='changed product information for ' + str(productForm.instance))
                             if product.picture.name != originalPicture:
                                 #picture has changed, offer opportunity to edit it
                                 picture='?picture'
                                 request.session['infoMessage'] += '\nAdjust picture rotation if needed and save.'
                         else:
-                            log_actions(modifier=request.user.username,
+                            log_actions(request = request, modifier=request.user.username,
                                         modificationMessage='unable to change product information for %s .  %s' %
                                          (str(productForm.instance), request.session['errorMessage']))
                             return redirect(reverse('ims:product_detail',
@@ -1085,7 +1092,7 @@ def product_delete(request, productsToDelete={}, page=1):
                         item.delete()
                     product.delete()
                     infoMessage += 'Successfully deleted product and associated inventory for product code %s with name "%s"<br/>' % (code, product.name)
-                    log_actions(modifier=request.user.username,
+                    log_actions(request = request, modifier=request.user.username,
                                 modificationMessage=infoMessage)
                 request.session['infoMessage'] = infoMessage
                 return redirect(reverse('ims:products', kwargs={'page':1}))
@@ -1121,7 +1128,7 @@ def product_delete_all(request):
                 inventoryItems.delete()
                 products.delete()
                 request.session['infoMessage'] = 'Successfully deleted all products'
-                log_actions(modifier=request.user.username,
+                log_actions(request = request, modifier=request.user.username,
                             modificationMessage=request.session['infoMessage'])
                 return redirect(reverse('ims:imports'))
             else:
@@ -1156,7 +1163,7 @@ def inventory_delete_all(request):
             if request.user.has_perm('ims.delete_inventoryitem'):
                 inventory.delete()
                 request.session['infoMessage'] = 'Successfully deleted all inventory'
-                log_actions(modifier=request.user.username,
+                log_actions(request = request, modifier=request.user.username,
                             modificationMessage=request.session['infoMessage'])
                 return redirect(reverse('ims:imports'))
             else:
@@ -1185,9 +1192,9 @@ def create_log_file_response(request):
     logDir = path.join(settings.BASE_DIR, "log")
     if not path.isdir(logDir):
         errorMessage = '"log" directory doesn''t exist. This shouldn''t occur.\nSystem admin has been notified.'
-        log_actions(modifier=request.user.username,
+        log_actions(request = request, modifier=request.user.username,
                     modificationMessage=errorMessage)
-        logger.error()
+        logger.error(errorMessage)
         request.session['errorMessage'] = errorMessage
         redirect(reverse('ims:imports'))
     xls = xlwt.Workbook(encoding="utf-8")
@@ -1199,6 +1206,10 @@ def create_log_file_response(request):
                 logFileString = fStr.read()
         except IOError:
             request.session['errorMessage'] = 'File Error:<br/>Unable to open %s' % logFile
+            errorMessage = 'Unable to open log file.. This shouldn''t occur.\nSystem admin has been notified.'
+            log_actions(request = request, modifier=request.user.username,
+                        modificationMessage=errorMessage)
+            logger.error(errorMessage)
             return redirect('ims:imports')
         logEntries = re.split(r'(\[\d{2}\/\w+\/\d{4}\s\d{2}:\d{2}:\d{2}\])',
                               logFileString)
@@ -1435,12 +1446,12 @@ def import_sites(request):
                             if len(msg) > 0:
                                 errorMessage = ('Error while trying to import sites from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s<br/>' 
                                                   % (fileRequest.name, msg))
-                                log_actions(modifier=request.user.username,
+                                log_actions(request = request, modifier=request.user.username,
                                             modificationMessage=errorMessage)
                             else:
                                 infoMessage = ('Successful bulk import of sites using "%s"' 
                                                % fileRequest.name)
-                                log_actions(
+                                log_actions(request = request, 
                                             modifier=request.user.username,
                                             modificationMessage='successful bulk import of sites using "' + 
                                             fileRequest.name +'"')
@@ -1453,9 +1464,9 @@ def import_sites(request):
                         else:
                             errorMessage += ('<br/><br/>Unhandled exception occurred during import_sites: %s<br/>Changes to the database have been cancelled.<br/>' 
                             % repr(e))
-                            log_actions(modifier=request.user.username,
+                            log_actions(request = request, modifier=request.user.username,
                                         modificationMessage=errorMessage)
-                    request.session['errorMessage'] = errorMessage
+                    request.session['errorMessage'] += errorMessage
                     request.session['warningMessage'] = warningMessage
                     request.session['infoMessage'] = infoMessage
                     return redirect(reverse('ims:imports'))
@@ -1502,12 +1513,12 @@ def import_products(request):
                             if len(msg) > 0:
                                 errorMessage = ('Error while trying to import products from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s<br/>' 
                                                   % (fileRequest.name, msg))
-                                log_actions(modifier=request.user.username,
+                                log_actions(request = request, modifier=request.user.username,
                                             modificationMessage=errorMessage)
                             else:
                                 infoMessage = ('Successful bulk import of products using "%s"' 
                                                % fileRequest.name)
-                                log_actions(modifier = request.user.username,
+                                log_actions(request = request, modifier = request.user.username,
                                             modificationMessage = infoMessage)
                             if len(msg) > 0:
                                 # in case of an issue rollback the atomic transaction
@@ -1518,9 +1529,9 @@ def import_products(request):
                         else:
                             errorMessage += ('<br/><br/>Unhandled exception occurred during import_products: %s<br/>Changes to the database have been cancelled.<br/>' 
                             % repr(e))
-                            log_actions(modifier=request.user.username,
+                            log_actions(request = request, modifier=request.user.username,
                                         modificationMessage=errorMessage)
-                    request.session['errorMessage'] = errorMessage
+                    request.session['errorMessage'] += errorMessage
                     request.session['warningMessage'] = warningMessage
                     request.session['infoMessage'] = infoMessage
                     return redirect(reverse('ims:imports'))
@@ -1566,12 +1577,12 @@ def import_inventory(request):
                             if len(msg) > 0:
                                 errorMessage = ('Error while trying to import inventory from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s<br/>' 
                                                   % (fileRequest.name, msg))
-                                log_actions(modifier=request.user.username,
+                                log_actions(request = request, modifier=request.user.username,
                                             modificationMessage=errorMessage)
                             else:
                                 infoMessage = ('Successful bulk import of inventory using "%s"' 
                                                % fileRequest.name)
-                                log_actions(modifier=request.user.username,
+                                log_actions(request = request, modifier=request.user.username,
                                             modificationMessage='successful bulk import of inventory using "' + 
                                             fileRequest.name +'"')
                             if len(msg) > 0:
@@ -1583,9 +1594,9 @@ def import_inventory(request):
                         else:
                             errorMessage += ('<br/><br/>Unhandled exception occurred during import_inventory: %s<br/>Changes to the database have been cancelled.' 
                             % repr(e))
-                            log_actions(modifier=request.user.username,
+                            log_actions(request = request, modifier=request.user.username,
                                         modificationMessage=errorMessage)
-                    request.session['errorMessage'] = errorMessage
+                    request.session['errorMessage'] += errorMessage
                     request.session['warningMessage'] = warningMessage
                     request.session['infoMessage'] = infoMessage
                     return redirect(reverse('ims:imports'))
@@ -1640,31 +1651,31 @@ def import_backup_from_xls(request,
                 if len(msg) > 0:
                     errorMessage=('Error while trying to restore sites from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s' %
                                     (fileRequest.name, msg))
-                    log_actions(modifier=modifier,
+                    log_actions(request = request, modifier=modifier,
                                 modificationMessage=errorMessage)
                 else:
                     infoMessage += ('Successful restore of sites using "%s"<br/>' 
                                    % fileRequest.name)
-                    log_actions(modifier=modifier,
+                    log_actions(request = request, modifier=modifier,
                                 modificationMessage=infoMessage)
                 result, msg=ProductInformation.parse_product_information_from_xls(file_contents=file_contents,
                                                       modifier=modifier)
                 if len(msg) > 0:
                     errorMessage += ('Error while trying to restore products from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s' %
                                     (fileRequest.name, msg))
-                    log_actions(modifier=modifier,
+                    log_actions(request = request, modifier=modifier,
                                 modificationMessage=errorMessage)
                 else:
                     infoMessage += ('Successful restore of products using "%s"<br/>' 
                                    % fileRequest.name)
-                    log_actions(modifier=modifier,
+                    log_actions(request = request, modifier=modifier,
                                 modificationMessage=infoMessage)
                 result, msg=InventoryItem.parse_inventory_from_xls(file_contents=file_contents,
                                                           modifier=modifier)
                 if len(msg) > 0 and msg != 'Found duplicate inventory items':
                     errorMessage += ('Error while trying to restore inventory from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s' %
                                     (fileRequest.name, msg))
-                    log_actions(modifier=modifier,
+                    log_actions(request = request, modifier=modifier,
                                 modificationMessage=errorMessage)
                 else:
                     if msg == 'Found duplicate inventory items':
@@ -1672,7 +1683,7 @@ def import_backup_from_xls(request,
                         msg=''
                     infoMessage += ('Successful restore of inventory using "%s"<br/>' 
                                    % fileRequest.name)
-                    log_actions(modifier=modifier,
+                    log_actions(request = request, modifier=modifier,
                                 modificationMessage=infoMessage)
                 if len(msg) > 0:
                     # in case of an issue rollback the atomic transaction
@@ -1684,7 +1695,7 @@ def import_backup_from_xls(request,
             else:
                 errorMessage += ('<br/><br/>Unhandled exception occurred during restore: %s<br/>Changes to the database have been cancelled.' 
                 % repr(e))
-                log_actions(modifier=modifier,
+                log_actions(request = request, modifier=modifier,
                             modificationMessage=errorMessage)
     else:
         errorMessage='You don''t have permission to restore the database'
