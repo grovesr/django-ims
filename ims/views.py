@@ -989,20 +989,38 @@ def product_add(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canAdd=request.user.has_perm('ims.add_productinformation')
     productForm=ProductInformationForm(error_class=TitleErrorList)
+    picture=''
     if request.method == "POST":
         if 'Save' in request.POST:
             if canAdd:
-                productForm=ProductInformationForm(request.POST, error_class=TitleErrorList)
+                productForm=ProductInformationForm(request.POST,
+                                               request.FILES,
+                                               error_class=TitleErrorList)
                 if productForm.is_valid():
                     if productForm.has_changed():
                         productForm.instance.modifier=request.user.username
-                        productForm.save()
-                        product=productForm.instance
-                        request.session['infoMessage'] = 'Successfully added product'
+                        try:
+                            with transaction.atomic():
+                                product=productForm.save()
+                                process_picture(request, product)
+                        except RimsImageProcessingError:
+                            pass
+                        if 'errorMessage' not in request.session or request.session['errorMessage'] == '':
+                            request.session['infoMessage'] = 'Successfully saved product.'
+                            log_actions(request = request, modifier=request.user.username,
+                                        modificationMessage='added product information for ' + str(productForm.instance))
+                            if product.picture:
+                                picture='?picture'
+                                request.session['infoMessage'] += '\nAdjust picture rotation if needed and save.'
+                        else:
+                            log_actions(request = request, modifier=request.user.username,
+                                        modificationMessage='unable to add product information for %s .  %s' %
+                                         (str(productForm.instance), request.session['errorMessage']))
+                            return redirect(reverse('ims:products',))
                     else:
                         request.message['warningMessage'] = 'No changes made to the product information'
                     return redirect(reverse('ims:product_detail', kwargs={'code':product.pk,
-                                                                        'page': 1,}))
+                                                                        'page': 1,})+picture)
     if not canAdd:
         errorMessage='You don''t have permission to add new products'
     return render(request, 'ims/product_detail.html', {"nav_products":1,

@@ -53,7 +53,7 @@
                     {% include "ims/product_details_detail.html" %}
                 {% else %}
                     <div id="product-add-form">
-                        <form action="{% url 'ims:product_add' %}" method="post">
+                        <form action="{% url 'ims:product_add' %}" method="post" enctype="multipart/form-data">
                             {% csrf_token  %}
                             <table id="form-table">
                                 <tr>
