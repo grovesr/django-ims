@@ -31,7 +31,11 @@
                 {% if numProductErrors %}
                     Products With Errors: {{ numProductErrors }} of {{ productForms.total_form_count }}<br/>
                 {% endif %}
-                <form action="{% url 'ims:products' page=pageNo %}" method="post">
+                {% if numPages == 'all' %}
+                    <form action="{% url 'ims:products' page='all' %}" method="post">
+                {% else %}
+                    <form action="{% url 'ims:products' page=pageNo %}" method="post">
+                {% endif %}
                     {% csrf_token  %}
                     <div class="detail-form">
                         <table id="product-list-form">
