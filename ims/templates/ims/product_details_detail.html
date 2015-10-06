@@ -1,5 +1,9 @@
 <div id="product-edit-form">
-    <form action="{% url 'ims:product_detail' code=product.code page=pageNo %}" method="post" enctype="multipart/form-data">
+    {% if numPages == 'all' %}
+        <form action="{% url 'ims:product_detail' code=product.code page='all' %}" method="post" enctype="multipart/form-data">
+    {% else %}
+        <form action="{% url 'ims:product_detail' code=product.code page=pageNo %}" method="post" enctype="multipart/form-data">
+    {% endif %}
         {% csrf_token  %}
         <table id="form-table">
             <tr>

@@ -24,7 +24,11 @@
             </td>
             {% if productForms.total_form_count and canAdd %}
                 <td class="cell-frame">
-                    <form action="{% url 'ims:site_add_inventory' siteId=site.number page=pageNo %}" method="post">
+                    {% if numPages == 'all' %}
+                        <form action="{% url 'ims:site_add_inventory' siteId=site.number page='all' %}" method="post">
+                    {% else %}
+                        <form action="{% url 'ims:site_add_inventory' siteId=site.number page=pageNo %}" method="post">
+                    {% endif %}
                     {% csrf_token  %}
                     {% if pageNo and numPages %}
                         <div class="table-nav-pages">
