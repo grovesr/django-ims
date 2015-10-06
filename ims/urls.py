@@ -63,7 +63,7 @@ urlpatterns = patterns('',
     # this will display products, paged from page 1,
     url(r'^products$', views.products, name='products'),
     # this will display all products un-paged
-    url(r'^products/(?P<page>all)$', views.products, name='products'),
+    url(r'^products/page_(?P<page>all)$', views.products, name='products'),
     # this will display products, paged from the given page
     url(r'^products/page_(?P<page>\d+)$', views.products, name='products'),
     # this will display details of a particular product paged from page 1
