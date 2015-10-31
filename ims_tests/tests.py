@@ -582,6 +582,11 @@ class HomeViewTests(TestCase):
     ims_tests for Home view
     """
     
+    def setUp(self):
+        # Most ims_tests need access to the request factory and/or a user.
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(
+            username='testUser', password='12345678')
         
     def test_home_for_latest_changes_1(self):
         """
@@ -590,6 +595,7 @@ class HomeViewTests(TestCase):
         latest changes at the top as well
         """
         print 'running HomeViewTests.test_home_for_latest_changes_1... '
+        self.client.login(username='testUser', password='12345678')
         (createdSites,
          createdProducts,
          createdInventoryItems)=create_products_with_inventory_items_for_sites(
@@ -632,6 +638,7 @@ class HomeViewTests(TestCase):
         latest changes at the top as well
         """
         print 'running HomeViewTests.test_home_for_latest_changes_2... '
+        self.client.login(username='testUser', password='12345678')
         (createdSites,
          createdProducts,
          createdInventoryItems)=create_products_with_inventory_items_for_sites(
@@ -672,6 +679,7 @@ class HomeViewTests(TestCase):
         If there is no inventory, ims:home should display nothing
         """
         print 'running HomeViewTests.test_home_for_no_inventory... '
+        self.client.login(username='testUser', password='12345678')
         response=self.client.get(reverse('ims:home'))
         resultWarning = get_announcement_from_response(response=response,
                                                        cls="warningnote")

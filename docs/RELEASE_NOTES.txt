@@ -1,0 +1,5 @@
+Version 1.11.0:
+- add template variables adminName, adminEmail, siteVersion, imsVersion  to display on each page
+- add VERSION to __init__.py to provide single source for version
+- reference VERSION in setup.py so distribution automatically gets new version
+- create RELEASE_NOTES.txt
