@@ -191,7 +191,7 @@ def get_sorted_inventory(report = '',
     sitesList=None
     inventoryList=None
     if report and startDate and stopDate:
-        parsedStartDate = parse_datestr_tz(reorder_date_mdy_to_ymd(startDate, '-'), 0, 0)
+        #parsedStartDate = parse_datestr_tz(reorder_date_mdy_to_ymd(startDate, '-'), 0, 0)
         parsedStopDate = parse_datestr_tz(reorder_date_mdy_to_ymd(stopDate, '-'), 23, 59)
         sites = Site.objects.all().order_by('name')
         sitesList = OrderedDict()
@@ -365,7 +365,7 @@ def inventory_history_dates(request, siteId=None, code=None,  page=1, startDate=
         code)
         request.session['errorMessage'] = errorMessage
         return redirect(reverse('ims:site_detail', kwargs = {'siteId':siteId,}))
-    parsedStartDate=parse_datestr_tz(reorder_date_mdy_to_ymd(startDate,'-'),0,0)
+    #parsedStartDate=parse_datestr_tz(reorder_date_mdy_to_ymd(startDate,'-'),0,0)
     parsedStopDate=parse_datestr_tz(reorder_date_mdy_to_ymd(stopDate,'-'),23,59)
     inventoryList=site.inventory_history_for_product(code=product.code, stopDate=parsedStopDate)
     inventoryIds=[]
@@ -1158,7 +1158,6 @@ def product_delete(request, productsToDelete={}, page=1):
         if 'Delete Product' in request.POST:
             if canDeleteProduct and canDeleteInventory:
                 productsToDelete=request.POST.getlist('products')
-                logStatus = []
                 infoMessage = ''
                 for code in productsToDelete:
                     product=ProductInformation.objects.get(pk=code)
@@ -1535,7 +1534,7 @@ def import_sites(request):
                         # error in the import, we want to roll back to the 
                         # initial state
                         with transaction.atomic():
-                            result,msg=Site.parse_sites_from_xls(file_contents=fileRequest.file.read(),
+                            __,msg=Site.parse_sites_from_xls(file_contents=fileRequest.file.read(),
                                                                  modifier=request.user.username,
                                                                  retainModDate=False)
                             if len(msg) > 0:
@@ -1605,7 +1604,7 @@ def import_products(request):
                         # error in the import, we want to roll back to the 
                         # initial state
                         with transaction.atomic():
-                            result,msg=ProductInformation.parse_product_information_from_xls(
+                            __,msg=ProductInformation.parse_product_information_from_xls(
                                        file_contents=fileRequest.file.read(),
                                        modifier=request.user.username,
                                        retainModDate=False)
@@ -1673,7 +1672,7 @@ def import_inventory(request):
                         # error in the import, we want to roll back to the 
                         # initial state
                         with transaction.atomic():
-                            result,msg=InventoryItem.parse_inventory_from_xls(
+                            __,msg=InventoryItem.parse_inventory_from_xls(
                                        file_contents=fileRequest.file.read(),
                                        modifier=request.user.username,
                                        retainModDate=False)
@@ -1753,7 +1752,7 @@ def import_backup_from_xls(request,
                 inventory.delete()
                 sites.delete()
                 products.delete()
-                result, msg=Site.parse_sites_from_xls(file_contents=file_contents,
+                __, msg=Site.parse_sites_from_xls(file_contents=file_contents,
                                         modifier=modifier)
                 if len(msg) > 0:
                     errorMessage=('Error while trying to restore sites from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s' %
@@ -1765,7 +1764,7 @@ def import_backup_from_xls(request,
                                    % fileRequest.name)
                     log_actions(request = request, modifier=modifier,
                                 modificationMessage=infoMessage)
-                result, msg=ProductInformation.parse_product_information_from_xls(file_contents=file_contents,
+                __, msg=ProductInformation.parse_product_information_from_xls(file_contents=file_contents,
                                                       modifier=modifier)
                 if len(msg) > 0:
                     errorMessage += ('Error while trying to restore products from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s' %
@@ -1777,7 +1776,7 @@ def import_backup_from_xls(request,
                                    % fileRequest.name)
                     log_actions(request = request, modifier=modifier,
                                 modificationMessage=infoMessage)
-                result, msg=InventoryItem.parse_inventory_from_xls(file_contents=file_contents,
+                __, msg=InventoryItem.parse_inventory_from_xls(file_contents=file_contents,
                                                           modifier=modifier)
                 if len(msg) > 0 and msg != 'Found duplicate inventory items':
                     errorMessage += ('Error while trying to restore inventory from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s' %
@@ -1809,7 +1808,7 @@ def import_backup_from_xls(request,
     return infoMessage,warningMessage,errorMessage
 
 def restore(request):
-    errorMessage, warningMessage, infoMessage = get_session_messages(request)
+    errorMessage, __, infoMessage = get_session_messages(request)
     perms=request.user.get_all_permissions()
     canDeleteSites='ims.delete_site' in perms
     canAddSites='ims.add_site' in perms

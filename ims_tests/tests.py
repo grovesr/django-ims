@@ -93,8 +93,8 @@ class SiteMethodTests(TestCase):
         """
         print 'running SiteMethodTests.test_latest_inventory_after_initial_creation... '
         (createdSites,
-         createdProducts,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         __,
+         __)=create_products_with_inventory_items_for_sites(
                                 numSites=1,
                                 numProducts=1,
                                 numItems=1)
@@ -125,7 +125,7 @@ class SiteMethodTests(TestCase):
         print 'running SiteMethodTests.test_latest_inventory_after_deletion... '
         (createdSites,
          createdProducts,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         __)=create_products_with_inventory_items_for_sites(
                                 numSites=1,
                                 numProducts=1,
                                 numItems=1)
@@ -170,7 +170,7 @@ class SiteMethodTests(TestCase):
         print 'running SiteMethodTests.test_latest_inventory_after_3_quantity_change_and_deletion... '
         (createdSites,
          createdProducts,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         __)=create_products_with_inventory_items_for_sites(
                                 numSites=1,
                                 numProducts=1,
                                 numItems=3)
@@ -192,8 +192,8 @@ class SiteMethodTests(TestCase):
         """
         print 'running SiteMethodTests.test_inventory_set_after_3_changes... '
         (createdSites,
-         createdProducts,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         __,
+         __)=create_products_with_inventory_items_for_sites(
                                 numSites=1,
                                 numProducts=1,
                                 numItems=3)
@@ -208,7 +208,7 @@ class SiteMethodTests(TestCase):
         print 'running SiteMethodTests.test_latest_inventory_after_deletion_and_re_addition... '
         (createdSites,
          createdProducts,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         __)=create_products_with_inventory_items_for_sites(
                                 numSites=1,
                                 numProducts=1,
                                 numItems=1)
@@ -218,9 +218,8 @@ class SiteMethodTests(TestCase):
                                        deleted=1)
         #latest_inventory is a queryset of all the most recent changes to the
         #site's inventory
-        latestInventory=createdSites[0].latest_inventory()
-        (site,
-         product,
+        (__,
+         __,
          lastItemChange)=create_inventory_item_for_site(
                             site=createdSites[0],
                             product=createdProducts[0],
@@ -267,7 +266,7 @@ class SiteMethodTests(TestCase):
         print 'running SiteMethodTests.test_parse_sites_from_xls_initial... '
         filename=os.path.join(APP_DIR,
                               'testData/sites_add_site1_site2_site3.xls')
-        importedSites,siteMessage=Site.parse_sites_from_xls(filename=filename, 
+        importedSites,__=Site.parse_sites_from_xls(filename=filename, 
                                                             modifier='none',
                                                             save=True)
         self.assertNotEqual(importedSites,
@@ -300,7 +299,7 @@ class SiteMethodTests(TestCase):
         print 'running SiteMethodTests.test_parse_sites_from_xls_with_dups... '
         filename=os.path.join(APP_DIR,
                               'testData/sites_add_site1_site2_site3_site3.xls')
-        importedSites,siteMessage=Site.parse_sites_from_xls(filename=filename, 
+        importedSites,__=Site.parse_sites_from_xls(filename=filename, 
                                                             modifier='none',
                                                             save=True)
         self.assertNotEqual(importedSites,
@@ -320,7 +319,7 @@ class SiteMethodTests(TestCase):
         print 'running SiteMethodTests.test_parse_sites_from_xls_with_bad_header... '
         filename=os.path.join(APP_DIR,
                               'testData/products_add_prod1_prod2_prod3.xls')
-        importedSites, siteMessage=Site.parse_sites_from_xls(filename=filename, 
+        __, siteMessage=Site.parse_sites_from_xls(filename=filename, 
                                                              modifier='none',
                                                              save=True)
         self.assert_(
@@ -336,7 +335,7 @@ class SiteMethodTests(TestCase):
         filename=os.path.join(
                         APP_DIR,
                         'testData/sites_add_site1_site2_site3_bad_date.xls')
-        importedSites, siteMessage=Site.parse_sites_from_xls(filename=filename, 
+        __, siteMessage=Site.parse_sites_from_xls(filename=filename, 
                                                              modifier='none',
                                                              save=True)
         self.assert_('Xlrdutils' in siteMessage,
@@ -357,7 +356,7 @@ class ProductInformationMethodTests(TestCase):
         filename=os.path.join(APP_DIR,
                               'testData/products_add_prod1_prod2_prod3.xls')
         (importedProducts,
-         productMessage)=ProductInformation.parse_product_information_from_xls(
+         __)=ProductInformation.parse_product_information_from_xls(
                          filename=filename, 
                          modifier='none',
                          save=True)
@@ -390,7 +389,7 @@ class ProductInformationMethodTests(TestCase):
         filename=os.path.join(APP_DIR,
                               'testData/products_add_prod1_prod2_prod3_prod3.xls')
         (importedProducts,
-         siteMessage)=ProductInformation.parse_product_information_from_xls(
+         __)=ProductInformation.parse_product_information_from_xls(
                       filename=filename, 
                       modifier='none',
                       save=True)
@@ -410,7 +409,7 @@ class ProductInformationMethodTests(TestCase):
         print 'running ProductInformationMethodTests.test_parse_product_information_from_xls_with_bad_header... '
         filename=os.path.join(APP_DIR,
                               'testData/sites_add_site1_site2_site3.xls')
-        (importedProducts,
+        (__,
          productMessage)=ProductInformation.parse_product_information_from_xls(
                          filename=filename, 
                          modifier='none',
@@ -428,7 +427,7 @@ class ProductInformationMethodTests(TestCase):
         filename=os.path.join(
                         APP_DIR,
                         'testData/products_add_prod1_prod2_prod3_bad_date.xls')
-        (importedProducts,
+        (__,
          productMessage)=ProductInformation.parse_product_information_from_xls(
                       filename=filename, 
                       modifier='none',
@@ -477,7 +476,7 @@ class InventoryItemMethodTests(TestCase):
                  APP_DIR,
                  'testData/inventory_add_10_to_site1_site2_site3_prod1_prod2_prod3.xls')
         (importedInventoryItems,
-         inventoryMessage)=InventoryItem.parse_inventory_from_xls(
+         __)=InventoryItem.parse_inventory_from_xls(
                            filename=filename, 
                            modifier='none',
                            save=True)
@@ -531,7 +530,7 @@ class InventoryItemMethodTests(TestCase):
                  APP_DIR,
                  'testData/inventory_add_10_to_site1_site2_site3_prod1_prod2_prod3_dups.xls')
         (importedInventoryItems,
-         inventoryMessage)=InventoryItem.parse_inventory_from_xls(
+         __)=InventoryItem.parse_inventory_from_xls(
                            filename=filename, 
                            modifier='none',
                            save=True)
@@ -551,7 +550,7 @@ class InventoryItemMethodTests(TestCase):
         print 'running InventoryItemMethodTests.test_parse_inventory_from_xls_with_bad_header... '
         filename=os.path.join(APP_DIR,
                               'testData/products_add_prod1_prod2_prod3.xls')
-        (importedInventoryItems,
+        (__,
          inventoryMessage)=InventoryItem.parse_inventory_from_xls(
                            filename=filename, 
                            modifier='none',
@@ -568,7 +567,7 @@ class InventoryItemMethodTests(TestCase):
         filename=os.path.join(
                  APP_DIR,
                  'testData/inventory_add_10_to_site1_site2_site3_prod1_prod2_prod3_bad_date.xls')
-        (importedInventoryItems,
+        (__,
          inventoryMessage)=InventoryItem.parse_inventory_from_xls(
                            filename=filename, 
                            modifier='none',
@@ -597,7 +596,7 @@ class HomeViewTests(TestCase):
         print 'running HomeViewTests.test_home_for_latest_changes_1... '
         self.client.login(username='testUser', password='12345678')
         (createdSites,
-         createdProducts,
+         __,
          createdInventoryItems)=create_products_with_inventory_items_for_sites(
                                 numSites=20,
                                 numProducts=5,
@@ -640,7 +639,7 @@ class HomeViewTests(TestCase):
         print 'running HomeViewTests.test_home_for_latest_changes_2... '
         self.client.login(username='testUser', password='12345678')
         (createdSites,
-         createdProducts,
+         __,
          createdInventoryItems)=create_products_with_inventory_items_for_sites(
                                 numSites=20,
                                 numProducts=5,
@@ -740,9 +739,9 @@ class InventoryHistoryViewTests(TestCase):
         print 'running InventoryHistoryViewTests.test_inventory_history_with_valid_history... '
         self.client.login(username='testUser', password='12345678')
         # create initial inventory item
-        site, product, inventoryItem = create_inventory_item_for_site(quantity=1)
+        site, product, __ = create_inventory_item_for_site(quantity=1)
         # change it to create a history
-        site, product, inventoryItem = create_inventory_item_for_site(
+        site, product, __ = create_inventory_item_for_site(
                                        site = site,
                                        product = product,
                                        quantity=2)
@@ -807,7 +806,6 @@ class SiteDetailViewTests(TestCase):
         print 'running SiteDetailViewTests.test_site_detail_with_invalid_site... '
         self.client.login(username='testUser', password='12345678')
         siteId = 1
-        code="D11"
         response=self.client.get(reverse('ims:site_detail',
                                  kwargs = 
                                   {'siteId':siteId,
@@ -1370,7 +1368,7 @@ class SiteDeleteAllViewTests(TestCase):
         request.user=self.user
         # populate the database with some data
         (createdSites,
-         createdProducts,
+         __,
          createdInventoryItems)=create_products_with_inventory_items_for_sites(
                                 numSites=20,
                                 numProducts=5,
@@ -1470,7 +1468,7 @@ class ProductDeleteAllViewTests(TestCase):
         request.user=self.user
         # populate the database with some data
         (createdSites,
-         createdProducts,
+         __,
          createdInventoryItems)=create_products_with_inventory_items_for_sites(
                                 numSites=20,
                                 numProducts=5,
@@ -1508,7 +1506,7 @@ class InventoryDeleteAllViewTests(TestCase):
         create_products_with_inventory_items_for_sites(numSites=20,
                                                        numProducts=5,
                                                        numItems=1)
-        response=inventory_delete_all(request)
+        inventory_delete_all(request)
         self.assertEqual(InventoryItem.objects.all().count(),
                          0,
                          'Did not delete all inventory')
@@ -1544,13 +1542,13 @@ class InventoryDeleteAllViewTests(TestCase):
         add_session_to_request(request)
         request.user=self.user
         # populate the database with some data
-        (createdSites,
-         createdProducts,
+        (__,
+         __,
          createdInventoryItems)=create_products_with_inventory_items_for_sites(
                                 numSites=20,
                                 numProducts=5,
                                 numItems=1)
-        response=inventory_delete_all(request)
+        inventory_delete_all(request)
         self.assertEqual(InventoryItem.objects.all().count(),
                          len(createdInventoryItems),
                          'Deleted inventory, should have canceled')
@@ -1575,8 +1573,8 @@ class ImportsViewTests(TestCase):
         self.client.login(username='testUser', password='12345678')
         # populate the database with some data
         (createdSites,
-         createdProducts,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         __,
+         __)=create_products_with_inventory_items_for_sites(
                                 numSites=20,
                                 numProducts=5,
                                 numItems=1)
@@ -1632,8 +1630,8 @@ class ImportsViewTests(TestCase):
         print 'running ImportsViewTests.test_export_sites... '
         # populate the database with some data
         (createdSites,
-         createdProducts,
-         createdIinventoryItems)=create_products_with_inventory_items_for_sites(
+         __,
+         __)=create_products_with_inventory_items_for_sites(
                                  numSites=3,
                                  numProducts=5,
                                  numItems=1,
@@ -1642,7 +1640,7 @@ class ImportsViewTests(TestCase):
         response=self.client.post(reverse('ims:imports'),
                                   {'Export Sites':'All'},
                                   follow=True)
-        parsedExportedSites,siteMessage=Site.parse_sites_from_xls( 
+        parsedExportedSites,__=Site.parse_sites_from_xls( 
                                             file_contents=response.content,
                                             save=False)
         sortedParsedExportedSites=[]
@@ -1664,9 +1662,9 @@ class ImportsViewTests(TestCase):
         self.user.user_permissions=permissions
         self.client.login(username='testUser', password='12345678')
         # populate the database with some data
-        (createdSites,
+        (__,
          createdProducts,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         __)=create_products_with_inventory_items_for_sites(
                                 numSites=20,
                                 numProducts=5,
                                 numItems=1)
@@ -1724,9 +1722,9 @@ class ImportsViewTests(TestCase):
     def test_export_products(self):
         print 'running ImportsViewTests.test_export_products... '
         # populate the database with some data
-        (createdSites,
+        (__,
          createdProducts,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         __)=create_products_with_inventory_items_for_sites(
                                 numSites=3,
                                 numProducts=5,
                                 numItems=1,
@@ -1736,7 +1734,7 @@ class ImportsViewTests(TestCase):
                                   {'Export Products':'All'},
                                   follow=True)
         (parsedExportedProducts,
-         productMessage)=ProductInformation.parse_product_information_from_xls(
+         __)=ProductInformation.parse_product_information_from_xls(
                          file_contents=response.content, 
                          save=True)
         sortedParsedExportedProducts=[]
@@ -1758,8 +1756,8 @@ class ImportsViewTests(TestCase):
         self.user.user_permissions=permissions
         self.client.login(username='testUser', password='12345678')
         # populate the database with some data
-        (createdSites,
-         createdProducts,
+        (__,
+         __,
          createdInventoryItems)=create_products_with_inventory_items_for_sites(
                                 numSites=20,
                                 numProducts=5,
@@ -1798,8 +1796,8 @@ class ImportsViewTests(TestCase):
         print 'running ImportsViewTests.test_export_all_inventory... '
         # populate the database with some data
         (createdSites,
-         createdProducts,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         __,
+         __)=create_products_with_inventory_items_for_sites(
                                 numSites=3,
                                 numProducts=5,
                                 numItems=3,
@@ -1809,7 +1807,7 @@ class ImportsViewTests(TestCase):
                                   {'Export All Inventory':'All'},
                                   follow=True)
         (parsedExportedInventory,
-         inventoryMessage)=InventoryItem.parse_inventory_from_xls(
+         __)=InventoryItem.parse_inventory_from_xls(
                            file_contents=response.content, 
                            save=False)
         sortedParsedExportedInventory=[]
@@ -1829,8 +1827,8 @@ class ImportsViewTests(TestCase):
         print 'running ImportsViewTests.test_export_current_inventory... '
         # populate the database with some data
         (createdSites,
-         createdProducts,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         __,
+         __)=create_products_with_inventory_items_for_sites(
                                 numSites=3,
                                 numProducts=5,
                                 numItems=3,
@@ -1840,7 +1838,7 @@ class ImportsViewTests(TestCase):
                                   {'Export Latest Inventory':'Current'},
                                   follow=True)
         (parsedExportedInventory,
-         inventoryMessage)=InventoryItem.parse_inventory_from_xls(
+         __)=InventoryItem.parse_inventory_from_xls(
                            file_contents=response.content, 
                            save=False)
         sortedParsedExportedInventory=[]
@@ -1861,7 +1859,7 @@ class ImportsViewTests(TestCase):
         # populate the database with some data
         (createdSites,
          createdProducts,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         __)=create_products_with_inventory_items_for_sites(
                                 numSites=3,
                                 numProducts=5,
                                 numItems=3,
@@ -1872,13 +1870,13 @@ class ImportsViewTests(TestCase):
                                   follow=True)
         fileContents=response.content
         (parsedBackedUpInventory,
-         inventoryMessage)=InventoryItem.parse_inventory_from_xls(
+         __)=InventoryItem.parse_inventory_from_xls(
                            file_contents=fileContents, 
                            save=False)
-        parsedBackedUpSites,siteMessage=Site.parse_sites_from_xls(
+        parsedBackedUpSites,__=Site.parse_sites_from_xls(
                             file_contents=fileContents,
                             save=False)
-        parsedBackedUpProducts,productMessage=ProductInformation.parse_product_information_from_xls(
+        parsedBackedUpProducts,__=ProductInformation.parse_product_information_from_xls(
                             file_contents=fileContents,
                             save=False)
         # Compare inventory
