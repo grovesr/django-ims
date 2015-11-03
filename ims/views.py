@@ -24,6 +24,22 @@ import re
 import xlwt
 import logging
 
+try:
+    adminName = settings.SITE_ADMIN[0]
+except AttributeError:
+    adminName=''
+try:
+    adminEmail = settings.SITE_ADMIN[1]
+except AttributeError:
+    adminEmail=''
+try:
+    siteVersion = settings.SITE_VERSION
+except AttributeError:
+    siteVersion=''
+try:
+    imsVersion = settings.IMS_VERSION
+except AttributeError:
+    imsVersion=''
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
     
@@ -40,8 +56,9 @@ def parse_datestr_tz(dateTimeString,hours=0,minutes=0):
     return pytz.utc.localize(naive)
 
 def log_actions(request = None, modifier='unknown', modificationMessage='no message'):
+    versionInfo = 'Site Version: ' + siteVersion + ', IMS Version: ' + imsVersion
     try:
-        logger.info(modifier + ', ' + modificationMessage)
+        logger.info(versionInfo + ',' + modifier + ', ' + modificationMessage)
     except IOError as e:
         if request:
             if 'errorMessage' not in request.session:
@@ -102,10 +119,10 @@ def home(request):
                                              'errorMessage':errorMessage,
                                              'warningMessage':warningMessage,
                                              'infoMessage':infoMessage,
-                                             'adminName':settings.SITE_ADMIN[0],
-                                             'adminEmail':settings.SITE_ADMIN[1],
-                                             'siteVersion':settings.SITE_VERSION,
-                                             'imsVersion':settings.IMS_VERSION,
+                                             'adminName':adminName,
+                                             'adminEmail':adminEmail,
+                                             'siteVersion':siteVersion,
+                                             'imsVersion':imsVersion,
                                              })
 
 @login_required()
@@ -176,10 +193,10 @@ def imports(request):
                                                 'canDeleteSites':canDeleteSites and canDeleteInventory,
                                                 'canDeleteProducts':canDeleteProducts and canDeleteInventory,
                                                 'canDeleteInventory':canDeleteInventory,
-                                                'adminName':settings.SITE_ADMIN[0],
-                                                'adminEmail':settings.SITE_ADMIN[1],
-                                                'siteVersion':settings.SITE_VERSION,
-                                                'imsVersion':settings.IMS_VERSION,
+                                                'adminName':adminName,
+                                                'adminEmail':adminEmail,
+                                                'siteVersion':siteVersion,
+                                                'imsVersion':imsVersion,
                                                 })
 
 def get_sorted_inventory(report = '', 
@@ -336,10 +353,10 @@ def reports_dates(request,
                                                 'altOrderBy':altOrderBy,
                                                 'orderDir':orderDir,
                                                 'altOrderDir':altOrderDir,
-                                                'adminName':settings.SITE_ADMIN[0],
-                                                'adminEmail':settings.SITE_ADMIN[1],
-                                                'siteVersion':settings.SITE_VERSION,
-                                                'imsVersion':settings.IMS_VERSION,})
+                                                'adminName':adminName,
+                                                'adminEmail':adminEmail,
+                                                'siteVersion':siteVersion,
+                                                'imsVersion':imsVersion,})
 
 @login_required()
 def reports(request):
@@ -409,10 +426,10 @@ def inventory_history_dates(request, siteId=None, code=None,  page=1, startDate=
                   'infoMessage':infoMessage,
                   'warningMessage':warningMessage,
                   'errorMessage':errorMessage,
-                  'adminName':settings.SITE_ADMIN[0],
-                  'adminEmail':settings.SITE_ADMIN[1],
-                  'siteVersion':settings.SITE_VERSION,
-                  'imsVersion':settings.IMS_VERSION,})
+                  'adminName':adminName,
+                  'adminEmail':adminEmail,
+                  'siteVersion':siteVersion,
+                  'imsVersion':imsVersion,})
     
 @login_required()
 def inventory_history(request, siteId=None, code=None, page=1,):
@@ -483,10 +500,10 @@ def sites(request, page=1):
                                               'errorMessage':errorMessage,
                                               'canAdd':canAdd,
                                               'canDelete':canDelete,
-                                              'adminName':settings.SITE_ADMIN[0],
-                                              'adminEmail':settings.SITE_ADMIN[1],
-                                              'siteVersion':settings.SITE_VERSION,
-                                              'imsVersion':settings.IMS_VERSION,
+                                              'adminName':adminName,
+                                              'adminEmail':adminEmail,
+                                              'siteVersion':siteVersion,
+                                              'imsVersion':imsVersion,
                                               })
 
 @login_required()
@@ -633,10 +650,10 @@ def site_detail(request, siteId=1, page=1):
                                                 'warningMessage':warningMessage,
                                                 'infoMessage':infoMessage,
                                                 'errorMessage':errorMessage,
-                                                'adminName':settings.SITE_ADMIN[0],
-                                                'adminEmail':settings.SITE_ADMIN[1],
-                                                'siteVersion':settings.SITE_VERSION,
-                                                'imsVersion':settings.IMS_VERSION,
+                                                'adminName':adminName,
+                                                'adminEmail':adminEmail,
+                                                'siteVersion':siteVersion,
+                                                'imsVersion':imsVersion,
                                                 })
 
 @login_required()
@@ -669,10 +686,10 @@ def site_add(request):
                                                 'warningMessage':warningMessage,
                                                 'infoMessage':infoMessage,
                                                 'errorMessage':errorMessage,
-                                                'adminName':settings.SITE_ADMIN[0],
-                                                'adminEmail':settings.SITE_ADMIN[1],
-                                                'siteVersion':settings.SITE_VERSION,
-                                                'imsVersion':settings.IMS_VERSION,
+                                                'adminName':adminName,
+                                                'adminEmail':adminEmail,
+                                                'siteVersion':siteVersion,
+                                                'imsVersion':imsVersion,
                                                 })
     
 @login_required()
@@ -742,10 +759,10 @@ def site_add_inventory(request, siteId=1, page=1):
                                                 'infoMessage':infoMessage,
                                                 'errorMessage':errorMessage,
                                                 'canAdd':canAdd,
-                                                'adminName':settings.SITE_ADMIN[0],
-                                                'adminEmail':settings.SITE_ADMIN[1],
-                                                'siteVersion':settings.SITE_VERSION,
-                                                'imsVersion':settings.IMS_VERSION,
+                                                'adminName':adminName,
+                                                'adminEmail':adminEmail,
+                                                'siteVersion':siteVersion,
+                                                'imsVersion':imsVersion,
                                                 })
 
 @login_required()
@@ -789,10 +806,10 @@ def site_delete(request, sitesToDelete={}, page=1):
                                                 'infoMessage':infoMessage,
                                                 'errorMessage':errorMessage,
                                                 'canDelete':canDelete,
-                                                'adminName':settings.SITE_ADMIN[0],
-                                                'adminEmail':settings.SITE_ADMIN[1],
-                                                'siteVersion':settings.SITE_VERSION,
-                                                'imsVersion':settings.IMS_VERSION,
+                                                'adminName':adminName,
+                                                'adminEmail':adminEmail,
+                                                'siteVersion':siteVersion,
+                                                'imsVersion':imsVersion,
                                                 })
 
 @login_required()
@@ -822,10 +839,10 @@ def site_delete_all(request):
                                                 'infoMessage':infoMessage,
                                                 'errorMessage':errorMessage,
                                                 'canDelete':canDelete,
-                                                'adminName':settings.SITE_ADMIN[0],
-                                                'adminEmail':settings.SITE_ADMIN[1],
-                                                'siteVersion':settings.SITE_VERSION,
-                                                'imsVersion':settings.IMS_VERSION,
+                                                'adminName':adminName,
+                                                'adminEmail':adminEmail,
+                                                'siteVersion':siteVersion,
+                                                'imsVersion':imsVersion,
                                                 })
 
 @login_required()
@@ -893,10 +910,10 @@ def products(request, page=1):
                                               'warningMessage':warningMessage,
                                               'infoMessage':infoMessage,
                                               'errorMessage':errorMessage,
-                                              'adminName':settings.SITE_ADMIN[0],
-                                              'adminEmail':settings.SITE_ADMIN[1],
-                                              'siteVersion':settings.SITE_VERSION,
-                                              'imsVersion':settings.IMS_VERSION,
+                                              'adminName':adminName,
+                                              'adminEmail':adminEmail,
+                                              'siteVersion':siteVersion,
+                                              'imsVersion':imsVersion,
                                               })
 
 @login_required()
@@ -1027,10 +1044,10 @@ def product_detail(request, page=1, code='-1',):
                              'warningMessage':warningMessage,
                              'infoMessage':infoMessage,
                              'errorMessage':errorMessage,
-                             'adminName':settings.SITE_ADMIN[0],
-                             'adminEmail':settings.SITE_ADMIN[1],
-                             'siteVersion':settings.SITE_VERSION,
-                             'imsVersion':settings.IMS_VERSION,
+                             'adminName':adminName,
+                             'adminEmail':adminEmail,
+                             'siteVersion':siteVersion,
+                             'imsVersion':imsVersion,
                             })
 
 @login_required()
@@ -1078,10 +1095,10 @@ def product_add(request):
                                                 'warningMessage':warningMessage,
                                                 'infoMessage':infoMessage,
                                                 'errorMessage':errorMessage,
-                                                'adminName':settings.SITE_ADMIN[0],
-                                                'adminEmail':settings.SITE_ADMIN[1],
-                                                'siteVersion':settings.SITE_VERSION,
-                                                'imsVersion':settings.IMS_VERSION,
+                                                'adminName':adminName,
+                                                'adminEmail':adminEmail,
+                                                'siteVersion':siteVersion,
+                                                'imsVersion':imsVersion,
                                                 })
     
 @login_required()
@@ -1143,10 +1160,10 @@ def product_add_to_site_inventory(request, siteId=1, productToAdd=None, productL
                                                      'infoMessage':infoMessage,
                                                      'errorMessage':errorMessage,
                                                      'canAdd':canAdd,
-                                                     'adminName':settings.SITE_ADMIN[0],
-                                                     'adminEmail':settings.SITE_ADMIN[1],
-                                                     'siteVersion':settings.SITE_VERSION,
-                                                     'imsVersion':settings.IMS_VERSION,
+                                                     'adminName':adminName,
+                                                     'adminEmail':adminEmail,
+                                                     'siteVersion':siteVersion,
+                                                     'imsVersion':imsVersion,
                                                 })
     
 @login_required()
@@ -1187,10 +1204,10 @@ def product_delete(request, productsToDelete={}, page=1):
                                                 'infoMessage':infoMessage,
                                                 'errorMessage':errorMessage,
                                                 'canDelete':canDeleteProduct and canDeleteInventory,
-                                                'adminName':settings.SITE_ADMIN[0],
-                                                'adminEmail':settings.SITE_ADMIN[1],
-                                                'siteVersion':settings.SITE_VERSION,
-                                                'imsVersion':settings.IMS_VERSION,
+                                                'adminName':adminName,
+                                                'adminEmail':adminEmail,
+                                                'siteVersion':siteVersion,
+                                                'imsVersion':imsVersion,
                                                 })
     
 @login_required()
@@ -1216,10 +1233,10 @@ def product_delete_all(request):
                                                     'infoMessage':infoMessage,
                                                     'errorMessage':errorMessage,
                                                     'canDelete':canDelete,
-                                                    'adminName':settings.SITE_ADMIN[0],
-                                                    'adminEmail':settings.SITE_ADMIN[1],
-                                                    'siteVersion':settings.SITE_VERSION,
-                                                    'imsVersion':settings.IMS_VERSION,
+                                                    'adminName':adminName,
+                                                    'adminEmail':adminEmail,
+                                                    'siteVersion':siteVersion,
+                                                    'imsVersion':imsVersion,
                                                     })
         if 'Cancel' in request.POST:
             return redirect(reverse('ims:imports'))
@@ -1233,10 +1250,10 @@ def product_delete_all(request):
                                                 'infoMessage':infoMessage,
                                                 'errorMessage':errorMessage,
                                                 'canDelete':canDelete,
-                                                'adminName':settings.SITE_ADMIN[0],
-                                                'adminEmail':settings.SITE_ADMIN[1],
-                                                'siteVersion':settings.SITE_VERSION,
-                                                'imsVersion':settings.IMS_VERSION,
+                                                'adminName':adminName,
+                                                'adminEmail':adminEmail,
+                                                'siteVersion':siteVersion,
+                                                'imsVersion':imsVersion,
                                                 })
 
 @login_required()
@@ -1259,10 +1276,10 @@ def inventory_delete_all(request):
                                                         'infoMessage':infoMessage,
                                                         'errorMessage':errorMessage,
                                                         'canDelete':canDelete,
-                                                        'adminName':settings.SITE_ADMIN[0],
-                                                        'adminEmail':settings.SITE_ADMIN[1],
-                                                        'siteVersion':settings.SITE_VERSION,
-                                                        'imsVersion':settings.IMS_VERSION,
+                                                        'adminName':adminName,
+                                                        'adminEmail':adminEmail,
+                                                        'siteVersion':siteVersion,
+                                                        'imsVersion':imsVersion,
                                                         })
         if 'Cancel' in request.POST:
             return redirect(reverse('ims:imports'))
@@ -1276,10 +1293,10 @@ def inventory_delete_all(request):
                                                 'infoMessage':infoMessage,
                                                 'errorMessage':errorMessage,
                                                 'canDelete':canDelete,
-                                                'adminName':settings.SITE_ADMIN[0],
-                                                'adminEmail':settings.SITE_ADMIN[1],
-                                                'siteVersion':settings.SITE_VERSION,
-                                                'imsVersion':settings.IMS_VERSION,
+                                                'adminName':adminName,
+                                                'adminEmail':adminEmail,
+                                                'siteVersion':siteVersion,
+                                                'imsVersion':imsVersion,
                                                 })
     
 def create_log_file_response(request):
@@ -1579,10 +1596,10 @@ def import_sites(request):
                    'canImportSites':canAddSites and canChangeSites,
                    'infoMessage':infoMessage,
                    'errorMessage':errorMessage,
-                   'adminName':settings.SITE_ADMIN[0],
-                   'adminEmail':settings.SITE_ADMIN[1],
-                   'siteVersion':settings.SITE_VERSION,
-                   'imsVersion':settings.IMS_VERSION,
+                   'adminName':adminName,
+                   'adminEmail':adminEmail,
+                   'siteVersion':siteVersion,
+                   'imsVersion':imsVersion,
                    })
 
 def import_products(request):
@@ -1648,10 +1665,10 @@ def import_products(request):
                    'canImportProducts':canAddProducts and canChangeProducts,
                    'infoMessage':infoMessage,
                    'errorMessage':errorMessage,
-                   'adminName':settings.SITE_ADMIN[0],
-                   'adminEmail':settings.SITE_ADMIN[1],
-                   'siteVersion':settings.SITE_VERSION,
-                   'imsVersion':settings.IMS_VERSION,
+                   'adminName':adminName,
+                   'adminEmail':adminEmail,
+                   'siteVersion':siteVersion,
+                   'imsVersion':imsVersion,
                    })
 
 def import_inventory(request):
@@ -1717,10 +1734,10 @@ def import_inventory(request):
                    'canImportInventory':canAddInventory,
                    'infoMessage':infoMessage,
                    'errorMessage':errorMessage,
-                   'adminName':settings.SITE_ADMIN[0],
-                   'adminEmail':settings.SITE_ADMIN[1],
-                   'siteVersion':settings.SITE_VERSION,
-                   'imsVersion':settings.IMS_VERSION,
+                   'adminName':adminName,
+                   'adminEmail':adminEmail,
+                   'siteVersion':siteVersion,
+                   'imsVersion':imsVersion,
                    })
 
 def import_backup_from_xls(request,
@@ -1849,10 +1866,10 @@ def restore(request):
                                                 'canAdd':canAdd,
                                                 'canChange':canChange,
                                                 'fileSelectForm':fileSelectForm,
-                                                'adminName':settings.SITE_ADMIN[0],
-                                                'adminEmail':settings.SITE_ADMIN[1],
-                                                'siteVersion':settings.SITE_VERSION,
-                                                'imsVersion':settings.IMS_VERSION,
+                                                'adminName':adminName,
+                                                'adminEmail':adminEmail,
+                                                'siteVersion':siteVersion,
+                                                'imsVersion':imsVersion,
                                                 })
     
 def process_picture(request, product):
