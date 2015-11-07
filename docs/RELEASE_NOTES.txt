@@ -4,3 +4,5 @@ Version 1.11.0:
 - reference VERSION in setup.py so distribution automatically gets new version
 - remove unused variables or replace with __
 - create RELEASE_NOTES.txt
+07/11/2015 Version 1.11.1:
+* 0d95ddb change ProductCategory relationship to Product from OneToOne to ForeignKey

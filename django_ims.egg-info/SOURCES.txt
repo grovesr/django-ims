@@ -24,6 +24,8 @@ ims/migrations/0004_auto_20150912_0647.py
 ims/migrations/0004_auto_20150912_0647.pyc
 ims/migrations/0005_auto_20150913_0927.py
 ims/migrations/0005_auto_20150913_0927.pyc
+ims/migrations/0006_auto_20151107_1549.py
+ims/migrations/0006_auto_20151107_1549.pyc
 ims/migrations/__init__.py
 ims/migrations/__init__.pyc
 ims/static/ims/css/style.css
