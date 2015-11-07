@@ -368,7 +368,7 @@ class ProductInformation(models.Model):
                                  help_text="Unique Red Cross code for this product")
     name=models.CharField(max_length=50, default="",
                                  help_text="Name of this product")
-    category = models.OneToOneField(ProductCategory, blank=True, null=True,
+    category = models.ForeignKey(ProductCategory, blank=True, null=True,
                                 help_text = "Category")
     expendable=models.BooleanField(default=False, help_text="Is this product expendable?")
     quantityOfMeasure=models.IntegerField(default=1,
