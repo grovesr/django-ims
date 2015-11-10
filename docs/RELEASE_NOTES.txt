@@ -6,3 +6,5 @@ Version 1.11.0:
 - create RELEASE_NOTES.txt
 07/11/2015 Version 1.11.1:
 * 0d95ddb change ProductCategory relationship to Product from OneToOne to ForeignKey
+10/11/2015 Version 1.11.2:
+* 0588311 add ability to auto-generate a random unique product code, and allow 32 char product codes

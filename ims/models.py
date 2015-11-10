@@ -364,7 +364,7 @@ class ProductInformation(models.Model):
     )
     unitOfMeasure=models.CharField(max_length=10, default=EACH, choices=unitOfMeasureChoices,
                                     help_text="How are these measured (EACH, BOX, ...)?")
-    code=models.CharField(max_length=10, default="D11", primary_key=True,
+    code=models.CharField(max_length=32, default="", primary_key=True,
                                  help_text="Unique Red Cross code for this product")
     name=models.CharField(max_length=50, default="",
                                  help_text="Name of this product")
@@ -474,7 +474,6 @@ class ProductInformation(models.Model):
         # add in microseconds offset to make sure we can distinguish order of saves
         if not self.modified:
             self.modified=timezone.now()
-        self.code=self.code.strip().upper()
         self.modifiedMicroseconds=self.modified.microsecond
         super(self.__class__,self).save(*args, **kwargs)
     
