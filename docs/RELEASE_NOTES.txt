@@ -10,3 +10,5 @@ Version 1.11.0:
 * 9461e4c remove extraneous ]> from product_detail.html
 * 931c03c change expiration notes to notes in ProductInformationForm
 * 23f5373 add ability to auto-generate a random unique product code, and allow 32 char product codes
+12/11/2015 Version 1.12.1:
+* ff580ea (HEAD, master) make generate code button of type button to keep from submitting

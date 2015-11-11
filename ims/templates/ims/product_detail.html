@@ -54,22 +54,23 @@
                     {% include "ims/product_details_detail.html" %}
                  {% else %}
                     <div id="product-add-form">
-                        <table id="form-table">
-                            <tr>
-                                <th>
-                                    <button title="generate new unique product code" id="generate-code" class="cell-left-btn" type="submit">Generate Code</button>
-                                </th>
-                                <form action="{% url 'ims:product_add' %}" method="post" enctype="multipart/form-data">
-                                    {% csrf_token %}
+                        <form action="{% url 'ims:product_add' %}" method="post" enctype="multipart/form-data">
+                            {% csrf_token %}
+                            <table id="form-table">
+                                <tr>
+                                    <th>
+                                        <button title="generate new unique product code" id="generate-code" class="cell-left-btn report-sort"  type="button" >Generate Code</button>
+                                    </th>
                                     <th>
                                         {% if canAdd %}
                                             <input title="save new product" class="cell-right-btn" type="submit" value="Save" name="Save">
                                         {% endif %}
                                     </th>
                                     {{ productForm }}
-                                </form>
-                            </tr>
-                        </table>
+                                    
+                                </tr>
+                            </table>
+                        </form>
                     </div>
                  {% endif %}
             </td>

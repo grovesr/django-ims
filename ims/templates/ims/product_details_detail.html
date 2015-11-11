@@ -1,36 +1,36 @@
 <div id="product-edit-form">
-    <table id="form-table">
-        <tr>
-            <th>
-                <button title="generate new unique product code" id="generate-code" class="cell-left-btn" type="submit">Generate Code</button>
-            </th>
-            {% if numPages == 'all' %}
-                <form action="{% url 'ims:product_detail' code=product.code page='all' %}" method="post" enctype="multipart/form-data">
-            {% else %}
-                <form action="{% url 'ims:product_detail' code=product.code page=pageNo %}" method="post" enctype="multipart/form-data">
-            {% endif %}
-            {% csrf_token  %}
-            <th>
-                {% if canChange %}
-                    <input title="save product information updates" class="cell-right-btn" type="submit" value="Save Product" name="Save">
-                {% endif %}
-            </th>
-        </tr>
-         <tr>
-            <th>
-                <label>
-                    Modified:
-                </label>
-            </th>
-            <td>
-                <input readonly="readonly" value="{{ productForm.instance.modified }}">
-                <br />
-                <span class="helptext">
-                    last modified on this date
-                </span>
-            </td>
-        </tr>
-        {{ productForm }}
-        </form>
-    </table>
+    {% if numPages == 'all' %}
+        <form action="{% url 'ims:product_detail' code=product.code page='all' %}" method="post" enctype="multipart/form-data">
+    {% else %}
+        <form action="{% url 'ims:product_detail' code=product.code page=pageNo %}" method="post" enctype="multipart/form-data">
+    {% endif %}
+    {% csrf_token  %}
+        <table id="form-table">
+            <tr>
+                <th>
+                    <button title="generate new unique product code" id="generate-code" class="cell-left-btn report-sort" type="button" >Generate Code</button>
+                </th>
+                <th>
+                    {% if canChange %}
+                        <input title="save product information updates" class="cell-right-btn" type="submit" value="Save Product" name="Save">
+                    {% endif %}
+                </th>
+            </tr>
+             <tr>
+                <th>
+                    <label>
+                        Modified:
+                    </label>
+                </th>
+                <td>
+                    <input readonly="readonly" value="{{ productForm.instance.modified }}">
+                    <br />
+                    <span class="helptext">
+                        last modified on this date
+                    </span>
+                </td>
+            </tr>
+            {{ productForm }}
+        </table>
+    </form>
 </div>
