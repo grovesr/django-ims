@@ -116,6 +116,8 @@ class ProductInformationForm(ModelForm):
                 'picture']
         widgets = {'modifier':TextInput(attrs = {'readonly':'readonly'}),
                    'picture':ImsClearableFileInput(fileUrl = '#')}
+        labels = {'expirationNotes':'Notes',}
+        help_texts = {'expirationNotes':'Special product notes',}
     error_css_class = 'detail-table-error-text'
     required_css_class = 'ims-required-field'
     
