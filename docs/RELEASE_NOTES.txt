@@ -7,4 +7,6 @@ Version 1.11.0:
 07/11/2015 Version 1.11.1:
 * 0d95ddb change ProductCategory relationship to Product from OneToOne to ForeignKey
 10/11/2015 Version 1.11.2:
-* 0588311 add ability to auto-generate a random unique product code, and allow 32 char product codes
+* 9461e4c remove extraneous ]> from product_detail.html
+* 931c03c change expiration notes to notes in ProductInformationForm
+* 23f5373 add ability to auto-generate a random unique product code, and allow 32 char product codes
