@@ -28,6 +28,8 @@ ims/migrations/0006_auto_20151107_1549.py
 ims/migrations/0006_auto_20151107_1549.pyc
 ims/migrations/0007_auto_20151109_0707.py
 ims/migrations/0007_auto_20151109_0707.pyc
+ims/migrations/0008_auto_20151112_0719.py
+ims/migrations/0008_auto_20151112_0719.pyc
 ims/migrations/__init__.py
 ims/migrations/__init__.pyc
 ims/static/ims/css/style.css

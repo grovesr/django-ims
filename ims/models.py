@@ -364,7 +364,7 @@ class ProductInformation(models.Model):
     )
     unitOfMeasure=models.CharField(max_length=10, default=EACH, choices=unitOfMeasureChoices,
                                     help_text="How are these measured (EACH, BOX, ...)?")
-    code=models.CharField(max_length=32, default="", primary_key=True,
+    code=models.CharField(max_length=36, default="", primary_key=True,
                                  help_text="Unique Red Cross code for this product")
     name=models.CharField(max_length=50, default="",
                                  help_text="Name of this product")
