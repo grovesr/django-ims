@@ -339,7 +339,11 @@ class ProductCategory(models.Model):
     """
     Product Category class to categorize ProductInformation objects
     """
-    category = models.CharField(max_length=100, default="")
+    
+    class Meta():
+        ordering = ['category']
+        
+    category = models.CharField(max_length=100, unique=True, default="")
     
     def __unicode__(self):
         return self.category
@@ -348,24 +352,42 @@ class ProductInformation(models.Model):
     """
     Red Cross inventory InventoryItem Information model
     """
-    BALE='BALE'
-    BOX='BOX'
-    CARTON='CARTON'
-    CASE='CASE'
+    BAG = 'BAG'
+    BALE = 'BALE'
+    BOTTLE = 'BOTTLE'
+    BOX = 'BOX'
+    CARTON = 'CARTON'
+    CASE = 'CASE'
     EACH = 'EACH'
-    PACKAGE='PACKAGE'
+    GALLONS = 'GALLONS'
+    LITERS = 'LITERS'
+    OUNCES = 'OUNCES'
+    PACKAGE = 'PACKAGE'
+    PAIRS = 'PAIRS'
+    POUNDS = 'POUNDS'
+    QUARTS = 'QUARTS'
+    ROLLS = 'ROLLS'
     unitOfMeasureChoices = (
+        (BAG, 'BAG'),
         (BALE, 'BALE'),
+        (BOTTLE, 'BOTTLE'),
         (BOX, 'BOX'),
         (CARTON, 'CARTON'),
         (CASE,'CASE'),
         (EACH,'EACH'),
-        (PACKAGE,'PACKAGE')
+        (GALLONS, 'GALLONS'),
+        (LITERS, 'LITERS'),
+        (OUNCES, 'OUNCES'),
+        (PACKAGE,'PACKAGE'),
+        (PAIRS, 'PAIRS'),
+        (POUNDS, 'POUNDS'),
+        (QUARTS, 'QUARTS'),
+        (ROLLS, 'ROLLS'),
     )
     unitOfMeasure=models.CharField(max_length=10, default=EACH, choices=unitOfMeasureChoices,
                                     help_text="How are these measured (EACH, BOX, ...)?")
     code=models.CharField(max_length=36, default="", primary_key=True,
-                                 help_text="Unique Red Cross code for this product")
+                                 help_text="Unique code for this product")
     name=models.CharField(max_length=50, default="",
                                  help_text="Name of this product")
     category = models.ForeignKey(ProductCategory, blank=True, null=True,
@@ -468,7 +490,15 @@ class ProductInformation(models.Model):
         return products, warningMessage
     
     def __unicode__(self):
-        return self.name+" ("+self.code+")"
+        codeString = ''
+        if not self.code_is_uuid():
+            codeString = ' (' + self.code + ')'
+        return self.name + codeString
+    
+    def meaningful_code(self):
+        if not self.code_is_uuid():
+            return self.code
+        return '---'
     
     def save(self, *args, **kwargs):
         # add in microseconds offset to make sure we can distinguish order of saves
@@ -500,6 +530,10 @@ class ProductInformation(models.Model):
     
     def __lt__(self,other):
         return self.timestamp() < other.timestamp()
+    
+    def code_is_uuid(self):
+        return re.match('[0-9a-f]{8,8}-[0-9a-f]{4,4}-4[0-9a-f]{3,3}-[0-9a-f]{4,4}-[0-9a-f]{12,12}',
+                        self.code,re.IGNORECASE) is not None
     
     def convert_header_name(self,name):
         if re.match('^.*?product\s*code',name,re.IGNORECASE):
