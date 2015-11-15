@@ -66,14 +66,14 @@
                                         {% if productForm.instance.check_product %}
                                             "detail-table-text cell-left"
                                         {% else %}
-                                            "detail-table-error cell-lef"
+                                            "detail-table-error cell-left"
                                         {% endif %}>
                                         <a title="edit product details" href="{% url 'ims:product_detail' code=productForm.instance.code %}">{{ productForm.instance.name }}</a>
                                     </td>
-                                    <td>
+                                    <td class="cell-left">
                                         {{ productForm.instance.category }}
                                     </td>
-                                    <td>
+                                    <td class="cell-left">
                                         {{ productForm.instance.meaningful_code }}
                                     </td>
                                     {% for field in productForm.visible_fields %}

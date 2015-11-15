@@ -14,3 +14,7 @@ Version 1.11.0:
 * ff580ea (HEAD, master) make generate code button of type button to keep from submitting
 12/11/2015 Version 1.13.0:
 * b48053f (HEAD, master) make product code 36 char and auto generate uuid4 compliant codes in js
+15/11/2015 Version 1.14.0:
+* 0a4a1ff (HEAD, master) add category to various pages showing lists of product/inventory
+15/11/2015 Version 1.14.1:
+* fadf785 (HEAD, master) left justify category and code in products list
