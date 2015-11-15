@@ -6,6 +6,7 @@ from django.utils.encoding import force_text
 from django.utils.html import conditional_escape, format_html
 from django.forms.utils import ErrorList
 from django.core.exceptions import ValidationError
+from django.conf import settings
 from ims.models import InventoryItem, ProductInformation, Site
 from functools import partial
 import re
@@ -109,11 +110,15 @@ def validate_product_code(code):
 class ProductInformationForm(ModelForm):
     class Meta:
         model = ProductInformation
-        fields=['modifier', 'category', 'name', 'code', 'unitOfMeasure', 
-                'quantityOfMeasure','expendable',
+        try:
+            additionalFields = settings.PRODUCT_INFORMATION_FORM_ADDED_FIELDS
+        except AttributeError:
+            additionalFields = ['expendable',
                 'cartonsPerPallet', 'doubleStackPallets', 'warehouseLocation',
                 'canExpire', 'expirationDate', 'expirationNotes', 'costPerItem',
                 'picture']
+        fields=['modifier', 'category', 'name', 'code', 'unitOfMeasure', 
+                'quantityOfMeasure',] + additionalFields 
         widgets = {'modifier':TextInput(attrs = {'readonly':'readonly'}),
                    'picture':ImsClearableFileInput(fileUrl = '#')}
         labels = {'expirationNotes':'Notes',}
