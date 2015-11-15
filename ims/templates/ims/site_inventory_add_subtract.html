@@ -19,6 +19,7 @@
                 </tr>
                 <tr class="detail-form-header">
                     <th>Item</th>
+                    <th>Category</th>
                     {% for field in inventoryForm.visible_fields %}
                         <th>{{ field.label }}</th>
                     {% endfor %}
@@ -44,6 +45,7 @@
              title="{% if inventoryForm.instance.check_information %}edit item details{% else %}edit item details, this product has errors the need to be corrected{% endif %}">
             {{ inventoryForm.instance.information }}
             </a></td>
+            <td>{{ inventoryForm.instance.information.category }}</td>
             {% for field in inventoryForm.visible_fields %}
                 <td class="{{ field.css_classes }} cell-left" title="{{ field.errors | escape}}">
                     {# Include the hidden fields in the form #}

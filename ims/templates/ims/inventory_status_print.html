@@ -12,6 +12,9 @@
                 <th>
                     Product
                 </th>
+                <th>
+                    Category
+                </th>
                 <th>uom</th>
                 <th>qom</th>
                 <th>
@@ -28,7 +31,10 @@
                 {% endcomment %}
                 <tr>
                     <td>
-                        {{ product.name }}:{{ product.code }}
+                        {{ product }}
+                    </td>
+                    <td>
+                        {{ product.category }}
                     </td>
                      <td>
                         {{ product.unitOfMeasure }}

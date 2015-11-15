@@ -54,6 +54,7 @@
                                 {% if forloop.first %}
                                         <tr class="detail-form-header">
                                             <th>Product</th>
+                                            <th>Category</th>
                                             <th>Code</th>
                                             {% for field in productForm.visible_fields %}
                                                 <th>{{ field.label|capfirst }}</th>
@@ -70,7 +71,10 @@
                                         <a title="edit product details" href="{% url 'ims:product_detail' code=productForm.instance.code %}">{{ productForm.instance.name }}</a>
                                     </td>
                                     <td>
-                                        {{ productForm.instance.code }}
+                                        {{ productForm.instance.category }}
+                                    </td>
+                                    <td>
+                                        {{ productForm.instance.meaningful_code }}
                                     </td>
                                     {% for field in productForm.visible_fields %}
                                         <td class="{{ field.css_classes }} cell-lef" title="{{ field.errors | escape}}">
