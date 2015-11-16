@@ -12,9 +12,11 @@
                 <th>
                     Product
                 </th>
-                <th>
-                    Category
-                </th>
+                {% if addCategory %}
+                    <th>
+                        Category
+                    </th>
+                {% endif %}
                 <th>uom</th>
                 <th>qom</th>
                 <th>
@@ -33,9 +35,11 @@
                     <td>
                         {{ product }}
                     </td>
-                    <td>
-                        {{ product.category }}
-                    </td>
+                    {% if addCategory %}
+                        <td>
+                            {{ product.category }}
+                        </td>
+                    {% endif %}
                      <td>
                         {{ product.unitOfMeasure | lower }}
                     </td>

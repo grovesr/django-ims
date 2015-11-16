@@ -207,6 +207,7 @@ def get_sorted_inventory(report = '',
                          sortReverse = False):
     sitesList=None
     inventoryList=None
+    includesCategories = False
     if report and startDate and stopDate:
         #parsedStartDate = parse_datestr_tz(reorder_date_mdy_to_ymd(startDate, '-'), 0, 0)
         parsedStopDate = parse_datestr_tz(reorder_date_mdy_to_ymd(stopDate, '-'), 23, 59)
@@ -222,6 +223,8 @@ def get_sorted_inventory(report = '',
                 siteInventory = site.latest_inventory(stopDate=parsedStopDate, 
                     orderBy=orderBy, orderDir = orderDir)
                 sitesList[site] = siteInventory
+                if not includesCategories:
+                    includesCategories = siteInventory.filter(information__category__isnull = False).count() > 0
                 if re.match('inventory_detail', report) or re.match('inventory_status', report):
                     # these reports require details about each inventory item
                     # contained at each site
@@ -252,7 +255,7 @@ def get_sorted_inventory(report = '',
                     sortedInventory[thisInfo[0]] = inventoryList[thisInfo[0]] #sortProductByName
             
             inventoryList = sortedInventory
-    return sitesList, inventoryList
+    return sitesList, inventoryList, includesCategories
 
 @login_required()
 
@@ -332,12 +335,15 @@ def reports_dates(request,
                                      'page':page,
                                      'startDate':beginDate,
                                      'stopDate':endDate}))
-    sitesList, inventoryList = get_sorted_inventory(report = report, 
-                                                    startDate = startDate, 
-                                                    stopDate = stopDate, 
-                                                    orderBy = orderBy, 
-                                                    orderDir = orderDir,
-                                                    sortReverse = sortReverse)
+    (sitesList, 
+     inventoryList, 
+     includesCategories) = get_sorted_inventory(report = report, 
+                                                startDate = startDate, 
+                                                stopDate = stopDate, 
+                                                orderBy = orderBy, 
+                                                orderDir = orderDir,
+                                                sortReverse = sortReverse)
+    
     return render(request,'ims/reports.html', {'nav_reports':1,
                                                 'warningMessage':warningMessage,
                                                 'infoMessage':infoMessage,
@@ -353,6 +359,7 @@ def reports_dates(request,
                                                 'altOrderBy':altOrderBy,
                                                 'orderDir':orderDir,
                                                 'altOrderDir':altOrderDir,
+                                                'addCategory':includesCategories,
                                                 'adminName':adminName,
                                                 'adminEmail':adminEmail,
                                                 'siteVersion':siteVersion,

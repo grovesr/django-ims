@@ -12,6 +12,11 @@
                 <th>
                     Product
                 </th>
+                {% if addCategory %}
+                    <th>
+                        Category
+                    </th>
+                {% endif %}
                 <th>
                     Site
                 </th>
@@ -33,12 +38,19 @@
                     <td>
                         <h4>{{ product }}</h4>
                     </td>
-                    <td colspan="4"></td>
+                    {% if addCategory %}
+                        <td>
+                            <h4>{{ product.category }}</h4>
+                        </td>
+                        <td colspan="3"></td>
+                    {% else %}
+                        <td colspan="4"></td>
+                    {% endif %}
                     <td><h4>{{ siteQuantity.1.1 }}</h4></td>
                 </tr>
                     {%for site,quantity,extendedQuantity in siteQuantity.0 %}
                         <tr>
-                            <td></td>
+                            <td colspan="2"></td>
                             <td>
                                 {{ site.name }}
                             </td>
