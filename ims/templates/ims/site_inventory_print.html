@@ -18,16 +18,16 @@
                 <th>uom</th>
                 <th>qom</th>
                 <th>
-                    Cartons
+                    Units
                 </th>
                 <th>
-                    Pieces
+                    Total
                 </th>
             </tr>
             {% for site,inventory in sitesList.iteritems %}
                 {% if inventory %}
                     <tr>
-                        <td colspan="3">
+                        <td>
                             <h4>{{ site.name }}</h4>
                         </td>
                     </tr>
@@ -38,10 +38,10 @@
                                     {{ item.information }}
                                 </td>
                                 <td>
-                                    {{ item.information.unitOfMeasure }}
+                                    {{ item.information.unitOfMeasure | lower}}
                                 </td>
                                 <td>
-                                    of {{ item.information.quantityOfMeasure }}
+                                    {{ item.information.quantityOfMeasure }}
                                 </td>
                                 <td>
                                     {{ item.quantity }}
