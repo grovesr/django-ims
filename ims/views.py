@@ -23,6 +23,7 @@ import pytz
 import re
 import xlwt
 import logging
+from xlrdutils.xlrdutils import XlrdutilsError
 
 try:
     adminName = settings.SITE_ADMIN[0]
@@ -40,6 +41,9 @@ try:
     imsVersion = settings.IMS_VERSION
 except AttributeError:
     imsVersion=''
+
+#TODO: Utilize Red Cross SSO authentication
+
 # Get an instance of a logger
 logger = logging.getLogger(__name__)
     
@@ -155,15 +159,15 @@ def imports(request):
             else:
                 errorMessage='You don''t have permission to delete inventory'
         if 'Export Sites' in request.POST:
-            return  create_site_export_xls_response()
+            return  create_site_export_xls_response(request)
         elif 'Export Products' in request.POST:
-            return create_product_export_xls_response()
+            return create_product_export_xls_response(request)
         elif 'Export All Inventory' in request.POST:
-            return create_inventory_export_xls_response(exportType='All')
+            return create_inventory_export_xls_response(request, exportType='All')
         elif 'Export Latest Inventory' in request.POST:
-            return create_inventory_export_xls_response(exportType='Current')
+            return create_inventory_export_xls_response(request, exportType='Current')
         elif 'Backup' in request.POST:
-            return create_backup_xls_response()
+            return create_backup_xls_response(request)
         elif 'Log File' in request.POST:
             return create_log_file_response(request)
         elif 'Import Sites' in request.POST:
@@ -1360,20 +1364,40 @@ def create_log_file_response(request):
     xls.save(response)
     return response
     
-def create_backup_xls_response():
-    xls = xlwt.Workbook(encoding="utf-8")
-    xls=create_inventory_sheet(xls=xls, exportType='All')
-    xls=create_product_export_sheet(xls=xls)
-    xls=create_site_export_sheet(xls=xls)
+def create_backup_xls_response(request):
+    #TODO: include Category in backup and restore
+    #TODO: include picture in backup and restore
+    errorMessage, __, __ = get_session_messages(request)
+    try:
+        xls = xlwt.Workbook(encoding="utf-8")
+        xls=create_inventory_sheet(xls=xls, exportType='All')
+        xls=create_product_export_sheet(xls=xls)
+        xls=create_site_export_sheet(xls=xls)
+    except XlrdutilsError as e:
+        errorMessage += ('<br/><br/>Unhandled exception occurred during creation of backup spreadsheet: %s<br/>' 
+        % repr(e))
+        log_actions(request = request, modifier=request.user.username,
+                    modificationMessage=errorMessage)
+        request.session['errorMessage'] += errorMessage
+        return redirect(reverse('ims:imports'))
     response = HttpResponse(content_type="application/ms-excel")
     dateStamp=timezone.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
     response['Content-Disposition'] = 'attachment; filename=Backup_Export' + dateStamp + '.xls'
     xls.save(response)
     return response
     
-def create_inventory_export_xls_response(exportType='All'):
-    xls = xlwt.Workbook(encoding="utf-8")
-    xls=create_inventory_sheet(xls=xls, exportType=exportType)
+def create_inventory_export_xls_response(request, exportType='All'):
+    errorMessage, __, __ = get_session_messages(request)
+    try:
+        xls = xlwt.Workbook(encoding="utf-8")
+        xls=create_inventory_sheet(xls=xls, exportType=exportType)
+    except XlrdutilsError as e:
+        errorMessage += ('<br/><br/>Unhandled exception occurred during creation of inventory export spreadsheet: %s<br/>' 
+        % repr(e))
+        log_actions(request = request, modifier=request.user.username,
+                    modificationMessage=errorMessage)
+        request.session['errorMessage'] += errorMessage
+        return redirect(reverse('ims:imports'))
     response = HttpResponse(content_type="application/ms-excel")
     response['Content-Disposition'] = 'attachment; filename=Inventory_Export_'+exportType+'.xls'
     xls.save(response)
@@ -1417,9 +1441,18 @@ def create_inventory_sheet(xls=None, exportType='All'):
             rowIndex += 1
     return xls
 
-def create_site_export_xls_response():
-    xls = xlwt.Workbook(encoding="utf-8")
-    xls=create_site_export_sheet(xls=xls)
+def create_site_export_xls_response(request):
+    errorMessage, __, __ = get_session_messages(request)
+    try:
+        xls = xlwt.Workbook(encoding="utf-8")
+        xls=create_site_export_sheet(xls=xls)
+    except XlrdutilsError as e:
+        errorMessage += ('<br/><br/>Unhandled exception occurred during creation of site export spreadsheet: %s<br/>' 
+        % repr(e))
+        log_actions(request = request, modifier=request.user.username,
+                    modificationMessage=errorMessage)
+        request.session['errorMessage'] += errorMessage
+        return redirect(reverse('ims:imports'))
     response = HttpResponse(content_type="application/ms-excel")
     response['Content-Disposition'] = 'attachment; filename=Site_Export.xls'
     xls.save(response)
@@ -1452,9 +1485,18 @@ def create_site_export_sheet(xls=None):
         rowIndex += 1
     return xls
 
-def create_product_export_xls_response():
-    xls = xlwt.Workbook(encoding="utf-8")
-    xls=create_product_export_sheet(xls=xls)
+def create_product_export_xls_response(request):
+    errorMessage, __, __ = get_session_messages(request)
+    try:
+        xls = xlwt.Workbook(encoding="utf-8")
+        xls=create_product_export_sheet(xls=xls)
+    except XlrdutilsError as e:
+        errorMessage += ('<br/><br/>Unhandled exception occurred during creation of product export spreadsheet: %s<br/>' 
+        % repr(e))
+        log_actions(request = request, modifier=request.user.username,
+                    modificationMessage=errorMessage)
+        request.session['errorMessage'] += errorMessage
+        return redirect(reverse('ims:imports'))
     response = HttpResponse(content_type="application/ms-excel")
     response['Content-Disposition'] = 'attachment; filename=Product_Export.xls'
     xls.save(response)
@@ -1470,22 +1512,24 @@ def create_product_export_sheet(xls=None):
     for product in products:
         sheet1.write(rowIndex,0,product.code)
         sheet1.write(rowIndex,1,product.name)
-        sheet1.write(rowIndex,2,product.expendable_number())
-        sheet1.write(rowIndex,3,product.unitOfMeasure)
-        sheet1.write(rowIndex,4,product.quantityOfMeasure)
-        sheet1.write(rowIndex,5,product.costPerItem)
-        sheet1.write(rowIndex,6,product.cartonsPerPallet)
-        sheet1.write(rowIndex,7,product.doubleStackPallets)
-        sheet1.write(rowIndex,8,product.warehouseLocation)
-        sheet1.write(rowIndex,9,product.expirationDate)
-        sheet1.write(rowIndex,10,product.expirationNotes)
+        if product.category:
+            sheet1.write(rowIndex,2,str(product.category))
+        sheet1.write(rowIndex,3,product.expendable_number())
+        sheet1.write(rowIndex,4,product.unitOfMeasure)
+        sheet1.write(rowIndex,5,product.quantityOfMeasure)
+        sheet1.write(rowIndex,6,product.costPerItem)
+        sheet1.write(rowIndex,7,product.cartonsPerPallet)
+        sheet1.write(rowIndex,8,product.doubleStackPallets)
+        sheet1.write(rowIndex,9,product.warehouseLocation)
+        sheet1.write(rowIndex,10,product.expirationDate)
+        sheet1.write(rowIndex,11,product.expirationNotes)
         modified=product.modified
         localZone=pytz.timezone(settings.TIME_ZONE)
         modified=modified.astimezone(localZone).replace(tzinfo=None)
         style = xlwt.XFStyle()
         style.num_format_str = 'M/D/YY h:mm, mm:ss' # Other options: D-MMM-YY, D-MMM, MMM-YY, h:mm, h:mm:ss, h:mm, h:mm:ss, M/D/YY h:mm, mm:ss, [h]:mm:ss, mm:ss.0
-        sheet1.write(rowIndex,11,modified,style)
-        sheet1.write(rowIndex,12,product.modifier)
+        sheet1.write(rowIndex,12,modified,style)
+        sheet1.write(rowIndex,13,product.modifier)
         rowIndex += 1
     return xls
     
@@ -1510,17 +1554,18 @@ def create_product_export_header(sheet=None):
     if sheet:
         sheet.write(0, 0, "Product Code")
         sheet.write(0, 1, "Product Name")
-        sheet.write(0, 2, "Expendable")
-        sheet.write(0, 3, "Unit of Measure")
-        sheet.write(0, 4, "Qty of Measure")
-        sheet.write(0, 5, "Cost Each")
-        sheet.write(0, 6, "Cartons per Pallet")
-        sheet.write(0, 7, "Double Stack Pallets")
-        sheet.write(0, 8, "Warehouse Location")
-        sheet.write(0, 9, "Expiration Date")
-        sheet.write(0, 10, "Expiration Notes")
-        sheet.write(0, 11, "Modified")
-        sheet.write(0, 12, "Modifier")
+        sheet.write(0, 2, "Product Category")
+        sheet.write(0, 3, "Expendable")
+        sheet.write(0, 4, "Unit of Measure")
+        sheet.write(0, 5, "Qty of Measure")
+        sheet.write(0, 6, "Cost Each")
+        sheet.write(0, 7, "Cartons per Pallet")
+        sheet.write(0, 8, "Double Stack Pallets")
+        sheet.write(0, 9, "Warehouse Location")
+        sheet.write(0, 10, "Expiration Date")
+        sheet.write(0, 11, "Expiration Notes")
+        sheet.write(0, 12, "Modified")
+        sheet.write(0, 13, "Modifier")
     else:
         return None
     return sheet
@@ -1827,6 +1872,7 @@ def import_backup_from_xls(request,
                 % repr(e))
                 log_actions(request = request, modifier=modifier,
                             modificationMessage=errorMessage)
+                infoMessage=''
     else:
         errorMessage='You don''t have permission to restore the database'
     return infoMessage,warningMessage,errorMessage
