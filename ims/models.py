@@ -345,8 +345,85 @@ class ProductCategory(models.Model):
         
     category = models.CharField(max_length=100, unique=True, default="")
     
+    @classmethod
+    def import_categories_from_xls(cls,filename=None, file_contents=None):
+        data = None
+        workbook = None
+        warningMessage=''
+        try:
+            workbook=xlrdutils.open_workbook(filename=filename, file_contents=file_contents)
+        except (xlrdutils.XlrdutilsOpenWorkbookError,
+                xlrdutils.XlrdutilsOpenSheetError) as e:
+            warningMessage=repr(e)
+            return (data, workbook, warningMessage)
+        try:
+            data=xlrdutils.read_lines(workbook, sheet="Categories", 
+                                      headerKeys=['Category ID',
+                                                  'Category',
+                                                  ], 
+                                      zone=settings.TIME_ZONE)
+        except (xlrdutils.XlrdutilsReadHeaderError,
+                xlrdutils.XlrdutilsDateParseError) as e:
+            warningMessage=repr(e)
+        return (data, workbook, warningMessage)
+    
+    @classmethod
+    def parse_product_categories_from_xls(cls,filename=None, file_contents=None, 
+                             modifier='', retainModDate=True, save=True):
+        """
+        read in an excel file containing product category information and populate the ProductCategory table
+        """
+        data, workbook, warningMessage=cls.import_categories_from_xls(filename=filename, file_contents=file_contents)
+        if data is None or workbook is None:
+            return None, warningMessage
+        keys=data.keys()
+        categories=[]
+        ids=[]
+        for indx in range(len(data[keys[0]])):
+            category=ProductCategory()
+            for header in keys:
+                value=data[header][indx]
+                tableHeader=category.convert_header_name(header)
+                if tableHeader ==-1:
+                    continue
+                if value==0 or value:
+                    value=category.convert_value(tableHeader,value)
+                    setattr(category,tableHeader,value)
+            if save:
+                category.save()
+            if category.pk not in ids:
+                ids.append(category.pk)
+            categories.append(category)
+            if len(categories) != len(ids):
+                warningMessage = 'Found duplicate categories'
+        return categories, warningMessage
+    
     def __unicode__(self):
         return self.category
+    
+    def convert_header_name(self,name):
+        if re.match('^.*?category\s*id',name,re.IGNORECASE):
+            return 'pk'
+        elif re.match('^\s*category\s*$',name,re.IGNORECASE):
+            return 'category'
+        return -1
+
+    def convert_value(self,key,value):
+        if isinstance(getattr(self,key),bool):
+            return value==1
+        elif isinstance(getattr(self,key),int):
+            return int(value)
+        elif isinstance(getattr(self,key),long):
+            return long(value)
+        elif isinstance(getattr(self,key),float):
+            return float(value)
+        elif isinstance(getattr(self,key),str):
+            return str(value.strip())
+        elif isinstance(getattr(self,key),unicode):
+            return unicode(value.strip())
+        elif re.match('pk',key,re.IGNORECASE):
+            return long(value)
+        return -1
 
 class ProductInformation(models.Model):
     """
@@ -540,6 +617,8 @@ class ProductInformation(models.Model):
             return 'code'
         elif re.match('^.*?product\s*name',name,re.IGNORECASE):
             return 'name'
+        elif re.match('^.*?product\s*category',name,re.IGNORECASE):
+            return 'category'
         elif re.match('^.*expendable.*',name,re.IGNORECASE):
             return 'expendable'
         elif re.match('^.*?unit\s*of\s*measure',name,re.IGNORECASE):
@@ -571,6 +650,11 @@ class ProductInformation(models.Model):
             return int(value)
         elif isinstance(getattr(self,key),float):
             return float(value)
+        elif re.match('^category$',key,re.IGNORECASE):
+            if value == '':
+                    return None
+            newCategory, __= ProductCategory.objects.get_or_create(category=value)
+            return newCategory
         elif isinstance(getattr(self,key),str):
             return str(value.strip())
         elif isinstance(getattr(self,key),unicode):

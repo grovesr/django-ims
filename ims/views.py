@@ -9,7 +9,7 @@ from django.utils.dateparse import parse_datetime, parse_date, date_re
 from django.conf import settings
 from django.db import transaction
 from .settings import PAGE_SIZE
-from .models import Site, InventoryItem, ProductInformation
+from .models import Site, InventoryItem, ProductInformation, ProductCategory
 from .forms import InventoryItemFormNoSite, InventoryItemFormAddSubtractNoSite,\
 ProductInformationForm, ProductInformationFormWithQuantity, SiteForm, \
 SiteFormReadOnly, SiteListForm,ProductListFormWithDelete, TitleErrorList, \
@@ -101,6 +101,8 @@ class RimsRestoreError(RimsError): pass
 class RimsImportInventoryError(RimsError): pass
 
 class RimsImportProductsError(RimsError): pass
+
+class RimsImportCategoriesError(RimsError): pass
     
 class RimsImportSitesError(RimsError): pass
 
@@ -1365,7 +1367,6 @@ def create_log_file_response(request):
     return response
     
 def create_backup_xls_response(request):
-    #TODO: include Category in backup and restore
     #TODO: include picture in backup and restore
     errorMessage, __, __ = get_session_messages(request)
     try:
@@ -1373,6 +1374,7 @@ def create_backup_xls_response(request):
         xls=create_inventory_sheet(xls=xls, exportType='All')
         xls=create_product_export_sheet(xls=xls)
         xls=create_site_export_sheet(xls=xls)
+        xls=create_category_export_sheet(xls=xls)
     except XlrdutilsError as e:
         errorMessage += ('<br/><br/>Unhandled exception occurred during creation of backup spreadsheet: %s<br/>' 
         % repr(e))
@@ -1530,6 +1532,22 @@ def create_product_export_sheet(xls=None):
         style.num_format_str = 'M/D/YY h:mm, mm:ss' # Other options: D-MMM-YY, D-MMM, MMM-YY, h:mm, h:mm:ss, h:mm, h:mm:ss, M/D/YY h:mm, mm:ss, [h]:mm:ss, mm:ss.0
         sheet1.write(rowIndex,12,modified,style)
         sheet1.write(rowIndex,13,product.modifier)
+        if product.picture:
+            sheet1.write(rowIndex,14,product.picture.file.name)
+        sheet1.write(rowIndex,15,product.originalPictureName)
+        rowIndex += 1
+    return xls
+
+def create_category_export_sheet(xls=None):
+    if not xls:
+        return xls
+    sheet1 = xls.add_sheet("Categories")
+    categories=ProductCategory.objects.all().order_by('category')
+    sheet1=create_category_export_header(sheet=sheet1)
+    rowIndex=1
+    for category in categories:
+        sheet1.write(rowIndex,0,category.id)
+        sheet1.write(rowIndex,1,category.category)
         rowIndex += 1
     return xls
     
@@ -1566,6 +1584,8 @@ def create_product_export_header(sheet=None):
         sheet.write(0, 11, "Expiration Notes")
         sheet.write(0, 12, "Modified")
         sheet.write(0, 13, "Modifier")
+        sheet.write(0, 14, "Picture")
+        sheet.write(0, 15, "Original Picture Name")
     else:
         return None
     return sheet
@@ -1580,6 +1600,14 @@ def create_inventory_export_header(sheet=None):
         sheet.write(0, 5, "modified")
         sheet.write(0, 6, "modifier")
         sheet.write(0, 7,"deleted")
+    else:
+        return None
+    return sheet
+
+def create_category_export_header(sheet=None):
+    if sheet:
+        sheet.write(0, 0, "Category ID")
+        sheet.write(0, 1, "Category")
     else:
         return None
     return sheet
@@ -1723,6 +1751,75 @@ def import_products(request):
                    'imsVersion':imsVersion,
                    })
 
+def import_categories(request):
+    errorMessage, warningMessage, infoMessage = get_session_messages(request)
+    perms = request.user.get_all_permissions()
+    canChangeCategories = 'ims.change_productcategory' in perms
+    canAddCategories = 'ims.add_productcategory' in perms
+    if request.method == 'POST':
+        if 'Cancel' in request.POST:
+            return redirect(reverse('ims:imports'))
+        if canAddCategories and canChangeCategories and 'Import' in request.POST:
+            if 'file' in request.FILES:
+                fileSelectForm = UploadFileForm(request.POST, request.FILES)
+                if fileSelectForm.is_valid():
+                    fileRequest=request.FILES['file']
+                    try:
+                        # make sure the database changes are atomic, in case 
+                        # there is some error that occurs.  In the case of an 
+                        # error in the import, we want to roll back to the 
+                        # initial state
+                        with transaction.atomic():
+                            __,msg=ProductCategory.parse_product_categories_from_xls(
+                                       file_contents=fileRequest.file.read(),
+                                       modifier=request.user.username,
+                                       retainModDate=False)
+                            if len(msg) > 0:
+                                errorMessage = ('Error while trying to import categories from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s<br/>' 
+                                                  % (fileRequest.name, msg))
+                                log_actions(request = request, modifier=request.user.username,
+                                            modificationMessage=errorMessage)
+                            else:
+                                infoMessage = ('Successful bulk import of categories using "%s"' 
+                                               % fileRequest.name)
+                                log_actions(request = request, modifier = request.user.username,
+                                            modificationMessage = infoMessage)
+                            if len(msg) > 0:
+                                # in case of an issue rollback the atomic transaction
+                                raise RimsImportCategoriesError
+                    except Exception as e:
+                        if isinstance(e,RimsError):
+                            errorMessage += '<br/><br/>Changes to the database have been cancelled.<br/>'
+                        else:
+                            errorMessage += ('<br/><br/>Unhandled exception occurred during import_categories: %s<br/>Changes to the database have been cancelled.<br/>' 
+                            % repr(e))
+                            log_actions(request = request, modifier=request.user.username,
+                                        modificationMessage=errorMessage)
+                    request.session['errorMessage'] += errorMessage
+                    request.session['warningMessage'] = warningMessage
+                    request.session['infoMessage'] = infoMessage
+                    return redirect(reverse('ims:imports'))
+            else:
+                warningMessage = 'No file selected'
+    else:
+        warningMessage='Importing products will overwrite current product information!'
+    if not (canAddCategories and canChangeCategories):
+        errorMessage = 'You don''t have permission to import categories'
+    fileSelectForm = UploadFileForm()
+    return render(request,
+                  'ims/import_products.html',
+                  {'nav_imports':1,
+                   'warningMessage':warningMessage,
+                   'fileSelectForm':fileSelectForm,
+                   'canImportProducts':canAddCategories and canChangeCategories,
+                   'infoMessage':infoMessage,
+                   'errorMessage':errorMessage,
+                   'adminName':adminName,
+                   'adminEmail':adminEmail,
+                   'siteVersion':siteVersion,
+                   'imsVersion':imsVersion,
+                   })
+
 def import_inventory(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     perms = request.user.get_all_permissions()
@@ -1802,17 +1899,22 @@ def import_backup_from_xls(request,
     canAddProducts='ims.add_productinformation' in perms
     canDeleteInventory='ims.delete_inventoryitem' in perms
     canAddInventory='ims.add_inventoryitem' in perms
+    canDeleteCategories='ims.delete_productcategory' in perms
+    canAddCategories='ims.add_productcategory' in perms
     canChangeProducts='ims.change_productinformation' in perms
     canChangeSites='ims.change_site' in perms
     canChangeInventory='ims.change_inventoryitem' in perms
+    canChangeCategories='ims.change_productcategory' in perms
     fileRequest=request.FILES['file']
     if canAddInventory and canChangeInventory and canDeleteInventory and\
             canAddSites and canChangeSites and canDeleteSites and\
-            canAddProducts and canChangeProducts and canDeleteProducts:
+            canAddProducts and canChangeProducts and canDeleteProducts and\
+            canAddCategories and canChangeCategories and canDeleteCategories:
         file_contents=fileRequest.file.read()
         inventory=InventoryItem.objects.all()
         sites=Site.objects.all()
         products=ProductInformation.objects.all()
+        categories = ProductCategory.objects.all()
         try:
             # make sure the deletes are atomic, in case there is some error that
             # occurs.  In the case of an error in the restore, we want to roll
@@ -1821,6 +1923,7 @@ def import_backup_from_xls(request,
                 inventory.delete()
                 sites.delete()
                 products.delete()
+                categories.delete()
                 __, msg=Site.parse_sites_from_xls(file_contents=file_contents,
                                         modifier=modifier)
                 if len(msg) > 0:
@@ -1830,6 +1933,18 @@ def import_backup_from_xls(request,
                                 modificationMessage=errorMessage)
                 else:
                     infoMessage += ('Successful restore of sites using "%s"<br/>' 
+                                   % fileRequest.name)
+                    log_actions(request = request, modifier=modifier,
+                                modificationMessage=infoMessage)
+                __, msg=ProductCategory.parse_product_categories_from_xls(file_contents=file_contents,
+                                                      modifier=modifier)
+                if len(msg) > 0:
+                    errorMessage += ('Error while trying to restore categories from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s' %
+                                    (fileRequest.name, msg))
+                    log_actions(request = request, modifier=modifier,
+                                modificationMessage=errorMessage)
+                else:
+                    infoMessage += ('Successful restore of categories using "%s"<br/>' 
                                    % fileRequest.name)
                     log_actions(request = request, modifier=modifier,
                                 modificationMessage=infoMessage)
