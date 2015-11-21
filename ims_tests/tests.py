@@ -4,11 +4,13 @@ from django.contrib.auth.models import User, Permission
 from django.contrib.sessions.middleware import SessionMiddleware
 from collections import OrderedDict
 import os 
+import StringIO
 import re
 import logging
 from ims.models import Site, ProductInformation, InventoryItem
 from ims.views import inventory_delete_all, site_delete_all, product_delete_all
 from ims.settings import PAGE_SIZE, APP_DIR
+import zipfile
 logging.disable(logging.CRITICAL)
 
 # test helper functions
@@ -1868,17 +1870,27 @@ class ImportsViewTests(TestCase):
         response=self.client.post(reverse('ims:imports'),
                                   {'Backup':'Backup'},
                                   follow=True)
-        fileContents=response.content
-        (parsedBackedUpInventory,
-         __)=InventoryItem.parse_inventory_from_xls(
-                           file_contents=fileContents, 
-                           save=False)
-        parsedBackedUpSites,__=Site.parse_sites_from_xls(
-                            file_contents=fileContents,
-                            save=False)
-        parsedBackedUpProducts,__=ProductInformation.parse_product_information_from_xls(
-                            file_contents=fileContents,
-                            save=False)
+        try:
+            f = StringIO.StringIO(response.content)
+            zipArchive = zipfile.ZipFile(f, 'r')
+            backups = [filename for filename in zipArchive.namelist() if 'Backup' in filename]
+            self.assertTrue(len(backups) > 0,'No Backup spreadsheet in the archive')
+            if backups:
+                fileContents=zipArchive.open(backups[0],'r').read()
+            zipArchive.close()
+            (parsedBackedUpInventory,
+             __)=InventoryItem.parse_inventory_from_xls(
+                               file_contents=fileContents, 
+                               save=False)
+            parsedBackedUpSites,__=Site.parse_sites_from_xls(
+                                file_contents=fileContents,
+                                save=False)
+            parsedBackedUpProducts,__=ProductInformation.parse_product_information_from_xls(
+                                file_contents=fileContents,
+                                save=False)
+        finally:
+            zipArchive.close()
+            f.close()
         # Compare inventory
         sortedParsedBackedUpInventory=[]
         for item in parsedBackedUpInventory:
@@ -2171,7 +2183,7 @@ class RestoreViewTests(TestCase):
                          % (warning, resultWarning))
         
     def test_restore_info_with_perms(self):
-        print 'running RestoreViewTests.test_restore_warning_with_perms... '
+        print 'running RestoreViewTests.test_restore_info_with_perms... '
         perms = ['add_inventoryitem',
                  'change_inventoryitem',
                  'delete_inventoryitem',
@@ -2180,20 +2192,23 @@ class RestoreViewTests(TestCase):
                  'delete_productinformation',
                  'add_site',
                  'change_site',
-                 'delete_site']
+                 'delete_site',
+                 'add_productcategory',
+                 'change_productcategory',
+                 'delete_productcategory']
         permissions = Permission.objects.filter(codename__in = perms)
         self.user.user_permissions=permissions
         self.client.login(username='testUser', password='12345678')
         with open(os.path.join(
                   APP_DIR,
-                  'testData/backup_3site_3prod_inventory10.xls')) as fp:
+                  'testData/Backup_3site_3prod_inventory10.zip')) as fp:
             response=self.client.post(reverse('ims:restore'),
                                       {'Restore':'Restore','file':fp},
                                       format = 'multipart',
                                       follow=True)
         resultWarning = get_announcement_from_response(response=response,
                                                        cls="infonote")
-        warning = 'Successful restore of sites using "backup_3site_3prod_inventory10.xls"<br/>Successful restore of products using "backup_3site_3prod_inventory10.xls"<br/>Successful restore of inventory using "backup_3site_3prod_inventory10.xls"<br/>'
+        warning = 'Successful restore of sites using "Backup_3site_3prod_inventory10.zip"<br/>Successful restore of categories using "Backup_3site_3prod_inventory10.zip"<br/>Successful restore of sites using "Backup_3site_3prod_inventory10.zip"<br/>Successful restore of products using "Backup_3site_3prod_inventory10.zip"<br/>Successful restore of inventory using "Backup_3site_3prod_inventory10.zip"<br/>'
         self.assertEqual(warning,resultWarning,'restore view generated incorrect warning when user requested a database restore.\ndesired Warning Message = %s\n\nactual warning message = %s'
                          % (warning, resultWarning))
         
@@ -2207,7 +2222,10 @@ class RestoreViewTests(TestCase):
                  'delete_productinformation',
                  'add_site',
                  'change_site',
-                 'delete_site']
+                 'delete_site',
+                 'add_productcategory',
+                 'change_productcategory',
+                 'delete_productcategory']
         permissions = Permission.objects.filter(codename__in = perms)
         self.user.user_permissions=permissions
         self.client.login(username='testUser', password='12345678')
@@ -2220,3 +2238,33 @@ class RestoreViewTests(TestCase):
         warning = 'No file selected'
         self.assertEqual(warning,resultWarning,'restore view generated incorrect warning when user requested a database restore with no file selected.\ndesired Warning Message = %s\n\nactual warning message = %s'
                          % (warning, resultWarning))
+        
+    def test_restore_error_bad_file_with_perms(self):
+        print 'running RestoreViewTests.test_restore_error_bad_file_with_perms... '
+        perms = ['add_inventoryitem',
+                 'change_inventoryitem',
+                 'delete_inventoryitem',
+                 'add_productinformation',
+                 'change_productinformation',
+                 'delete_productinformation',
+                 'add_site',
+                 'change_site',
+                 'delete_site',
+                 'add_productcategory',
+                 'change_productcategory',
+                 'delete_productcategory']
+        permissions = Permission.objects.filter(codename__in = perms)
+        self.user.user_permissions=permissions
+        self.client.login(username='testUser', password='12345678')
+        with open(os.path.join(
+                  APP_DIR,
+                  'testData/Backup_3site_3prod_inventory10.xls')) as fp:
+            response=self.client.post(reverse('ims:restore'),
+                                      {'Restore':'Restore','file':fp},
+                                      format = 'multipart',
+                                      follow=True)
+        resultError = get_announcement_from_response(response=response,
+                                                       cls="errornote")
+        error = "Error while trying to restore database from backup archive:<br/>\"Backup_3site_3prod_inventory10.xls\".<br/><br/>Error Message:<br/> BadZipfile('File is not a zip file',)"
+        self.assertIn(error,resultError,'restore view generated incorrect error when user requested a database restore with an invalid file.\ndesired Error Message = %s\n\nactual error message = %s'
+                         % (error, resultError))

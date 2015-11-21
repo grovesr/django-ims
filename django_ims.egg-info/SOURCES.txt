@@ -66,7 +66,8 @@ ims/templates/ims/site_inventory_add_subtract.html
 ims/templates/ims/site_inventory_adjust_total.html
 ims/templates/ims/site_inventory_print.html
 ims/templates/ims/sites.html
-ims/testData/backup_3site_3prod_inventory10.xls
+ims/testData/Backup_3site_3prod_inventory10.xls
+ims/testData/Backup_3site_3prod_inventory10.zip
 ims/testData/inventory_add_10_to_site1_site2_site3_prod1_prod2_prod3.xls
 ims/testData/inventory_add_10_to_site1_site2_site3_prod1_prod2_prod3_bad_date.xls
 ims/testData/inventory_add_10_to_site1_site2_site3_prod1_prod2_prod3_dups.xls

@@ -18,6 +18,7 @@ ProductListFormWithoutDelete
 from collections import OrderedDict
 from subprocess import check_call, check_output, CalledProcessError
 import os
+import shutil
 import datetime
 import pytz
 import re
@@ -65,10 +66,16 @@ def parse_datestr_tz(dateTimeString,hours=0,minutes=0):
         naive=parse_datetime(dateTimeString)
     return pytz.utc.localize(naive)
 
-def log_actions(request = None, modifier='unknown', modificationMessage='no message'):
+def log_actions(request = None, 
+                modifier='unknown', 
+                modificationMessage='no message',
+                logError = False):
     versionInfo = 'Site Version: ' + siteVersion + ', IMS Version: ' + imsVersion
     try:
-        logger.info(versionInfo + ',' + modifier + ', ' + modificationMessage)
+        if logError:
+            logger.error(versionInfo + ',' + modifier + ', ' + modificationMessage)
+        else:
+            logger.info(versionInfo + ',' + modifier + ', ' + modificationMessage)
     except IOError as e:
         if request:
             if 'errorMessage' not in request.session:
@@ -990,7 +997,8 @@ def product_detail(request, page=1, code='-1',):
             else:
                 log_actions(request = request, modifier=request.user.username,
                             modificationMessage='unable to change picture rotation for %s due to image processing error' %
-                             str(product))
+                             str(product),
+                             logError = True)
             return redirect(reverse('ims:product_detail',
                                                 kwargs={'code':product.code,})+ picture)
         if 'Save' in request.POST:
@@ -1035,7 +1043,8 @@ def product_detail(request, page=1, code='-1',):
                         else:
                             log_actions(request = request, modifier=request.user.username,
                                         modificationMessage='unable to change product information for %s .  %s' %
-                                         (str(productForm.instance), request.session['errorMessage']))
+                                         (str(productForm.instance), request.session['errorMessage']),
+                                         logError = True)
                             return redirect(reverse('ims:product_detail',
                                                 kwargs={'code':code,})+ picture)
                     else:
@@ -1049,6 +1058,16 @@ def product_detail(request, page=1, code='-1',):
     if product.picture:
         productForm.fields['picture'].widget.fileUrl = reverse('ims:product_detail',
                                             kwargs={'code':product.code,})+ '?picture'
+    if product.picture and not product.thumbnail_exists():
+        errorMessage += ('<br />Product picture thumbnail [%s]<br />missing from file system.'
+                           % product.thumbnail_name())
+    if product.picture and not product.picture_exists():
+        errorMessage += ('<br />Product picture [%s]<br />missing from file system.'
+                           % product.picture.name)
+    if errorMessage:
+        log_actions(request = request, modifier=request.user.username,
+                    modificationMessage = errorMessage,
+                    logError = True)
     return render(request, 'ims/product_detail.html',
                             {"nav_products":1,
                              'pageNo':str(pageNo),
@@ -1100,7 +1119,8 @@ def product_add(request):
                         else:
                             log_actions(request = request, modifier=request.user.username,
                                         modificationMessage='unable to add product information for %s .  %s' %
-                                         (str(productForm.instance), request.session['errorMessage']))
+                                         (str(productForm.instance), request.session['errorMessage']),
+                                         logError = True)
                             return redirect(reverse('ims:products',))
                     else:
                         request.message['warningMessage'] = 'No changes made to the product information'
@@ -1157,7 +1177,7 @@ def product_add_to_site_inventory(request, siteId=1, productToAdd=None, productL
                                     kwargs={'siteId':site.pk,
                                             'page':1}))
                 else:
-                    errorMessage = 'More information required before the inventory can be saved'
+                    warningMessage = 'More information required before the inventory can be saved'
         if 'Cancel' in request.POST:
             return redirect(reverse('ims:site_detail', kwargs={'siteId':site.pk,
                                                                 'page':1}),
@@ -1323,7 +1343,8 @@ def create_log_file_response(request):
     if not os.path.isdir(logDir):
         errorMessage = '"log" directory doesn''t exist. This shouldn''t occur.\nSystem admin has been notified.'
         log_actions(request = request, modifier=request.user.username,
-                    modificationMessage=errorMessage)
+                    modificationMessage=errorMessage,
+                    logError = True)
         request.session['errorMessage'] = errorMessage
         redirect(reverse('ims:imports'))
     xls = xlwt.Workbook(encoding="utf-8")
@@ -1337,7 +1358,8 @@ def create_log_file_response(request):
             request.session['errorMessage'] = 'File Error:<br/>Unable to open %s' % logFile
             errorMessage = 'Unable to open log file.. This shouldn''t occur.\nSystem admin has been notified.'
             log_actions(request = request, modifier=request.user.username,
-                        modificationMessage=errorMessage)
+                        modificationMessage=errorMessage,
+                        logError = True)
             return redirect('ims:imports')
         logEntries = re.split(r'(\[\d{2}\/\w+\/\d{4}\s\d{2}:\d{2}:\d{2}\])',
                               logFileString)
@@ -1401,7 +1423,8 @@ def create_backup_archive_response(request):
         errorMessage += ('<br/><br/>Unhandled exception occurred during creation of backup spreadsheet: %s<br/>' 
         % repr(e))
         log_actions(request = request, modifier=request.user.username,
-                    modificationMessage=errorMessage)
+                    modificationMessage=errorMessage,
+                    logError = True)
         request.session['errorMessage'] += errorMessage
         return redirect(reverse('ims:imports'))
     dateStamp=timezone.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
@@ -1413,7 +1436,8 @@ def create_backup_archive_response(request):
         errorMessage += ('<br/><br/>Unhandled exception occurred during creation of backup file %s: %s<br/>' 
         % (backupFile, repr(e)))
         log_actions(request = request, modifier=request.user.username,
-                    modificationMessage=errorMessage)
+                    modificationMessage=errorMessage,
+                    logError = True)
         request.session['errorMessage'] += errorMessage
         return redirect(reverse('ims:imports'))
     backupStream = StringIO.StringIO()
@@ -1426,7 +1450,8 @@ def create_backup_archive_response(request):
         errorMessage += ('<br/><br/>Unhandled exception occurred during removal of temporary backup file %s: %s<br/>' 
         % (backupFile, repr(e)))
         log_actions(request = request, modifier=request.user.username,
-                    modificationMessage=errorMessage)
+                    modificationMessage=errorMessage,
+                    logError = True)
         request.session['errorMessage'] += errorMessage
         return redirect(reverse('ims:imports'))
     zip_pictures(request, zipHandle)
@@ -1446,7 +1471,8 @@ def create_inventory_export_xls_response(request, exportType='All'):
         errorMessage += ('<br/><br/>Unhandled exception occurred during creation of inventory export spreadsheet: %s<br/>' 
         % repr(e))
         log_actions(request = request, modifier=request.user.username,
-                    modificationMessage=errorMessage)
+                    modificationMessage=errorMessage,
+                    logError = True)
         request.session['errorMessage'] += errorMessage
         return redirect(reverse('ims:imports'))
     response = HttpResponse(content_type="application/ms-excel")
@@ -1501,7 +1527,8 @@ def create_site_export_xls_response(request):
         errorMessage += ('<br/><br/>Unhandled exception occurred during creation of site export spreadsheet: %s<br/>' 
         % repr(e))
         log_actions(request = request, modifier=request.user.username,
-                    modificationMessage=errorMessage)
+                    modificationMessage=errorMessage,
+                    logError = True)
         request.session['errorMessage'] += errorMessage
         return redirect(reverse('ims:imports'))
     response = HttpResponse(content_type="application/ms-excel")
@@ -1545,7 +1572,8 @@ def create_product_export_xls_response(request):
         errorMessage += ('<br/><br/>Unhandled exception occurred during creation of product export spreadsheet: %s<br/>' 
         % repr(e))
         log_actions(request = request, modifier=request.user.username,
-                    modificationMessage=errorMessage)
+                    modificationMessage=errorMessage,
+                    logError = True)
         request.session['errorMessage'] += errorMessage
         return redirect(reverse('ims:imports'))
     response = HttpResponse(content_type="application/ms-excel")
@@ -1582,7 +1610,7 @@ def create_product_export_sheet(xls=None):
         sheet1.write(rowIndex,12,modified,style)
         sheet1.write(rowIndex,13,product.modifier)
         if product.picture:
-            sheet1.write(rowIndex,14,product.picture.file.name)
+            sheet1.write(rowIndex,14,product.picture.name)
         sheet1.write(rowIndex,15,product.originalPictureName)
         rowIndex += 1
     return xls
@@ -1687,7 +1715,8 @@ def import_sites(request):
                                 errorMessage = ('Error while trying to import sites from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s<br/>' 
                                                   % (fileRequest.name, msg))
                                 log_actions(request = request, modifier=request.user.username,
-                                            modificationMessage=errorMessage)
+                                            modificationMessage=errorMessage,
+                                            logError = True)
                             else:
                                 infoMessage = ('Successful bulk import of sites using "%s"' 
                                                % fileRequest.name)
@@ -1705,7 +1734,8 @@ def import_sites(request):
                             errorMessage += ('<br/><br/>Unhandled exception occurred during import_sites: %s<br/>Changes to the database have been cancelled.<br/>' 
                             % repr(e))
                             log_actions(request = request, modifier=request.user.username,
-                                        modificationMessage=errorMessage)
+                                        modificationMessage=errorMessage,
+                                        logError = True)
                     request.session['errorMessage'] += errorMessage
                     request.session['warningMessage'] = warningMessage
                     request.session['infoMessage'] = infoMessage
@@ -1758,7 +1788,8 @@ def import_products(request):
                                 errorMessage = ('Error while trying to import products from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s<br/>' 
                                                   % (fileRequest.name, msg))
                                 log_actions(request = request, modifier=request.user.username,
-                                            modificationMessage=errorMessage)
+                                            modificationMessage=errorMessage,
+                                            logError = True)
                             else:
                                 infoMessage = ('Successful bulk import of products using "%s"' 
                                                % fileRequest.name)
@@ -1774,7 +1805,8 @@ def import_products(request):
                             errorMessage += ('<br/><br/>Unhandled exception occurred during import_products: %s<br/>Changes to the database have been cancelled.<br/>' 
                             % repr(e))
                             log_actions(request = request, modifier=request.user.username,
-                                        modificationMessage=errorMessage)
+                                        modificationMessage=errorMessage,
+                                        logError = True)
                     request.session['errorMessage'] += errorMessage
                     request.session['warningMessage'] = warningMessage
                     request.session['infoMessage'] = infoMessage
@@ -1827,7 +1859,8 @@ def import_categories(request):
                                 errorMessage = ('Error while trying to import categories from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s<br/>' 
                                                   % (fileRequest.name, msg))
                                 log_actions(request = request, modifier=request.user.username,
-                                            modificationMessage=errorMessage)
+                                            modificationMessage=errorMessage,
+                                            logError = True)
                             else:
                                 infoMessage = ('Successful bulk import of categories using "%s"' 
                                                % fileRequest.name)
@@ -1843,7 +1876,8 @@ def import_categories(request):
                             errorMessage += ('<br/><br/>Unhandled exception occurred during import_categories: %s<br/>Changes to the database have been cancelled.<br/>' 
                             % repr(e))
                             log_actions(request = request, modifier=request.user.username,
-                                        modificationMessage=errorMessage)
+                                        modificationMessage=errorMessage,
+                                        logError = True)
                     request.session['errorMessage'] += errorMessage
                     request.session['warningMessage'] = warningMessage
                     request.session['infoMessage'] = infoMessage
@@ -1895,7 +1929,8 @@ def import_inventory(request):
                                 errorMessage = ('Error while trying to import inventory from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s<br/>' 
                                                   % (fileRequest.name, msg))
                                 log_actions(request = request, modifier=request.user.username,
-                                            modificationMessage=errorMessage)
+                                            modificationMessage=errorMessage,
+                                            logError = True)
                             else:
                                 infoMessage = ('Successful bulk import of inventory using "%s"' 
                                                % fileRequest.name)
@@ -1912,7 +1947,8 @@ def import_inventory(request):
                             errorMessage += ('<br/><br/>Unhandled exception occurred during import_inventory: %s<br/>Changes to the database have been cancelled.' 
                             % repr(e))
                             log_actions(request = request, modifier=request.user.username,
-                                        modificationMessage=errorMessage)
+                                        modificationMessage=errorMessage,
+                                        logError = True)
                     request.session['errorMessage'] += errorMessage
                     request.session['warningMessage'] = warningMessage
                     request.session['infoMessage'] = infoMessage
@@ -1938,7 +1974,16 @@ def import_inventory(request):
                    'imsVersion':imsVersion,
                    })
 
-def import_backup_from_xls(request,
+def restore_pictures(zipArchive, pictures):
+    errorMessage = ''
+    try:
+        shutil.rmtree(settings.MEDIA_ROOT + os.sep + 'inventory_pictures', ignore_errors=True)
+    except IOError as e:
+        errorMessage = repr(e)
+    zipArchive.extractall(settings.MEDIA_ROOT ,pictures)
+    return errorMessage
+
+def import_backup_from_archive(request,
                           modifier='',
                           perms=[]):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
@@ -1959,7 +2004,20 @@ def import_backup_from_xls(request,
             canAddSites and canChangeSites and canDeleteSites and\
             canAddProducts and canChangeProducts and canDeleteProducts and\
             canAddCategories and canChangeCategories and canDeleteCategories:
-        file_contents=fileRequest.file.read()
+        try:
+            zipArchive = zipfile.ZipFile(fileRequest.file)
+        except (zipfile.BadZipfile, zipfile.LargeZipFile) as e:
+            errorMessage+=('Error while trying to restore database from backup archive:<br/>"%s".<br/><br/>Error Message:<br/> %s' %
+                          (fileRequest.name, repr(e)))
+            log_actions(request = request, modifier=modifier,
+                        modificationMessage=errorMessage,
+                        logError = True)
+        if errorMessage:
+            return infoMessage,warningMessage,errorMessage
+        backups = [filename for filename in zipArchive.namelist() if 'Backup' in filename]
+        if backups:
+            file_contents=zipArchive.open(backups[0],'r').read()
+        pictures = [filename for filename in zipArchive.namelist() if 'inventory_pictures' in filename]
         inventory=InventoryItem.objects.all()
         sites=Site.objects.all()
         products=ProductInformation.objects.all()
@@ -1976,10 +2034,11 @@ def import_backup_from_xls(request,
                 __, msg=Site.parse_sites_from_xls(file_contents=file_contents,
                                         modifier=modifier)
                 if len(msg) > 0:
-                    errorMessage=('Error while trying to restore sites from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s' %
+                    errorMessage=('Error while trying to restore sites from backup archive:<br/>"%s".<br/><br/>Error Message:<br/> %s' %
                                     (fileRequest.name, msg))
                     log_actions(request = request, modifier=modifier,
-                                modificationMessage=errorMessage)
+                                modificationMessage=errorMessage,
+                                logError = True)
                 else:
                     infoMessage += ('Successful restore of sites using "%s"<br/>' 
                                    % fileRequest.name)
@@ -1991,19 +2050,39 @@ def import_backup_from_xls(request,
                     errorMessage += ('Error while trying to restore categories from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s' %
                                     (fileRequest.name, msg))
                     log_actions(request = request, modifier=modifier,
-                                modificationMessage=errorMessage)
+                                modificationMessage=errorMessage,
+                                logError = True)
                 else:
                     infoMessage += ('Successful restore of categories using "%s"<br/>' 
+                                   % fileRequest.name)
+                    log_actions(request = request, modifier=modifier,
+                                modificationMessage=infoMessage)
+                if pictures:
+                    msg = restore_pictures(zipArchive, pictures)
+                    if len(msg) > 0:
+                        errorMessage=('Error while restoring pictures from backup archive:<br/>"%s".<br/><br/>Error Message:<br/> %s' %
+                                        (fileRequest.name, msg))
+                        log_actions(request = request, modifier=modifier,
+                                    modificationMessage=errorMessage,
+                                    logError = True)
+                    else:
+                        infoMessage += ('Successful restore of product images using "%s"<br/>' 
+                                       % fileRequest.name)
+                        log_actions(request = request, modifier=modifier,
+                                    modificationMessage=infoMessage)
+                else:
+                    infoMessage += ('Successful restore of sites using "%s"<br/>' 
                                    % fileRequest.name)
                     log_actions(request = request, modifier=modifier,
                                 modificationMessage=infoMessage)
                 __, msg=ProductInformation.parse_product_information_from_xls(file_contents=file_contents,
                                                       modifier=modifier)
                 if len(msg) > 0:
-                    errorMessage += ('Error while trying to restore products from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s' %
+                    errorMessage += ('Error while trying to restore products from backup archive:<br/>"%s".<br/><br/>Error Message:<br/> %s' %
                                     (fileRequest.name, msg))
                     log_actions(request = request, modifier=modifier,
-                                modificationMessage=errorMessage)
+                                modificationMessage=errorMessage,
+                                logError = True)
                 else:
                     infoMessage += ('Successful restore of products using "%s"<br/>' 
                                    % fileRequest.name)
@@ -2012,10 +2091,11 @@ def import_backup_from_xls(request,
                 __, msg=InventoryItem.parse_inventory_from_xls(file_contents=file_contents,
                                                           modifier=modifier)
                 if len(msg) > 0 and msg != 'Found duplicate inventory items':
-                    errorMessage += ('Error while trying to restore inventory from spreadsheet:<br/>"%s".<br/><br/>Error Message:<br/> %s' %
+                    errorMessage += ('Error while trying to restore inventory from backup archive:<br/>"%s".<br/><br/>Error Message:<br/> %s' %
                                     (fileRequest.name, msg))
                     log_actions(request = request, modifier=modifier,
-                                modificationMessage=errorMessage)
+                                modificationMessage=errorMessage,
+                                logError = True)
                 else:
                     if msg == 'Found duplicate inventory items':
                         # when restoring, duplicate inventory items are OK
@@ -2023,7 +2103,7 @@ def import_backup_from_xls(request,
                     infoMessage += ('Successful restore of inventory using "%s"<br/>' 
                                    % fileRequest.name)
                     log_actions(request = request, modifier=modifier,
-                                modificationMessage=infoMessage)
+                                modificationMessage=infoMessage)                
                 if len(msg) > 0:
                     # in case of an issue rollback the atomic transaction
                     errorMessage += msg + '<br/>'
@@ -2035,7 +2115,8 @@ def import_backup_from_xls(request,
                 errorMessage += ('<br/><br/>Unhandled exception occurred during restore: %s<br/>Changes to the database have been cancelled.' 
                 % repr(e))
                 log_actions(request = request, modifier=modifier,
-                            modificationMessage=errorMessage)
+                            modificationMessage=errorMessage,
+                            logError = True)
                 infoMessage=''
     else:
         errorMessage='You don''t have permission to restore the database'
@@ -2065,7 +2146,7 @@ def restore(request):
         if 'Restore' in request.POST:
             fileSelectForm = UploadFileForm(request.POST, request.FILES)
             if fileSelectForm.is_valid():
-                infoMsg,warningMsg,errorMsg = import_backup_from_xls(request,
+                infoMsg,warningMsg,errorMsg = import_backup_from_archive(request,
                                           modifier=request.user.username,
                                           perms=perms)
                 request.session['errorMessage'] = errorMsg
@@ -2108,6 +2189,9 @@ def process_picture(request, product):
                                    product.picture.file.name])
         except CalledProcessError as e:
             request.session['errorMessage'] = 'Unable to resize picture. Nothing was saved. %s' % e.message
+            log_actions(request = request, modifier=request.user,
+                        modificationMessage=request.session['errorMessage'],
+                        logError = True)
             raise RimsImageProcessingError
         create_thumbnail(request, product = product)
         
@@ -2127,6 +2211,9 @@ def create_thumbnail(request, product = None):
                                    thumbnailFile])
         except CalledProcessError as e:
             request.session['errorMessage'] = 'Unable to create thumbnail. Nothing was saved. %s' % e.message
+            log_actions(request = request, modifier=request.user,
+                        modificationMessage=request.session['errorMessage'],
+                        logError = True)
             raise RimsImageProcessingError
         
 def get_picture_aspect_ratio(request, product = None):
@@ -2136,6 +2223,9 @@ def get_picture_aspect_ratio(request, product = None):
             geometry = check_output(['identify','-format','%wx%h', product.picture.file.name])
         except CalledProcessError as e:
             request.session['errorMessage'] = 'Unable to open picture. Nothing was saved. %s' % e.message
+            log_actions(request = request, modifier=request.user,
+                        modificationMessage=request.session['errorMessage'],
+                        logError = True)
             raise RimsImageProcessingError
         imageW, imageH = geometry.strip().split('x')
         aspectRatio = float(imageW) / float(imageH)
@@ -2147,7 +2237,7 @@ def rotate_picture(request, product, rotation):
     '''
     if product.picture:
         previousPictureName = product.picture.file.name
-        previousThumbnailName = product.thumbnail_name()
+        previousThumbnailName = product.thumbnail_filename()
         try:
             check_call(['convert', 
                                    '-rotate', 
@@ -2157,6 +2247,9 @@ def rotate_picture(request, product, rotation):
                                    previousPictureName])
         except CalledProcessError as e:
             request.session['errorMessage'] = 'Unable to rotate picture. Nothing was saved. %s' % e.message
+            log_actions(request = request, modifier=request.user,
+                        modificationMessage=request.session['errorMessage'],
+                        logError = True)
             raise RimsImageProcessingError
         with open(previousPictureName) as p:
             product.picture.save(product.originalPictureName, File(p))

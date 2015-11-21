@@ -4,4 +4,5 @@
 #VERSION=('1.12.1','12/11/2015','fix generate code button and templates that use it')
 #VERSION=('1.13.0','12/11/2015','make product code 36 char and auto generate uuid4 compliant codes in js')
 #VERSION=('1.14.0','15/11/2015','updates to ProductCode and Category, mostly UI improvements')
-VERSION=('1.14.1','15/11/2015','left justify category and code in products list')
+#VERSION=('1.14.1','15/11/2015','left justify category and code in products list')
+VERSION=('1.15.0','18/11/2015','add category and picture export and import')
