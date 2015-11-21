@@ -21,7 +21,9 @@
                 </table>
             </div>
             <div id="product-image">
-                <img id="image" src="{{ productForm.instance.picture.url }}" alt="{{ productForm.instance.picture.name }}"/>
+                {% if product.picture_exists %}
+                    <img id="image" src="{{ productForm.instance.picture.url }}" alt="{{ productForm.instance.picture.name }}"/>
+                {% endif %}
         </div>
     {% endif %}
 </div>

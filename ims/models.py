@@ -4,6 +4,7 @@ from django.core.exceptions import ValidationError
 from django.utils.dateparse import parse_datetime
 from django.conf import settings
 from xlrdutils import xlrdutils
+import os
 import re
 import pytz
 from collections import OrderedDict
@@ -641,6 +642,10 @@ class ProductInformation(models.Model):
             return 'modified'
         elif re.match('^\s*modifier\s*$',name,re.IGNORECASE):
             return 'modifier'
+        elif re.match('^\s*picture\s*$',name,re.IGNORECASE):
+            return 'picture'
+        elif re.match('^\s*original\s*picture\s*name\s*$',name,re.IGNORECASE):
+            return 'originalPictureName'
         return -1
 
     def convert_value(self,key,value):
@@ -655,6 +660,8 @@ class ProductInformation(models.Model):
                     return None
             newCategory, __= ProductCategory.objects.get_or_create(category=value)
             return newCategory
+        elif re.match('^picture$', key, re.IGNORECASE):
+            return value
         elif isinstance(getattr(self,key),str):
             return str(value.strip())
         elif isinstance(getattr(self,key),unicode):
@@ -695,10 +702,36 @@ class ProductInformation(models.Model):
             filePieces = self.picture.url.rsplit('.',1)
             return filePieces[0] + 'thumb.' + filePieces[1]
         return ''
+    
+    def thumbnail_exists(self):
+        if self.picture:
+            try:
+                filePieces = self.picture.file.name.rsplit('.',1)
+            except IOError:
+                return False
+            return os.path.isfile(filePieces[0] + 'thumb.' + filePieces[1])
+        return False
+    
+    def picture_exists(self):
+        try:
+            return self.picture and os.path.isfile(self.picture.file.name)
+        except IOError:
+            return False
         
     def thumbnail_name(self):
         if self.picture:
-            filePieces = self.picture.file.name.rsplit('.',1)
+            try:
+                filePieces = self.picture.name.rsplit('.',1)
+            except IOError:
+                return False
+            return filePieces[0] + 'thumb.' + filePieces[1]
+        return ''
+    def thumbnail_filename(self):
+        if self.picture:
+            try:
+                filePieces = self.picture.file.name.rsplit('.',1)
+            except IOError:
+                return ''
             return filePieces[0] + 'thumb.' + filePieces[1]
         return ''
 

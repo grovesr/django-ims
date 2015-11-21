@@ -19,7 +19,7 @@
     <table id="form-table">
         <tr>
             <th id="product-thumbnail">
-                {% if product.picture %}
+                {% if product.thumbnail_exists %}
                     <img id="image" src="{{ productForm.instance.thumbnail_url }}" alt="{{ productForm.instance.thumbnail_name }}"/>
                 {% endif %}
             </th>
