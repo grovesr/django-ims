@@ -17,12 +17,14 @@ DateSpanQueryForm, ProductListFormWithAdd, UploadFileForm, \
 ProductListFormWithoutDelete
 from collections import OrderedDict
 from subprocess import check_call, check_output, CalledProcessError
-from os import path, remove, sep
+import os
 import datetime
 import pytz
 import re
 import xlwt
 import logging
+import StringIO
+import zipfile
 from xlrdutils.xlrdutils import XlrdutilsError
 
 try:
@@ -41,6 +43,10 @@ try:
     imsVersion = settings.IMS_VERSION
 except AttributeError:
     imsVersion=''
+try:
+    tempDir = settings.TEMP_DIR
+except AttributeError:
+    tempDir = '/tmp'
 
 #TODO: Utilize Red Cross SSO authentication
 
@@ -169,7 +175,7 @@ def imports(request):
         elif 'Export Latest Inventory' in request.POST:
             return create_inventory_export_xls_response(request, exportType='Current')
         elif 'Backup' in request.POST:
-            return create_backup_xls_response(request)
+            return create_backup_archive_response(request)
         elif 'Log File' in request.POST:
             return create_log_file_response(request)
         elif 'Import Sites' in request.POST:
@@ -1313,12 +1319,11 @@ def inventory_delete_all(request):
                                                 })
     
 def create_log_file_response(request):
-    logDir = path.join(settings.BASE_DIR, "log")
-    if not path.isdir(logDir):
+    logDir = os.path.join(settings.BASE_DIR, "log")
+    if not os.path.isdir(logDir):
         errorMessage = '"log" directory doesn''t exist. This shouldn''t occur.\nSystem admin has been notified.'
         log_actions(request = request, modifier=request.user.username,
                     modificationMessage=errorMessage)
-        logger.error(errorMessage)
         request.session['errorMessage'] = errorMessage
         redirect(reverse('ims:imports'))
     xls = xlwt.Workbook(encoding="utf-8")
@@ -1333,11 +1338,10 @@ def create_log_file_response(request):
             errorMessage = 'Unable to open log file.. This shouldn''t occur.\nSystem admin has been notified.'
             log_actions(request = request, modifier=request.user.username,
                         modificationMessage=errorMessage)
-            logger.error(errorMessage)
             return redirect('ims:imports')
         logEntries = re.split(r'(\[\d{2}\/\w+\/\d{4}\s\d{2}:\d{2}:\d{2}\])',
                               logFileString)
-        fileName = logFile.rsplit(sep)[-1]
+        fileName = logFile.rsplit(os.sep)[-1]
         sheets.append(xls.add_sheet(fileName.rsplit('.',1)[0]))
         sheets[sheetIndex].write(0,0,'Timestamp')
         sheets[sheetIndex].write(0,1,'Type')
@@ -1366,7 +1370,25 @@ def create_log_file_response(request):
     xls.save(response)
     return response
     
-def create_backup_xls_response(request):
+def trim_path(rootPath = '', dirPath = ''):
+    archivePath = dirPath.replace(rootPath, "", 1)
+    if rootPath:
+        archivePath = archivePath.replace(os.path.sep, "", 1)
+    return os.path.normcase(archivePath)
+
+def zip_pictures(request,zipHandle):
+    products = ProductInformation.objects.exclude(picture = '')
+    for product in products:
+        imageFile = product.picture.file.name
+        thumbFile = imageFile.split('.')[0] + 'thumb.' + imageFile.split('.')[1]
+        if os.path.isfile(imageFile):
+            zipHandle.write(imageFile, trim_path(rootPath = settings.MEDIA_ROOT,
+                                                 dirPath = imageFile))
+        if os.path.isfile(thumbFile):
+            zipHandle.write(thumbFile, trim_path(rootPath = settings.MEDIA_ROOT,
+                                                 dirPath = thumbFile))
+                
+def create_backup_archive_response(request):
     #TODO: include picture in backup and restore
     errorMessage, __, __ = get_session_messages(request)
     try:
@@ -1382,10 +1404,37 @@ def create_backup_xls_response(request):
                     modificationMessage=errorMessage)
         request.session['errorMessage'] += errorMessage
         return redirect(reverse('ims:imports'))
-    response = HttpResponse(content_type="application/ms-excel")
     dateStamp=timezone.datetime.now().strftime("%Y-%m-%dT%H-%M-%S")
-    response['Content-Disposition'] = 'attachment; filename=Backup_Export' + dateStamp + '.xls'
-    xls.save(response)
+    xlsFileName = 'Backup_Export' + dateStamp + '.xls'
+    backupFile = tempDir+ os.sep + xlsFileName
+    try:
+        xls.save(backupFile)
+    except IOError as e:
+        errorMessage += ('<br/><br/>Unhandled exception occurred during creation of backup file %s: %s<br/>' 
+        % (backupFile, repr(e)))
+        log_actions(request = request, modifier=request.user.username,
+                    modificationMessage=errorMessage)
+        request.session['errorMessage'] += errorMessage
+        return redirect(reverse('ims:imports'))
+    backupStream = StringIO.StringIO()
+    zipHandle = zipfile.ZipFile(backupStream,'w',
+                                compression = zipfile.ZIP_DEFLATED)
+    zipHandle.write(backupFile, xlsFileName)
+    try:
+        os.remove(backupFile)
+    except IOError as e:
+        errorMessage += ('<br/><br/>Unhandled exception occurred during removal of temporary backup file %s: %s<br/>' 
+        % (backupFile, repr(e)))
+        log_actions(request = request, modifier=request.user.username,
+                    modificationMessage=errorMessage)
+        request.session['errorMessage'] += errorMessage
+        return redirect(reverse('ims:imports'))
+    zip_pictures(request, zipHandle)
+    zipHandle.close()
+    response = HttpResponse(backupStream.getvalue(), 
+                            content_type="application/zip")
+    
+    response['Content-Disposition'] = 'attachment; filename=Backup_Export' + dateStamp + '.zip'
     return response
     
 def create_inventory_export_xls_response(request, exportType='All'):
@@ -2115,7 +2164,7 @@ def rotate_picture(request, product, rotation):
         # we now know the actual picture file name and can create a matching
         # thumbnail
         create_thumbnail(request, product = product)
-        if path.isfile(previousPictureName):
-            remove(previousPictureName)
-        if path.isfile(previousThumbnailName):
-            remove(previousThumbnailName)
+        if os.path.isfile(previousPictureName):
+            os.remove(previousPictureName)
+        if os.path.isfile(previousThumbnailName):
+            os.remove(previousThumbnailName)
