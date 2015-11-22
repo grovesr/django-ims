@@ -1401,18 +1401,18 @@ def trim_path(rootPath = '', dirPath = ''):
 def zip_pictures(request,zipHandle):
     products = ProductInformation.objects.exclude(picture = '')
     for product in products:
-        imageFile = product.picture.file.name
-        imagePieces = imageFile.rsplit('.',1)
-        thumbFile = imagePieces[0] + 'thumb.' + imagePieces[1]
-        if os.path.isfile(imageFile):
-            zipHandle.write(imageFile, trim_path(rootPath = settings.MEDIA_ROOT,
-                                                 dirPath = imageFile))
-        if os.path.isfile(thumbFile):
-            zipHandle.write(thumbFile, trim_path(rootPath = settings.MEDIA_ROOT,
-                                                 dirPath = thumbFile))
+        if product.picture and product.picture.file:
+            imageFile = product.picture.file.name
+            imagePieces = imageFile.rsplit('.',1)
+            thumbFile = imagePieces[0] + 'thumb.' + imagePieces[1]
+            if os.path.isfile(imageFile):
+                zipHandle.write(imageFile, trim_path(rootPath = settings.MEDIA_ROOT,
+                                                     dirPath = imageFile))
+            if os.path.isfile(thumbFile):
+                zipHandle.write(thumbFile, trim_path(rootPath = settings.MEDIA_ROOT,
+                                                     dirPath = thumbFile))
                 
 def create_backup_archive_response(request):
-    #TODO: include picture in backup and restore
     errorMessage, __, __ = get_session_messages(request)
     try:
         xls = xlwt.Workbook(encoding="utf-8")

@@ -7,4 +7,5 @@
 #VERSION=('1.14.1','15/11/2015','left justify category and code in products list')
 #VERSION=('1.15.0','21/11/2015','add category and picture export and import')
 #VERSION=('1.15.1','22/11/2015','fix ProductInformation.originalPictureName path and thumbnail backup')
-VERSION=('1.15.2','22/11/2015','fix restore of originalPictureName')
+#VERSION=('1.15.2','22/11/2015','fix restore of originalPictureName')
+VERSION=('1.15.3','22/11/2015','handle backups without picture files')

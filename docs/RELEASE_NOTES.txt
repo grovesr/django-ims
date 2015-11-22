@@ -4,24 +4,26 @@ Version 1.11.0:
 - reference VERSION in setup.py so distribution automatically gets new version
 - remove unused variables or replace with __
 - create RELEASE_NOTES.txt
-07/11/2015 Version 1.11.1:
+2015/11/07 Version 1.11.1:
 * 0d95ddb change ProductCategory relationship to Product from OneToOne to ForeignKey
-10/11/2015 Version 1.11.2:
+2015/11/10 Version 1.11.2:
 * 9461e4c remove extraneous ]> from product_detail.html
 * 931c03c change expiration notes to notes in ProductInformationForm
 * 23f5373 add ability to auto-generate a random unique product code, and allow 32 char product codes
-12/11/2015 Version 1.12.1:
+2015/11/12 Version 1.12.1:
 * ff580ea (HEAD, master) make generate code button of type button to keep from submitting
-12/11/2015 Version 1.13.0:
+2015/11/12 Version 1.13.0:
 * b48053f (HEAD, master) make product code 36 char and auto generate uuid4 compliant codes in js
-15/11/2015 Version 1.14.0:
+2015/11/15 Version 1.14.0:
 * 0a4a1ff (HEAD, master) add category to various pages showing lists of product/inventory
-15/11/2015 Version 1.14.1:
+2015/11/15 Version 1.14.1:
 * fadf785 (HEAD, master) left justify category and code in products list
-21/11/2015 Version 1.15.0:
+2015/11/21 Version 1.15.0:
 * f2190db (HEAD, master) enable restore of archive backups including images.  add error checking for missing picture files
-22/11/2015 Version 1.15.1:
+2015/11/22 Version 1.15.1:
 * 09e05ce (HEAD, master) fix backup of thumbnail file
 * 19ee201 save ProductInformation.originalPictureName relative to MEDIA_ROOT instead of absolute path
-22/11/2015 Version 1.15.2:
+2015/11/22 Version 1.15.2:
 * 485b72f (HEAD, master) fix restore of originalPictureName
+2015/11/22 Version 1.15.3:
+* 248e289 (HEAD, master) handle backups without picture files
