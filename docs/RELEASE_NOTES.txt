@@ -20,3 +20,6 @@ Version 1.11.0:
 * fadf785 (HEAD, master) left justify category and code in products list
 21/11/2015 Version 1.15.0:
 * f2190db (HEAD, master) enable restore of archive backups including images.  add error checking for missing picture files
+22/11/2015 Version 1.15.1:
+* 09e05ce (HEAD, master) fix backup of thumbnail file
+* 19ee201 save ProductInformation.originalPictureName relative to MEDIA_ROOT instead of absolute path

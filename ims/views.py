@@ -1402,7 +1402,8 @@ def zip_pictures(request,zipHandle):
     products = ProductInformation.objects.exclude(picture = '')
     for product in products:
         imageFile = product.picture.file.name
-        thumbFile = imageFile.split('.')[0] + 'thumb.' + imageFile.split('.')[1]
+        imagePieces = imageFile.rsplit('.',1)
+        thumbFile = imagePieces[0] + 'thumb.' + imagePieces[1]
         if os.path.isfile(imageFile):
             zipHandle.write(imageFile, trim_path(rootPath = settings.MEDIA_ROOT,
                                                  dirPath = imageFile))
