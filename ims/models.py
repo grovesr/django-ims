@@ -662,6 +662,8 @@ class ProductInformation(models.Model):
             return newCategory
         elif re.match('^picture$', key, re.IGNORECASE):
             return value
+        elif re.match('^originalpicturename$', key, re.IGNORECASE):
+            return value.strip()
         elif isinstance(getattr(self,key),str):
             return str(value.strip())
         elif isinstance(getattr(self,key),unicode):
