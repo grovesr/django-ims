@@ -2175,7 +2175,7 @@ def process_picture(request, product):
     set size of uploaded picture file and create associated thumbnail image.
     '''
     if product.picture:
-        product.originalPictureName = product.picture.file.name
+        product.originalPictureName = product.picture.name
         product.save()
         aspectRatio = get_picture_aspect_ratio(request, product = product)
         pictureHeight = int(settings.PICTURE_SIZE / aspectRatio)
@@ -2200,8 +2200,9 @@ def create_thumbnail(request, product = None):
         aspectRatio = get_picture_aspect_ratio(request, product = product)
         thumbnailHeight = int(settings.THUMBNAIL_SIZE / aspectRatio)
         thumbnailWidth = aspectRatio * thumbnailHeight
-        thumbnailPieces = product.picture.file.name.rsplit('.',1)
-        thumbnailFile = thumbnailPieces[0] + 'thumb.' + thumbnailPieces[1]
+        thumbnailPieces = product.picture.name.rsplit('.',1)
+        thumbnailFile = (settings.MEDIA_ROOT + os.sep + thumbnailPieces[0] + 
+                         'thumb.' + thumbnailPieces[1])
         try:
             check_call(['convert', 
                                    '-resize', 
