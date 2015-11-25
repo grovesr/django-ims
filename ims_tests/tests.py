@@ -7,7 +7,7 @@ import os
 import StringIO
 import re
 import logging
-from ims.models import Site, ProductInformation, InventoryItem
+from ims.models import Site, ProductInformation, InventoryItem, ProductCategory
 from ims.views import inventory_delete_all, site_delete_all, product_delete_all
 from ims.settings import PAGE_SIZE, APP_DIR
 import zipfile
@@ -37,35 +37,45 @@ def create_inventory_item_for_site(site=None,
 def create_products_with_inventory_items_for_sites(numSites=1,
                                                    numProducts=1,
                                                    numItems=1,
-                                                   modifier='none'):
+                                                   modifier='none',
+                                                   uniqueCategories=False):
     sitesList=[]
     productList=[]
     inventoryItemList=[]
-    for m in range(numSites):
-        siteName="test site "+str(m+1)
+    categoryList=[]
+    for s in range(numSites):
+        siteName="test site "+str(s+1)
         site=Site(name=siteName,)
         site.save()
         sitesList.append(site)
-        for n in range(numProducts):
-            if m == 0:
-                productName="test product "+str(n+1)
-                productCode="pdt"+str(n+1)
-                product=ProductInformation(name=productName, code=productCode,)
+        for p in range(numProducts):
+            productName="test product "+str(p+1)
+            productCode="pdt"+str(p+1)
+            if uniqueCategories:
+                categoryName="category-" + str(p+1)
+            else:
+                categoryName="category-1"
+            category, created = ProductCategory.objects.get_or_create(category = categoryName)
+            if created:
+                category.save()
+                categoryList.append(category)
+            product, created=ProductInformation.objects.get_or_create(name=productName,
+                                       code=productCode,
+                                       category=category)
+            if created:
                 product.save()
                 productList.append(product)
-            else:
-                product=ProductInformation.objects.get(pk="pdt"+str(n+1))
-            for p in range(numItems):
+            for i in range(numItems):
                 # increment the quantity for each addition of a new item for 
                 # the same product code, so we can distinguish them
                 site,product,inventoryItem=create_inventory_item_for_site(
                                             site=site,
                                             product=product,
-                                            quantity=p+1,
+                                            quantity=i+1,
                                             deleted=0,
                                             modifier=modifier)
                 inventoryItemList.append(inventoryItem)
-    return sitesList,productList,inventoryItemList
+    return sitesList,productList,inventoryItemList,categoryList
 
 def get_announcement_from_response(response=None, cls=None):
     if response and cls:
@@ -95,6 +105,7 @@ class SiteMethodTests(TestCase):
         """
         print 'running SiteMethodTests.test_latest_inventory_after_initial_creation... '
         (createdSites,
+         __,
          __,
          __)=create_products_with_inventory_items_for_sites(
                                 numSites=1,
@@ -127,6 +138,7 @@ class SiteMethodTests(TestCase):
         print 'running SiteMethodTests.test_latest_inventory_after_deletion... '
         (createdSites,
          createdProducts,
+         __,
          __)=create_products_with_inventory_items_for_sites(
                                 numSites=1,
                                 numProducts=1,
@@ -151,7 +163,8 @@ class SiteMethodTests(TestCase):
         print 'running SiteMethodTests.test_latest_inventory_after_3_quantity_change... '
         (createdSites,
          createdProducts,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         createdInventoryItems,
+         createdCategories)=create_products_with_inventory_items_for_sites(
                                 numSites=1,
                                 numProducts=1,
                                 numItems=3)
@@ -163,6 +176,9 @@ class SiteMethodTests(TestCase):
         self.assertEqual(latestInventory.get(
                          information_id=createdProducts[0].pk).create_key(),
                          createdInventoryItems.pop().create_key())
+        self.assertEqual(latestInventory.get(
+                         information_id=createdProducts[0].pk).information.category.pk, 
+                         createdCategories.pop().pk)
          
     def test_latest_inventory_after_3_quantity_change_and_deletion(self):
         """
@@ -172,6 +188,7 @@ class SiteMethodTests(TestCase):
         print 'running SiteMethodTests.test_latest_inventory_after_3_quantity_change_and_deletion... '
         (createdSites,
          createdProducts,
+         __,
          __)=create_products_with_inventory_items_for_sites(
                                 numSites=1,
                                 numProducts=1,
@@ -195,6 +212,7 @@ class SiteMethodTests(TestCase):
         print 'running SiteMethodTests.test_inventory_set_after_3_changes... '
         (createdSites,
          __,
+         __,
          __)=create_products_with_inventory_items_for_sites(
                                 numSites=1,
                                 numProducts=1,
@@ -210,6 +228,7 @@ class SiteMethodTests(TestCase):
         print 'running SiteMethodTests.test_latest_inventory_after_deletion_and_re_addition... '
         (createdSites,
          createdProducts,
+         __,
          __)=create_products_with_inventory_items_for_sites(
                                 numSites=1,
                                 numProducts=1,
@@ -243,10 +262,12 @@ class SiteMethodTests(TestCase):
         print 'running SiteMethodTests.test_latest_inventory_3_products_after_3_changes... '
         (createdSites,
          createdProducts,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         createdInventoryItems,
+         createdCategories)=create_products_with_inventory_items_for_sites(
                                 numSites=1,
                                 numProducts=3,
                                 numItems=3,
+                                uniqueCategories=False,
                                 )
         # latest_inventory is a queryset of all the most recent changes to the
         # site's inventory.
@@ -260,6 +281,9 @@ class SiteMethodTests(TestCase):
         self.assertEqual(
          latestInventory.get(information_id=createdProducts[2].pk).create_key(),
          createdInventoryItems[3*3-1].create_key())
+        self.assertEqual(
+         latestInventory.get(information_id=createdProducts[0].pk).information.category.pk,
+         createdCategories.pop().pk)
     
     def test_parse_sites_from_xls_initial(self):
         """
@@ -599,7 +623,8 @@ class HomeViewTests(TestCase):
         self.client.login(username='testUser', password='12345678')
         (createdSites,
          __,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         createdInventoryItems,
+         __)=create_products_with_inventory_items_for_sites(
                                 numSites=20,
                                 numProducts=5,
                                 numItems=1)
@@ -642,7 +667,8 @@ class HomeViewTests(TestCase):
         self.client.login(username='testUser', password='12345678')
         (createdSites,
          __,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         createdInventoryItems,
+         __)=create_products_with_inventory_items_for_sites(
                                 numSites=20,
                                 numProducts=5,
                                 numItems=1)
@@ -1371,7 +1397,8 @@ class SiteDeleteAllViewTests(TestCase):
         # populate the database with some data
         (createdSites,
          __,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         createdInventoryItems,
+         __)=create_products_with_inventory_items_for_sites(
                                 numSites=20,
                                 numProducts=5,
                                 numItems=1)
@@ -1471,7 +1498,8 @@ class ProductDeleteAllViewTests(TestCase):
         # populate the database with some data
         (createdSites,
          __,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         createdInventoryItems,
+         __)=create_products_with_inventory_items_for_sites(
                                 numSites=20,
                                 numProducts=5,
                                 numItems=1)
@@ -1546,7 +1574,8 @@ class InventoryDeleteAllViewTests(TestCase):
         # populate the database with some data
         (__,
          __,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         createdInventoryItems,
+         __)=create_products_with_inventory_items_for_sites(
                                 numSites=20,
                                 numProducts=5,
                                 numItems=1)
@@ -1575,6 +1604,7 @@ class ImportsViewTests(TestCase):
         self.client.login(username='testUser', password='12345678')
         # populate the database with some data
         (createdSites,
+         __,
          __,
          __)=create_products_with_inventory_items_for_sites(
                                 numSites=20,
@@ -1633,6 +1663,7 @@ class ImportsViewTests(TestCase):
         # populate the database with some data
         (createdSites,
          __,
+         __,
          __)=create_products_with_inventory_items_for_sites(
                                  numSites=3,
                                  numProducts=5,
@@ -1666,6 +1697,7 @@ class ImportsViewTests(TestCase):
         # populate the database with some data
         (__,
          createdProducts,
+         __,
          __)=create_products_with_inventory_items_for_sites(
                                 numSites=20,
                                 numProducts=5,
@@ -1726,6 +1758,7 @@ class ImportsViewTests(TestCase):
         # populate the database with some data
         (__,
          createdProducts,
+         __,
          __)=create_products_with_inventory_items_for_sites(
                                 numSites=3,
                                 numProducts=5,
@@ -1760,7 +1793,8 @@ class ImportsViewTests(TestCase):
         # populate the database with some data
         (__,
          __,
-         createdInventoryItems)=create_products_with_inventory_items_for_sites(
+         createdInventoryItems,
+         __)=create_products_with_inventory_items_for_sites(
                                 numSites=20,
                                 numProducts=5,
                                 numItems=1)
@@ -1799,6 +1833,7 @@ class ImportsViewTests(TestCase):
         # populate the database with some data
         (createdSites,
          __,
+         __,
          __)=create_products_with_inventory_items_for_sites(
                                 numSites=3,
                                 numProducts=5,
@@ -1829,6 +1864,7 @@ class ImportsViewTests(TestCase):
         print 'running ImportsViewTests.test_export_current_inventory... '
         # populate the database with some data
         (createdSites,
+         __,
          __,
          __)=create_products_with_inventory_items_for_sites(
                                 numSites=3,
@@ -1861,6 +1897,7 @@ class ImportsViewTests(TestCase):
         # populate the database with some data
         (createdSites,
          createdProducts,
+         __,
          __)=create_products_with_inventory_items_for_sites(
                                 numSites=3,
                                 numProducts=5,
