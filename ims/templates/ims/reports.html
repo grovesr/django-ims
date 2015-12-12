@@ -24,7 +24,7 @@
         function popup(data) {
             var mywindow = window.open('', 'report', 'height=300px,width=1000px');
             mywindow.document.write('<html><head>');
-            mywindow.document.write('<link rel="stylesheet" href="{% static 'ims/style/style.css' %}" type="text/css" />');
+            mywindow.document.write('<link rel="stylesheet" href="{% static 'ims/css/style.css' %}" type="text/css" />');
             mywindow.document.write('</head><body >');
             mywindow.document.write(data);
             mywindow.document.write('</body></html>');
@@ -38,7 +38,7 @@
 {% endblock extra_scripts %}
 {% block breadcrumbs %}
     {{ block.super }}
-    &raquo;
+    <i class="fa fa-angle-double-right"></i>
     <a href="{% url 'ims:reports' %}">reports</a>
 {% endblock breadcrumbs %}
 {% block content %}
