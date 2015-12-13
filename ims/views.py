@@ -2,13 +2,13 @@ from django.shortcuts import render, redirect
 from django.http import HttpResponse
 from django.core.urlresolvers import reverse
 from django.core.files import File
+from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
 from django.forms.models import modelformset_factory
 from django.utils.dateparse import parse_datetime, parse_date, date_re
 from django.conf import settings
 from django.db import transaction
-from .settings import PAGE_SIZE
 from .models import Site, InventoryItem, ProductInformation, ProductCategory
 from .forms import InventoryItemFormNoSite, InventoryItemFormAddSubtractNoSite,\
 ProductInformationForm, ProductInformationFormWithQuantity, SiteForm, \
@@ -17,6 +17,8 @@ DateSpanQueryForm, ProductListFormWithAdd, UploadFileForm, \
 ProductListFormWithoutDelete
 from collections import OrderedDict
 from subprocess import check_call, check_output, CalledProcessError
+from urllib import urlencode
+from urlparse import urlparse
 import os
 import shutil
 import datetime
@@ -105,6 +107,45 @@ def get_session_messages(request):
     request.session['infoMessage'] = ''
     return errorMessage, warningMessage, infoMessage
 
+def get_session_page_info(request):
+    parsedUrl = urlparse(request.META.get('PATH_INFO'))
+    pageDict = request.session.get(parsedUrl.path, {})
+    page = pageDict.get('page', 1)
+    pageSize = pageDict.get('pageSize', settings.PAGE_SIZE)
+    return page, pageSize
+
+def set_session_page_info(request, page = 1, pageSize = settings.PAGE_SIZE):
+    parsedUrl = urlparse(request.META.get('PATH_INFO'))
+    pageDict = request.session.get(parsedUrl.path, {})
+    if not isinstance(pageDict, dict):
+        # something is wrong, this should be a dictionary
+        pageDict = {}
+    pageDict['page'] = page
+    pageDict['pageSize'] = pageSize
+    request.session[parsedUrl.path] = pageDict
+
+def create_paginator(request, queryset):
+    totalItemCount = queryset.count()
+    if 'page' not in request.GET:
+        page, __ = get_session_page_info(request)
+    else:
+        page = int(request.GET.get('page'))
+    if 'pageSize' not in request.GET:
+        __, pageSize = get_session_page_info(request)
+    else:
+        pageSize = int(request.GET.get('pageSize',settings.PAGE_SIZE))
+    paginator = Paginator(queryset, pageSize)
+    set_session_page_info(request, page, pageSize)
+    try:
+        paginatorPage = paginator.page(page)
+    except PageNotAnInteger:
+        # If page is not an integer, deliver first page.
+        paginatorPage = paginator.page(1)
+    except EmptyPage:
+        # If page is out of range (e.g. 9999), deliver last page of results.
+        paginatorPage = paginator.page(paginator.num_pages)
+    return paginatorPage, page, pageSize, totalItemCount
+
 #TODO: rename to Ims from Rims
 # Error classes 
 class RimsError(Exception): pass
@@ -127,14 +168,25 @@ class RimsDuplicateKeyError(RimsError): pass
 @login_required()
 def home(request):
     # display most recently edited sites and inventory
+    if 'pageSize' not in request.GET:
+        __, pageSize = get_session_page_info(request)
+    else:
+        pageSize = int(request.GET.get('pageSize',settings.PAGE_SIZE))
+    set_session_page_info(request, pageSize = pageSize)
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
-    recentSites = Site.recently_changed_inventory(PAGE_SIZE)
-    recentInventory = InventoryItem.recently_changed(PAGE_SIZE)
+    recentSites = Site.recently_changed_inventory(pageSize)
+    recentInventory = InventoryItem.recently_changed(pageSize)
+    totalSites = Site.objects.all().count()
+    totalProducts = ProductInformation.objects.all().count()
+    totalItemCount = max(totalSites, totalProducts)
     if len(recentInventory) == 0:
         warningMessage += 'No inventory found.'
     return render(request,'ims/home.html', {'nav_rims':1,
                                              'sitesList':recentSites,
                                              'inventoryList':recentInventory,
+                                             'pageSize':pageSize,
+                                             'totalItemCount':totalItemCount,
+                                             'pageSizeSelectionLabel':'Display most recent:',
                                              'errorMessage':errorMessage,
                                              'warningMessage':warningMessage,
                                              'infoMessage':infoMessage,
@@ -392,8 +444,9 @@ def reports(request):
     return reports_dates(request, startDate=startDate, stopDate=stopDate)
 
 @login_required()
-def inventory_history_dates(request, siteId=None, code=None,  page=1, startDate=None, stopDate=None):
+def inventory_history_dates(request, siteId=None, code=None, startDate=None, stopDate=None):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
+    adjust = request.GET.get('adjust', 'False')
     try:
         site=Site.objects.get(pk=siteId)
     except Site.DoesNotExist:
@@ -411,8 +464,12 @@ def inventory_history_dates(request, siteId=None, code=None,  page=1, startDate=
     #parsedStartDate=parse_datestr_tz(reorder_date_mdy_to_ymd(startDate,'-'),0,0)
     parsedStopDate=parse_datestr_tz(reorder_date_mdy_to_ymd(stopDate,'-'),23,59)
     inventoryList=site.inventory_history_for_product(code=product.code, stopDate=parsedStopDate)
+    (paginatorPage, 
+     page, 
+     pageSize, 
+     totalItemCount) = create_paginator(request, inventoryList)
     inventoryIds=[]
-    for item in inventoryList:
+    for item in paginatorPage.object_list:
         inventoryIds.append(item.pk)
     siteInventory=InventoryItem.objects.filter(pk__in=inventoryIds)
     inventoryItems=[]
@@ -420,33 +477,15 @@ def inventory_history_dates(request, siteId=None, code=None,  page=1, startDate=
         inventoryItems.append(item)
     inventoryItems.sort(reverse=True)
     siteInventory = inventoryItems
-    if page == 'all':
-        pageSize = len(siteInventory)
-        pageNum = 1
-    else:
-        pageSize = PAGE_SIZE
-        pageNum = page
-    numPages=int(len(siteInventory)/pageSize)
-    if len(siteInventory)% pageSize !=0:
-        numPages += 1
-    numPages=(max(1,numPages))
-    if page == 'all':
-        numPagesIndicator = 'all'
-    else:
-        numPagesIndicator = numPages
-    pageNo = min(numPages,max(1,int(pageNum)))
-    startRow=(pageNo-1) * pageSize
-    stopRow=startRow+pageSize
     return render(request, 'ims/inventory_history_dates.html',{
                   'site':site,
                   'product':product,
-                  'pageNo':str(pageNo),
-                  'previousPageNo':str(max(1,pageNo-1)),
-                  'nextPageNo':str(min(pageNo+1,numPages)),
-                  'numPages':numPagesIndicator,
-                  'startRow':startRow,
-                  'stopRow':stopRow,
-                  'siteInventory':siteInventory,
+                  'page':page,
+                  'pageSize':pageSize,
+                  'totalItemCount':totalItemCount,
+                  'adjust':adjust,
+                  'paginatorPage':paginatorPage,
+                  'paginatedForms':siteInventory,
                   'startDate':startDate,
                   'stopDate':stopDate,
                   'infoMessage':infoMessage,
@@ -458,50 +497,34 @@ def inventory_history_dates(request, siteId=None, code=None,  page=1, startDate=
                   'imsVersion':imsVersion,})
     
 @login_required()
-def inventory_history(request, siteId=None, code=None, page=1,):
+def inventory_history(request, siteId=None, code=None,):
     today=timezone.now()
     startDate=today.strftime('%m-%d-%Y')
     stopDate=today.strftime('%m-%d-%Y')
-    return inventory_history_dates(request, siteId=siteId, code=code, page=page, 
+    return inventory_history_dates(request, siteId=siteId, code=code, 
                                    startDate=startDate, stopDate=stopDate)
 
 @login_required()
-def sites(request, page=1):
+def sites(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canDelete=request.user.has_perm('ims.delete_site') and request.user.has_perm('ims.delete_inventoryitem')
     canAdd=request.user.has_perm('ims.add_site')
     sitesList=Site.objects.all().order_by('name')
+    (paginatorPage, 
+     page, 
+     pageSize, 
+     totalItemCount) = create_paginator(request, sitesList)
     SiteFormset=modelformset_factory( Site, form=SiteListForm, fields=['Delete'], extra=0)
-    if page == 'all':
-        page_size = sitesList.count()
-        pageNum = 1
-    else:
-        page_size = PAGE_SIZE
-        pageNum = page
-    numPages=int(sitesList.count()/page_size)
-    if sitesList.count()% page_size !=0:
-        numPages += 1
-    numPages=(max(1,numPages))
-    if page == 'all':
-        numPagesIndicator = 'all'
-    else:
-        numPagesIndicator = numPages
-    pageNo = min(numPages,max(1,int(pageNum)))
-    slicedSitesList=sitesList[(pageNo-1) * page_size: pageNo * page_size]
-    numSiteErrors=0
-    for site in slicedSitesList:
-        if not site.check_site():
-            numSiteErrors += 1
     if request.method == "POST":
-        siteForms=SiteFormset(request.POST,queryset=slicedSitesList, error_class=TitleErrorList)
+        paginatedForms=SiteFormset(request.POST,queryset=paginatorPage.object_list, error_class=TitleErrorList)
         if 'Delete' in request.POST:
             if canDelete:
                 sitesToDelete={}
-                for siteForm in siteForms:
+                for siteForm in paginatedForms:
                     if siteForm.prefix+'-'+'Delete' in request.POST:
                         sitesToDelete[siteForm.instance]=siteForm.instance.inventoryitem_set.all()
                 if len(sitesToDelete) > 0:
-                    return site_delete(request,sitesToDelete=sitesToDelete, page=page)
+                    return site_delete(request,sitesToDelete=sitesToDelete)
                 else:
                     warningMessage = 'No sites selected for deletion'
             else:
@@ -511,16 +534,15 @@ def sites(request, page=1):
                 return redirect(reverse('ims:site_add'))
             else:
                 errorMessage='You don''t have permission to add sites'
-    siteForms=SiteFormset(queryset=slicedSitesList, error_class=TitleErrorList)
-    if len(slicedSitesList) == 0:
+    paginatedForms=SiteFormset(queryset=paginatorPage.object_list, error_class=TitleErrorList)
+    if len(sitesList) == 0:
         warningMessage += 'No sites found'
     return render(request,'ims/sites.html', {'nav_sites':1,
-                                              'pageNo':str(pageNo),
-                                              'previousPageNo':str(max(1,pageNo-1)),
-                                              'nextPageNo':str(min(pageNo+1,numPages)),
-                                              'numPages': numPagesIndicator,
-                                              'numSiteErrors':numSiteErrors,
-                                              'siteForms':siteForms,
+                                              'page':page,
+                                              'pageSize':pageSize,
+                                              'totalItemCount':int(totalItemCount),
+                                              'paginatedForms':paginatedForms,
+                                              'paginatorPage':paginatorPage,
                                               'infoMessage':infoMessage,
                                               'warningMessage':warningMessage,
                                               'errorMessage':errorMessage,
@@ -533,7 +555,7 @@ def sites(request, page=1):
                                               })
 
 @login_required()
-def site_detail(request, siteId=1, page=1):
+def site_detail(request, siteId=1):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     try:
         site=Site.objects.get(pk=siteId)
@@ -542,46 +564,28 @@ def site_detail(request, siteId=1, page=1):
         siteId)
         request.session['errorMessage'] = errorMessage
         return redirect(reverse('ims:sites'))
-    if 'adjust' in request.GET:
-        adjust = 'adjust'
-    else:
-        adjust = ''
+    adjust = request.GET.get('adjust','False')
     canAdd=request.user.has_perm('ims.add_inventoryitem')
     canChangeInventory=request.user.has_perm('ims.change_inventoryitem')
     canChangeSite=request.user.has_perm('ims.change_site')
     canDelete=request.user.has_perm('ims.delete_inventoryitem')
     siteInventory=site.latest_inventory()
+    (paginatorPage, 
+     page, 
+     pageSize, 
+     totalItemCount) = create_paginator(request, siteInventory)
     siteForm=SiteForm(site.__dict__,instance=site, error_class=TitleErrorList)
-    if page == 'all':
-        pageSize = siteInventory.count()
-        pageNum = 1
-    else:
-        pageSize = PAGE_SIZE
-        pageNum = str(page)
-    numPages=max(1,int(siteInventory.count()/pageSize))
-    if numPages > 1 and siteInventory.count()% pageSize !=0:
-        numPages += 1
-    numPages=(max(1,numPages))
-    pageNo = min(numPages,max(1,int(pageNum)))
-    if page == 'all':
-        numPagesIndicator = 'all'
-        pageIndicator='all'
-    else:
-        numPagesIndicator = numPages
-        pageIndicator=pageNo
-    startRow=(pageNo-1) * pageSize
-    stopRow=startRow+pageSize
     InventoryAdjustFormset=modelformset_factory(InventoryItem,extra=0, can_delete=False,
                                              form=InventoryItemFormNoSite)
     InventoryAddSubtractFormset=modelformset_factory(InventoryItem,extra=0, can_delete=False,
                                              form=InventoryItemFormAddSubtractNoSite)
-    inventoryAdjustForms=InventoryAdjustFormset(queryset=siteInventory, error_class=TitleErrorList)
-    inventoryAddSubtractForms=InventoryAddSubtractFormset(queryset=siteInventory, error_class=TitleErrorList)
+    inventoryAdjustForms=InventoryAdjustFormset(queryset=paginatorPage.object_list, error_class=TitleErrorList)
+    inventoryAddSubtractForms=InventoryAddSubtractFormset(queryset=paginatorPage.object_list, error_class=TitleErrorList)
     if request.method == "POST":
         siteForm=SiteForm(request.POST,instance=site, error_class=TitleErrorList)
         if siteInventory.count() > 0:
-            inventoryAdjustForms=InventoryAdjustFormset(request.POST, queryset=siteInventory, error_class=TitleErrorList)
-            inventoryAddSubtractForms=InventoryAddSubtractFormset(request.POST, queryset=siteInventory, error_class=TitleErrorList)
+            inventoryAdjustForms=InventoryAdjustFormset(request.POST, queryset=paginatorPage.object_list, error_class=TitleErrorList)
+            inventoryAddSubtractForms=InventoryAddSubtractFormset(request.POST, queryset=paginatorPage.object_list, error_class=TitleErrorList)
         if 'Save Site' or 'Save Changes' in request.POST:
             if 'Save Site' in request.POST:
                 if canChangeSite:
@@ -596,8 +600,9 @@ def site_detail(request, siteId=1, page=1):
                             request.session['warningMessage'] = warningMessage
                             request.session['infoMessage'] = infoMessage
                             return redirect(reverse('ims:site_detail',
-                                                    kwargs={'siteId':site.pk, 
-                                                            'page':pageIndicator,},))
+                                                    kwargs={'siteId':site.pk,},) + 
+                                            '?' + urlencode({'page':page,
+                                                             'pageSize':pageSize,}))
                         else:
                             warningMessage = 'No changes made to the site information'
                     else:
@@ -605,7 +610,7 @@ def site_detail(request, siteId=1, page=1):
                 else:
                     errorMessage='You don''t have permission to change site information'
             if ('Save Adjust Changes' in request.POST):
-                adjust = 'adjust'
+                adjust = 'True'
                 if canChangeInventory and canDelete:
                     if inventoryAdjustForms.is_valid():
                         if inventoryAdjustForms.has_changed():
@@ -622,8 +627,10 @@ def site_detail(request, siteId=1, page=1):
                             request.session['infoMessage'] = 'Successfully changed site inventory'
                             inventoryAdjustForms=InventoryAdjustFormset(queryset=siteInventory, error_class=TitleErrorList)
                             return redirect(reverse('ims:site_detail',
-                                                    kwargs={'siteId':site.pk, 
-                                                            'page':pageIndicator,},) + "?adjust")
+                                                    kwargs={'siteId':site.pk,},) + 
+                                            '?' + urlencode({'page':page,
+                                                             'pageSize':pageSize,
+                                                             'adjust':adjust}))
                         else:
                             warningMessage = 'No changes made to the site inventory'
             elif ('Save Add Subtract Changes' in request.POST):
@@ -644,15 +651,16 @@ def site_detail(request, siteId=1, page=1):
                             request.session['infoMessage'] = 'Successfully changed site inventory'
                             inventoryAddSubtractForms=InventoryAddSubtractFormset(queryset=siteInventory, error_class=TitleErrorList)
                             return redirect(reverse('ims:site_detail',
-                                                    kwargs={'siteId':site.pk, 
-                                                            'page':pageIndicator,},))
+                                                    kwargs={'siteId':site.pk,},) + 
+                                            '?' + urlencode({'page':page,
+                                                             'pageSize':pageSize,}))
                         else:
                             warningMessage = 'No changes made to the site inventory'
                 else:
                     errorMessage='You don''t have permission to change or delete inventory'
             if 'Add New Inventory' in request.POST:
                 if canAdd:
-                    return redirect(reverse('ims:site_add_inventory',kwargs={'siteId':site.pk, 'page':1}))
+                    return redirect(reverse('ims:site_add_inventory',kwargs={'siteId':site.pk}))
                 else:
                     errorMessage='You don''t have permission to add inventory'
         #siteForm=SiteForm(site.__dict__,instance=site, error_class=TitleErrorList)
@@ -660,12 +668,11 @@ def site_detail(request, siteId=1, page=1):
     return render(request, 'ims/site_detail.html', {"nav_sites":1,
                                                 'site': site,
                                                 'siteForm':siteForm,
-                                                'startRow':startRow,
-                                                'stopRow':stopRow,
-                                                'pageNo':str(pageIndicator),
-                                                'previousPageNo':str(max(1,pageNo-1)),
-                                                'nextPageNo':str(min(pageNo+1,numPages)),
-                                                'numPages': numPagesIndicator,
+                                                'page':page,
+                                                'pageSize':pageSize,
+                                                'totalItemCount':totalItemCount,
+                                                'paginatorPage':paginatorPage,
+                                                'paginatedForms':inventoryAdjustForms,
                                                 'inventoryAdjustForms':inventoryAdjustForms,
                                                 'inventoryAddSubtractForms':inventoryAddSubtractForms,
                                                 'adjust':adjust,
@@ -719,7 +726,7 @@ def site_add(request):
                                                 })
     
 @login_required()
-def site_add_inventory(request, siteId=1, page=1):
+def site_add_inventory(request, siteId=1):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     try:
         site=Site.objects.get(pk=siteId)
@@ -730,34 +737,21 @@ def site_add_inventory(request, siteId=1, page=1):
         return redirect(reverse('ims:sites'))
     canAdd=request.user.has_perm('ims.add_inventoryitem')
     productsList=ProductInformation.objects.all().order_by('name')
+    (paginatorPage, 
+     page, 
+     pageSize, 
+     totalItemCount) = create_paginator(request, productsList)
     ProductFormset=modelformset_factory( ProductInformation, form=ProductListFormWithAdd, extra=0)
-    if page == 'all':
-        pageSize = productsList.count()
-        pageNum = 1
-    else:
-        pageSize = PAGE_SIZE
-        pageNum = page
-    numPages=int(productsList.count()/pageSize)
-    if productsList.count()% pageSize !=0:
-        numPages += 1
-    numPages=(max(1,numPages))
-    if page == 'all':
-        numPagesIndicator = 'all'
-    else:
-        numPagesIndicator = numPages
-    pageNo = min(numPages,max(1,int(pageNum)))
-    startRow=(pageNo-1) * pageSize
-    stopRow=startRow+pageSize
     if canAdd:
         if request.method == "POST":
-            productForms=ProductFormset(request.POST,queryset=productsList, error_class=TitleErrorList)
+            paginatedForms=ProductFormset(request.POST,queryset=paginatorPage.object_list, error_class=TitleErrorList)
             if 'Add Products' in request.POST:
                 if canAdd:
                         # current inventory at this site
                         siteInventory=site.latest_inventory()
                         productToAdd=[]
                         productList=[]
-                        for productForm in productForms:
+                        for productForm in paginatedForms:
                             if productForm.prefix+'-'+'Add' in request.POST:
                                 if siteInventory.filter(information=productForm.instance.pk).count() == 0:
                                     productToAdd.append(productForm.instance)
@@ -770,17 +764,15 @@ def site_add_inventory(request, siteId=1, page=1):
     else:
         errorMessage='You don''t have permission to add site inventory'
     siteForm=SiteFormReadOnly(instance=site, error_class=TitleErrorList)
-    productForms=ProductFormset(queryset=productsList, error_class=TitleErrorList)
+    paginatedForms=ProductFormset(queryset=paginatorPage.object_list, error_class=TitleErrorList)
     return render(request, 'ims/site_add_inventory.html', {"nav_sites":1,
                                                 'site':site,
                                                 'siteForm':siteForm,
-                                                'startRow':startRow,
-                                                'stopRow':stopRow,
-                                                'pageNo':str(pageNo),
-                                                'previousPageNo':str(max(1,pageNo-1)),
-                                                'nextPageNo':str(min(pageNo+1,numPages)),
-                                                'numPages': numPagesIndicator,
-                                                'productForms':productForms,
+                                                'page':page,
+                                                'pageSize':pageSize,
+                                                'totalItemCount':totalItemCount,
+                                                'paginatorPage':paginatorPage,
+                                                'paginatedForms':paginatedForms,
                                                 'warningMessage':warningMessage,
                                                 'infoMessage':infoMessage,
                                                 'errorMessage':errorMessage,
@@ -792,9 +784,14 @@ def site_add_inventory(request, siteId=1, page=1):
                                                 })
 
 @login_required()
-def site_delete(request, sitesToDelete={}, page=1):
+def site_delete(request, sitesToDelete={}):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canDelete=request.user.has_perm('ims.delete_site')
+    page = int(request.GET.get('page','1'))
+    pageSize = int(request.GET.get('pageSize',settings.PAGE_SIZE))
+    numSites = Site.objects.all().count()
+    if pageSize > numSites:
+        pageSize = numSites
     if request.method == 'POST':
         if 'Delete Site' in request.POST:
             if canDelete:
@@ -802,20 +799,29 @@ def site_delete(request, sitesToDelete={}, page=1):
                 numSites=len(sitesToDelete)
                 for siteId in sitesToDelete:
                     site=Site.objects.get(pk=int(siteId))
+                    name = site.name
+                    number = site.number
                     siteInventory=site.inventoryitem_set.all()
                     for item in siteInventory:
                         item.delete()
                     site.delete()
-                    infoMessage = 'Successfully deleted %d sites' % numSites
+                    infoMessage += 'Successfully deleted site %s<br />' % name
                     log_actions(request = request, modifier=request.user.username,
                                 modificationMessage='deleted site and all associated inventory for site number ' + 
-                                str(site.pk) + ' with name ' + site.name)
+                                str(number) + ' with name ' + name)
                 request.session['errorMessage'] += errorMessage
                 request.session['warningMessage'] = warningMessage
                 request.session['infoMessage'] = infoMessage
-                return redirect(reverse('ims:sites', kwargs={'page':1}))
+                numSites = Site.objects.all().count()
+                if pageSize > numSites:
+                    pageSize = numSites
+                return redirect(reverse('ims:sites') + '?' + 
+                            urlencode({'page':1,
+                                       'pageSize':pageSize,}))
         if 'Cancel' in request.POST:
-            return redirect(reverse('ims:sites', kwargs={'page':1}))
+            return redirect(reverse('ims:sites') + '?' + 
+                            urlencode({'page':page,
+                                       'pageSize':pageSize,}))
     if 'Delete Site' not in request.POST:
         # then this comes directly from the sites view requesting site deletion
         if canDelete:
@@ -827,6 +833,8 @@ def site_delete(request, sitesToDelete={}, page=1):
                 errorMessage='You don''t have permission to delete sites'
                 sitesToDelete=[]
     return render(request, 'ims/site_delete.html', {"nav_sites":1,
+                                                'page':page,
+                                                'pageSize':pageSize,
                                                 'sitesToDelete':sitesToDelete,
                                                 'warningMessage':warningMessage,
                                                 'infoMessage':infoMessage,
@@ -872,7 +880,7 @@ def site_delete_all(request):
                                                 })
 
 @login_required()
-def products(request, page=1):
+def products(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canAdd=request.user.has_perm('ims.add_productinformation')
     canDelete=request.user.has_perm('ims.delete_productinformation')
@@ -881,38 +889,25 @@ def products(request, page=1):
     else:
         ProductFormset=modelformset_factory( ProductInformation, form=ProductListFormWithoutDelete, extra=0)
     productsList=ProductInformation.objects.all().order_by('name')
-    if page == 'all':
-        page_size = productsList.count()
-        pageNum = 1
-    else:
-        page_size = PAGE_SIZE
-        pageNum = page
-    numPages=int(productsList.count()/page_size)
-    if productsList.count()% page_size !=0:
-        numPages += 1
-    numPages=(max(1,numPages))
-    if page == 'all':
-        numPagesIndicator = 'all'
-    else:
-        numPagesIndicator = numPages
-    pageNo = min(numPages,max(1,int(pageNum)))
-    slicedProductsList=productsList[(pageNo-1) * page_size: pageNo * page_size]
-    numProductErrors=0
-    for product in slicedProductsList:
-        if not product.check_product():
-            numProductErrors += 1
+    (paginatorPage, 
+     page, 
+     pageSize, 
+     totalItemCount) = create_paginator(request, productsList)
     if request.method == 'POST':
-        productForms=ProductFormset(request.POST,queryset=slicedProductsList, error_class=TitleErrorList)
+        paginatedForms=ProductFormset(request.POST,queryset=paginatorPage.object_list, error_class=TitleErrorList)
         if 'Delete' in request.POST:
             if canDelete:
                 productsToDelete={}
-                for productForm in productForms:
+                for productForm in paginatedForms:
                     if productForm.prefix+'-'+'Delete' in request.POST:
                         productsToDelete[productForm.instance]=productForm.instance.inventoryitem_set.all()
                 if len(productsToDelete) > 0:
-                    return product_delete(request,productsToDelete=productsToDelete, page=page)
+                    return product_delete(request,
+                                          productsToDelete=productsToDelete)
                 request.session['warningMessage'] = 'No products selected for deletion'
-                return redirect(reverse('ims:products',kwargs={'page':page,}))
+                return redirect(reverse('ims:products') + '?' +
+                                        urlencode({'page':page,
+                                                'pageSize':pageSize,}))
             else:
                 errorMessage='You don''t have permission to delete products'
         if 'Add' in request.POST:
@@ -920,17 +915,16 @@ def products(request, page=1):
                 return redirect(reverse('ims:product_add'))
             else:
                 errorMessage='You don''t have permission to add products'
-    productForms=ProductFormset(queryset=slicedProductsList, error_class=TitleErrorList)
-    if len(slicedProductsList) == 0:
+    else:
+        paginatedForms=ProductFormset(queryset=paginatorPage.object_list, error_class=TitleErrorList)
+    if len(productsList) == 0:
         warningMessage='No products found'
     return render(request,'ims/products.html', {'nav_products':1,
-                                              'pageNo':str(pageNo),
-                                              'previousPageNo':str(max(1,pageNo-1)),
-                                              'nextPageNo':str(min(pageNo+1,numPages)),
-                                              'numPages': numPagesIndicator,
-                                              'productsList':slicedProductsList,
-                                              'numProductErrors':numProductErrors,
-                                              'productForms':productForms,
+                                              'page':page,
+                                              'pageSize':pageSize,
+                                              'totalItemCount':int(totalItemCount),
+                                              'paginatedForms':paginatedForms,
+                                              'paginatorPage':paginatorPage,
                                               'canAdd':canAdd,
                                               'canDelete':canDelete,
                                               'warningMessage':warningMessage,
@@ -943,7 +937,7 @@ def products(request, page=1):
                                               })
 
 @login_required()
-def product_detail(request, page=1, code='-1',):
+def product_detail(request, code='-1',):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     try:
         product = ProductInformation.objects.get(pk=code)
@@ -954,30 +948,14 @@ def product_detail(request, page=1, code='-1',):
         return redirect(reverse('ims:products'))
     canChange=request.user.has_perm('ims.change_productinformation')
     inventorySites=product.inventoryitem_set.all().values('site').distinct()
+    (paginatorPage, 
+     page, 
+     pageSize, 
+     totalItemCount) = create_paginator(request, inventorySites)
     sitesList=[]
-    for siteNumber in inventorySites:
+    for siteNumber in paginatorPage.object_list:
         site = Site.objects.get(pk=siteNumber['site'])
         sitesList.append((site,site.inventory_quantity(code)))
-    if page == 'all':
-        page_size = len(sitesList)
-        pageNum = 1
-    else:
-        page_size = PAGE_SIZE
-        pageNum = page
-    numPages=int(len(sitesList)/page_size)
-    if len(sitesList)% page_size !=0:
-        numPages += 1
-    numPages=(max(1,numPages))
-    if page == 'all':
-        numPagesIndicator = 'all'
-    else:
-        numPagesIndicator = numPages
-    pageNo = min(numPages,max(1,int(pageNum)))
-    slicedSitesList=sitesList[(pageNo-1) * page_size: pageNo * page_size]
-    numSiteErrors=0
-    for site in slicedSitesList:
-        if not site[0].check_site():
-            numSiteErrors += 1
     if 'picture' in request.GET:
         picture = 'picture'
     else:
@@ -1070,13 +1048,13 @@ def product_detail(request, page=1, code='-1',):
                     logError = True)
     return render(request, 'ims/product_detail.html',
                             {"nav_products":1,
-                             'pageNo':str(pageNo),
-                             'previousPageNo':str(max(1,pageNo-1)),
-                             'nextPageNo':str(min(pageNo+1,numPages)),
-                             'numPages': numPagesIndicator,
                              'product': product,
                              'productForm':productForm,
-                             'sitesList':sitesList,
+                             'page':page,
+                             'pageSize':pageSize,
+                             'totalItemCount':totalItemCount,
+                             'paginatorPage':paginatorPage,
+                             'paginatedForms':sitesList,
                              'picture':picture,
                              'canChange':canChange,
                              'warningMessage':warningMessage,
@@ -1206,10 +1184,15 @@ def product_add_to_site_inventory(request, siteId=1, productToAdd=None, productL
                                                 })
     
 @login_required()
-def product_delete(request, productsToDelete={}, page=1):
+def product_delete(request, productsToDelete={}):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canDeleteProduct=request.user.has_perm('ims.delete_productinformation')
     canDeleteInventory=request.user.has_perm('ims.delete_inventoryitem')
+    page = int(request.GET.get('page','1'))
+    pageSize = int(request.GET.get('pageSize',settings.PAGE_SIZE))
+    numProducts = ProductInformation.objects.all().count()
+    if pageSize > numProducts:
+        pageSize = numProducts
     if request.method == 'POST':
         if 'Delete Product' in request.POST:
             if canDeleteProduct and canDeleteInventory:
@@ -1217,17 +1200,26 @@ def product_delete(request, productsToDelete={}, page=1):
                 infoMessage = ''
                 for code in productsToDelete:
                     product=ProductInformation.objects.get(pk=code)
+                    meaningfulCode = product.meaningful_code()
+                    name=product.name
                     productInventory=product.inventoryitem_set.all()
                     for item in productInventory:
                         item.delete()
                     product.delete()
-                    infoMessage += 'Successfully deleted product and associated inventory for product code %s with name "%s"<br/>' % (code, product.name)
+                    infoMessage += 'Successfully deleted product and associated inventory for product code %s with name "%s"<br/>' % (meaningfulCode, name)
                     log_actions(request = request, modifier=request.user.username,
                                 modificationMessage=infoMessage)
                 request.session['infoMessage'] = infoMessage
-                return redirect(reverse('ims:products', kwargs={'page':1}))
+                numProducts = ProductInformation.objects.all().count()
+                if pageSize > numProducts:
+                    pageSize = numProducts
+                return redirect(reverse('ims:products') + '?' +
+                                        urlencode({'page':1,
+                                                'pageSize':pageSize,}))
         if 'Cancel' in request.POST:
-            return redirect(reverse('ims:products', kwargs={'page':1}))
+            return redirect(reverse('ims:products') + '?' +
+                                        urlencode({'page':page,
+                                                'pageSize':pageSize,}))
     if canDeleteProduct and canDeleteInventory:
         if any(productsToDelete[k].count() > 0  for k in productsToDelete):
             warningMessage='One or more products contain inventory.  Deleting the products will delete all inventory in all sites containing this product as well. Delete anyway?'
@@ -1238,6 +1230,8 @@ def product_delete(request, productsToDelete={}, page=1):
         productsToDelete=[]
     
     return render(request, 'ims/product_delete.html', {"nav_products":1,
+                                                'page':page,
+                                                'pageSize':pageSize,
                                                 'productsToDelete':productsToDelete,
                                                 'warningMessage':warningMessage,
                                                 'infoMessage':infoMessage,
