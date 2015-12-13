@@ -3,6 +3,7 @@ import json
 from django.core.exceptions import ImproperlyConfigured
 
 BASE_DIR = os.path.dirname(os.path.dirname(__file__))
+PAGE_SIZE = 20
 
 # JSON secrets module
 with open(os.path.join(BASE_DIR, 'ims_tests/.secret_file.json')) as f:
