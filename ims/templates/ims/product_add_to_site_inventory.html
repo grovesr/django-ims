@@ -1,7 +1,7 @@
 {% extends "ims/site_detail.html" %}
 {% block breadcrumbs %}
     {{ block.super }}
-    &raquo;
+    <i class="fa fa-angle-double-right"></i>
     <a href="{% url 'ims:product_add_to_site_inventory' siteId=site.pk %}">add inventory</a>
 {% endblock breadcrumbs %}
 {% block content %}

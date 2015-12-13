@@ -1,7 +1,7 @@
 {% extends "ims/home.html" %}
 {% block breadcrumbs %}
     {{ block.super }}
-    &raquo;
+    <i class="fa fa-angle-double-right"></i>
     <a href="{% url 'ims:products' %}">products</a>
 {% endblock breadcrumbs %}
 {% block content %}
@@ -12,45 +12,28 @@
             </th>
         </tr>
         <tr>
-            <td class="cell-frame">
-                {% if pageNo and numPages and productForms.total_form_count%}
-                    <div class="table-nav-pages">
-                        {% if numPages == 'all' %}
-                            {{ productsList.count }} products
-                            <a href="{% url 'ims:products' page=1 %}">&nbsp;show pages</a>
-                        {% else %}
-                            <a href="{% url 'ims:products' page=1 %}">&laquo;&nbsp;</a>
-                            <a href="{% url 'ims:products' page=previousPageNo %}">&lsaquo;&nbsp;</a>
-                            {{ pageNo }} of {{ numPages }}
-                            <a href="{% url 'ims:products' page=nextPageNo %}">&nbsp;&rsaquo;</a>
-                            <a href="{% url 'ims:products' page=numPages %}">&nbsp;&raquo;</a>
-                            <a href="{% url 'ims:products' page='all' %}">&nbsp;show all</a>
-                        {% endif %}
-                    </div>
-                {% endif %}
-                {% if numProductErrors %}
-                    Products With Errors: {{ numProductErrors }} of {{ productForms.total_form_count }}<br/>
-                {% endif %}
-                {% if numPages == 'all' %}
-                    <form action="{% url 'ims:products' page='all' %}" method="post">
-                {% else %}
-                    <form action="{% url 'ims:products' page=pageNo %}" method="post">
-                {% endif %}
+            <td>
+                {% include "ims/page_navigation.html" %}
+            </td>
+        </tr>
+        <tr>
+            <td id="products-list-cell-frame" class="cell-frame">
+                <form action="{% url 'ims:products' %}?page={{ page }}&pageSize={{ pageSize }}" method="post">
                     {% csrf_token  %}
                     <div class="detail-form">
-                        <table id="product-list-form">
-                            {{ productForms.management_form }}
+                        <table id="products-list-form">
+                            {{ paginatedForms.management_form }}
                             <tr class="detail-form-header">
-                                <th colspan=3>
+                                <th colspan=4>
                                     {% if canAdd %}
                                         <input title="add new product" class="cell-left-btn" type="submit" value="Add" name="Add">
                                     {% endif %}
-                                    {% if canDelete and productForms.total_form_count > 0 %}
+                                    {% if canDelete and paginatedForms.total_form_count %}
                                         <input title="delete checked product(s) from the database" class="cell-right-btn" type="submit" value="Delete" name="Delete">
                                     {% endif %}
                                 </th>
                             </tr>
-                            {% for productForm in productForms %}
+                            {% for productForm in paginatedForms %}
                                 {% if forloop.first %}
                                         <tr class="detail-form-header">
                                             <th>Product</th>

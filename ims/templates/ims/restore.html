@@ -1,7 +1,7 @@
 {% extends "ims/imports.html" %}
 {% block breadcrumbs %}
     {{ block.super }}
-    &raquo;
+    <i class="fa fa-angle-double-right"></i>
     <a href="{% url 'ims:restore' %}">restore database</a>
 {% endblock breadcrumbs %}
 {% block content %}

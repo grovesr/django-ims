@@ -8,15 +8,15 @@
 {% endblock extra_scripts %}
 {% block breadcrumbs %}
     {{ block.super }}
-    &raquo;
+    <i class="fa fa-angle-double-right"></i>
     {% if product %}
-        <a href="{% url 'ims:product_detail' code=product.pk page=pageNo%}">product details</a>
+        <a href="{% url 'ims:product_detail' code=product.pk }">product details</a>
     {% else %}
         <a href="{% url 'ims:product_add' %}">add product</a>
     {% endif %}
 {% endblock breadcrumbs %}
 {% block content %}
-    <table id="form-table">
+    <table id="report-table">
         <tr>
             <th id="product-thumbnail">
                 {% if product.thumbnail_exists %}
@@ -32,7 +32,7 @@
                     <h3>New product</h3>
                 {% endif %}
             </th>
-            {% if sitesList %}
+            {% if paginatedForms.total_form_count%}
                 <th><h3>Sites Containing This Product:</h3></th>
             {% endif %}
         </tr>
@@ -47,8 +47,13 @@
                 <th></th>
             </tr>
         {% endif %}
+        <tr>
+            <td colspan="2">
+                {% include "ims/page_navigation.html" %}
+            </td>
+        </tr>
         <tr class="cell-frame">
-            <td class="cell-frame">
+            <td id="product-detail-form" class="cell-frame">
                  {% if product %}
                     {% include "ims/product_details_picture.html" %}
                     {% include "ims/product_details_detail.html" %}
@@ -74,29 +79,14 @@
                     </div>
                  {% endif %}
             </td>
-            {% if sitesList %}
-                <td class="cell-frame">
-                    {% if pageNo and numPages %}
-                        <div class="table-nav-pages">
-                            {% if numPages == 'all' %}
-                                {{ sitesList | length }} sites
-                                <a href="{% url 'ims:product_detail' code=product.pk page=1 %}">&nbsp;show pages</a>
-                            {% else %}
-                                <a href="{% url 'ims:product_detail' code=product.pk page=1 %}">&laquo;&nbsp;</a>
-                                <a href="{% url 'ims:product_detail' code=product.pk page=previousPageNo %}">&lsaquo;&nbsp;</a>
-                                {{ pageNo }} of {{ numPages }}
-                                <a href="{% url 'ims:product_detail' code=product.pk page=nextPageNo %}">&nbsp;&rsaquo;</a>
-                                <a href="{% url 'ims:product_detail' code=product.pk page=numPages %}">&nbsp;&raquo;</a>
-                                <a href="{% url 'ims:product_detail' code=product.pk page='all' %}">&nbsp;show all</a>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                    {% if sitesList %}
+            {% if paginatedForms.total_form_count %}
+                <td id="site-list-form" class="cell-frame">
+                    {% if paginatedForms.total_form_count %}
                         <table>
-                            {% for site in sitesList %}
+                            {% for site in paginatedForms %}
                                 <tr>
                                     <td class="cell-left">
-                                        <a title="edit site containing this product in inventory" href="{% url 'ims:site_detail' siteId=site.0.number page=1%}">
+                                        <a title="edit site containing this product in inventory" href="{% url 'ims:site_detail' siteId=site.0.number %}">
                                             {{ site.0.name }}
                                         </a>
                                     </td>

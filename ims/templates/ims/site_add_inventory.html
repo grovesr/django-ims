@@ -1,10 +1,10 @@
 {% extends "ims/sites.html" %}
 {% block breadcrumbs %}
     {{ block.super }}
-    &raquo;
-    <a href="{% url 'ims:site_detail' siteId=site.number page=pageNo %}">site details</a>
-    &raquo;
-    <a href="{% url 'ims:site_add_inventory' siteId=site.number page=1 %}">add new inventory</a>
+    <i class="fa fa-angle-double-right"></i>
+    <a href="{% url 'ims:site_detail' siteId=site.number %}">site details</a>
+    <i class="fa fa-angle-double-right"></i>
+    <a href="{% url 'ims:site_add_inventory' siteId=site.number %}">add new inventory</a>
 {% endblock breadcrumbs %}
 {% block content %}
     <table id="report-table">
@@ -12,42 +12,29 @@
             <th>
                 <h3>Site: {{ site.name }}</h3>
             </th>
-            {% if productForms.total_form_count and canAdd %}
+            {% if paginatedForms.total_form_count and canAdd %}
                 <th><h3>Products to Add:</h3></th>
             {% endif %}
         </tr>
+        {% if paginatedForms.total_form_count and canAdd %}
+            <tr>
+                <td></td>
+                <td>
+                    {% include "ims/page_navigation.html" %}
+                </td>
+            </tr>
+       {% endif %}
         <tr class="cell-frame">
-            <td class="cell-frame">
+            <td id="site-detail-cell-frame" class="cell-frame">
                 <table id="form-table">
                     {{ siteForm }}
                 </table>
             </td>
-            {% if productForms.total_form_count and canAdd %}
-                <td class="cell-frame">
-                    {% if numPages == 'all' %}
-                        <form action="{% url 'ims:site_add_inventory' siteId=site.number page='all' %}" method="post">
-                    {% else %}
-                        <form action="{% url 'ims:site_add_inventory' siteId=site.number page=pageNo %}" method="post">
-                    {% endif %}
-                    {% csrf_token  %}
-                    {% if pageNo and numPages %}
-                        <div class="table-nav-pages">
-                            {% if numPages == 'all' %}
-                                {{ productForms.total_form_count }} product items
-                                <a href="{% url 'ims:site_add_inventory' siteId=site.number page=1 %}">&nbsp;show pages</a>
-                            {% else %}
-                                <a href="{% url 'ims:site_add_inventory' siteId=site.number page=1 %}">&laquo;&nbsp;</a>
-                                <a href="{% url 'ims:site_add_inventory' siteId=site.number page=previousPageNo %}">&lsaquo;&nbsp;</a>
-                                {{ pageNo }} of {{ numPages }}
-                                <a href="{% url 'ims:site_add_inventory' siteId=site.number page=nextPageNo %}">&nbsp;&rsaquo;</a>
-                                <a href="{% url 'ims:site_add_inventory' siteId=site.number page=numPages %}">&nbsp;&raquo;</a>
-                                <a href="{% url 'ims:site_add_inventory' siteId=site.number page='all' %}">&nbsp;show all</a>
-                            {% endif %}
-                        </div>
-                    {% endif %}
-                    <table id="product-list-form form-table">
-                    {{ productForms.management_form }}
-                    {% for productForm in productForms %}
+            {% if paginatedForms.total_form_count and canAdd %}
+                <td id="product-add-cell-frame"  class="cell-frame">
+                    <table id="product-list-form" class="form-table">
+                    {{ paginatedForms.management_form }}
+                    {% for productForm in paginatedForms %}
                         {% if forloop.first %}
                             <thead>
                                 <tr class="detail-form-header">
@@ -65,11 +52,7 @@
                                 </tr>
                             </thead>
                         {% endif %}
-                        <tr class={% if forloop.counter0  >= startRow and forloop.counter <= stopRow %}
-                                "detail-table-row-visible"
-                            {% else %}
-                                "detail-table-row-invisible"
-                            {% endif %}>
+                        <tr>
                             <td class="cell-left">
                                 {{ productForm.instance.name }}
                             </td>

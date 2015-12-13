@@ -1,7 +1,4 @@
 <div id="adjust-quantity-form">
-    {% if site.num_inventory_errors > 0 %}
-        Inventory Items With Errors: {{ site.num_inventory_errors }}
-    {% endif %}
     <table id="inventory-detail-form">
     {{ inventoryAdjustForms.management_form }}
     {% for inventoryForm in inventoryAdjustForms %}
@@ -30,18 +27,14 @@
                 </tr>
             </thead>
         {% endif %}
-        <tr class={% if forloop.counter0  >= startRow and forloop.counter <= stopRow %}
-                "detail-table-row-visible"
-            {% else %}
-                "detail-table-row-invisible"
-            {% endif %}>
+        <tr>
             <td class=
             {% if inventoryForm.instance.check_quantity %}
                 "detail-table-text cell-left"
             {% else %}
                 "detail-table-error-text cell-left"
             {% endif %}
-            ><a class="pkt-link" href="{% url 'ims:product_detail' code=inventoryForm.instance.information.code page=1%}"
+            ><a class="pkt-link" href="{% url 'ims:product_detail' code=inventoryForm.instance.information.code %}"
              title="{% if inventoryForm.instance.check_information %}edit item details{% else %}edit item details, this product has errors the need to be corrected{% endif %}">
             {{ inventoryForm.instance.information }}
             </a></td>
@@ -64,7 +57,7 @@
             <td>
                 {% if inventoryForm.instance.inventory_history_count >= 1 %}
                 <a title="history of inventory changes at this site for this product"
-                href="{% url 'ims:inventory_history' siteId=site.pk code=inventoryForm.instance.information.code page=1 %}">
+                href="{% url 'ims:inventory_history' siteId=site.pk code=inventoryForm.instance.information.code %}?adjust={{ adjust }}">
                     history
                 </a> ({{ inventoryForm.instance.inventory_history_count }})
                 {% endif %}

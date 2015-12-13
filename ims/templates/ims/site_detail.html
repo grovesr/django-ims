@@ -6,20 +6,20 @@
 {% endblock extra_scripts %}
 {% block breadcrumbs %}
     {{ block.super }}
-    &raquo;
+    <i class="fa fa-angle-double-right"></i>
     {% if site %}
-        <a href="{% url 'ims:site_detail' siteId=site.number %}?{{ adjust }}">site details</a>
+        <a href="{% url 'ims:site_detail' siteId=site.number %}?adjust={{ adjust }}">site details</a>
     {% else %}
         <a href="{% url 'ims:site_add' %}">add site</a>
     {% endif %}
 {% endblock breadcrumbs %}
 {% block content %}
     {% if site %}
-        <form action="{% url 'ims:site_detail' siteId=site.number  %}" method="post">
+        <form action="{% url 'ims:site_detail' siteId=site.number  %}?page={{ page }}&pageSize={{ pageSize }}&adjust={{ adjust }}" method="post">
     {% else %}
         <form action="{% url 'ims:site_add' %}" method="post">
     {% endif %}
-        <table id="form-table">
+        <table id="report-table" >
             <tr>
                 <th>
                     {% if site %}
@@ -32,19 +32,25 @@
                     <th><h3>Inventory:</h3></th>
                 {% endif %}
             </tr>
+            <tr>
+                <td colspan="2" >
+                    {% include "ims/page_navigation.html" %}
+                </td>
+            </tr>
             {% if inventoryAdjustForms.total_form_count %}
+                
                 <tr>
                     <th></th>
                     <th class="tabbed">
                         <ul>
-                            <li meta="adjust-quantity-form" title="Change total quantity for this item" class="tabbed-left {% if adjust == 'adjust' %}tabbed-selected{% endif %}">Adjust Total Inventory</li>
-                            <li meta="add-subtract-form" title="Add or subtract inventory from the total quantity of this product" class="tabbed {% if adjust == '' %}tabbed-selected{% endif %}">Add/Subtract Inventory</li>
+                            <li meta="adjust-quantity-form" title="Change total quantity for this item" class="tabbed-left {% if adjust == 'True' %}tabbed-selected{% endif %}">Adjust Total Inventory</li>
+                            <li meta="add-subtract-form" title="Add or subtract inventory from the total quantity of this product" class="tabbed {% if adjust == 'False' %}tabbed-selected{% endif %}">Add/Subtract Inventory</li>
                         </ul>
                     </th>
                 </tr>
             {% endif %}
             <tr class="cell-frame">
-                <td class="cell-frame">
+                <td id="site-detail-cell-frame" class="cell-frame">
                     
                     {% csrf_token  %}
                         <table>
@@ -54,7 +60,7 @@
                                         {% if canChangeSite %}
                                             <input title="save changes to site information" class="cell-left-btn" type="submit" value="Save Site" name="Save Site">
                                         {% endif %}
-                                        {% if inventoryAdjustForms.total_form_count == 0  and site and canAdd %}
+                                        {% if not inventoryAdjustForms.total_form_count  and site and canAdd %}
                                             <input title="add new products to site inventory" class="cell-right-btn" type="submit" value="Add New Inventory" name="Add New Inventory">
                                         {% endif %}
                                     </th>
@@ -76,25 +82,9 @@
                             </tr>
                             {{ siteForm }}
                         </table>
-                    
                 </td>
                 {% if inventoryAdjustForms.total_form_count %}
-                    <td class="cell-frame">
-                        {% if pageNo and numPages %}
-                            <div class="table-nav-pages">
-                                {% if numPages == 'all' %}
-                                    {{ inventoryAdjustForms.total_form_count }} inventory items
-                                    <a href="{% url 'ims:site_detail' siteId=site.number page=1 %}">&nbsp;show pages</a>
-                                {% else %}
-                                    <a href="{% url 'ims:site_detail' siteId=site.number page=1 %}">&laquo;&nbsp;</a>
-                                    <a href="{% url 'ims:site_detail' siteId=site.number page=previousPageNo %}">&lsaquo;&nbsp;</a>
-                                    {{ pageNo }} of {{ numPages }}
-                                    <a href="{% url 'ims:site_detail' siteId=site.number page=nextPageNo %}">&nbsp;&rsaquo;</a>
-                                    <a href="{% url 'ims:site_detail' siteId=site.number page=numPages %}">&nbsp;&raquo;</a>
-                                    <a href="{% url 'ims:site_detail' siteId=site.number page='all' %}">&nbsp;show all</a>
-                                {% endif %}
-                            </div>
-                        {% endif %}
+                    <td id="site-inventory-cell-frame" class="cell-frame">
                         {% include "ims/site_inventory_adjust_total.html" %}
                         {% include "ims/site_inventory_add_subtract.html" %}
                     </td>

@@ -7,11 +7,7 @@
                             <button  id="rotate-button" title="Click to rotate the picture in 90 degree steps">Rotate</button>
                         </td>
                         <td>
-                            {% if numPages == 'all' %}
-                                <form action="{% url 'ims:product_detail' code=product.code page='all' %}" method="post">
-                            {% else %}
-                                <form action="{% url 'ims:product_detail' code=product.code page=pageNo %}" method="post">
-                            {% endif %}
+                            <form action="{% url 'ims:product_detail' code=product.code %}" method="post">
                                 {% csrf_token  %}
                                 <input id="save-picture" title="save changes to picture orientation" class="cell-center-btn" type="submit" value="Save" name="SavePicture">
                                 <input id="rotation" type="hidden" name="rotation" value="0">

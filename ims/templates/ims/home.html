@@ -2,33 +2,34 @@
 {% load staticfiles %}
 {% block extrastyle %}
     {{ block.super }}
+    <link rel="stylesheet" href="{% static 'font-awesome/css/font-awesome.min.css' %}" type="text/css" >
     <link rel="stylesheet" href="{% static 'ims/css/style.css' %}" type="text/css" >
 {% endblock extrastyle %}
 {% block breadcrumbs %}
     {{ block.super }}
-    &raquo;
+    <i class="fa fa-angle-double-right"></i>
     <a href="{% url 'ims:home' %}">IMS</a>
 {% endblock breadcrumbs %}
 {% block announcement %}
     <div id="announcement">
         {% if errorMessage %}
             <p id="error-note" class="errornote">
-                <img class="announcement-close" src="{% static 'base/img/delete.png' %}"></img>
-                <img class="announcement-icon" src="{% static 'base/img/icon_error.gif' %}"></img>
+                <i class="fa fa-times fa-lg announcement-close"></i>
+                <i class="fa fa-minus-circle fa-lg announcement-icon"></i>
                 {{ errorMessage | safe }}
             </p>
         {%endif %}
         {% if warningMessage %}
             <p id="warning-note" class="warningnote">
-                <img class="announcement-close" src="{% static 'base/img/delete.png' %}"></img>
-                <img class="announcement-icon" src="{% static 'base/img/icon_alert.gif' %}"></img>
+                <i class="fa fa-times fa-lg announcement-close"></i>
+                <i class="fa fa-exclamation-circle fa-lg announcement-icon"></i>
                 {{ warningMessage | safe }}
             </p>
         {%endif %}
         {% if infoMessage %}
             <p id="info-note" class="infonote">
-                <img class="announcement-close" src="{% static 'base/img/delete.png' %}"></img>
-                <img class="announcement-icon" src="{% static 'base/img/icon_success.gif' %}"></img>
+                <i class="fa fa-times fa-lg announcement-close"></i>
+                <i class="fa fa-info-circle fa-lg announcement-icon"></i>
                 {{ infoMessage | safe }}
             </p>
         {%endif %}
@@ -37,24 +38,27 @@
 {% block content %}
     <table id="report-table">
         <tr>
-            <th  colspan="2">
-                <h3>Inventory Home:</h3>
+            <td colspan="2">
+                {% include "ims/page_size_selection.html" %}
+            </td>
+        </tr>
+        <tr>
+            <th>
+                <h3>Sites with Recently Edited Inventory</h3>
+            </th>
+            <th>
+                <h3>Recently Edited Inventory</h3>
             </th>
         </tr>
         <tr>
             <td class="cell-frame">
-                <table id="report-table">
-                    <tr class="bottom-bordered-row">
-                        <th>
-                            <h3>Sites with Recently Edited Inventory</h3>
-                        </th>
-                    </tr>
+                <table class="home-list-cell-frame">
                     <tr>
                         <td  class="report-column">
                             <ul>
                                 {% for site in sitesList %}
-                                    <li>
-                                        <a title="edit site" href="{% url 'ims:site_detail' siteId=site.pk page=1 %}">{{ site.name }}</a>
+                                    <li class="home-list">
+                                        <a title="edit site" href="{% url 'ims:site_detail' siteId=site.pk %}">{{ site.name }}</a>
                                     </li>
                                 {% endfor %}
                             </ul>
@@ -62,19 +66,14 @@
                     </tr>
                 </table>
             </td>
-            <td class="cell-frame">
-                <table id="report-table">
-                    <tr class="bottom-bordered-row">
-                        <th>
-                            <h3>Recently Edited Inventory</h3>
-                        </th>
-                    </tr>
+            <td class="cell-frame" >
+                <table class="home-list-cell-frame">
                     <tr>
                         <td  class="report-column">
                             <ul>
                                 {% for item in inventoryList %}
-                                    <li>
-                                        <a title="edit site containing this inventory" href="{% url 'ims:site_detail' siteId=item.site.pk page=1 %}">{{ item.information }}</a>
+                                    <li class="home-list">
+                                        <a title="edit site containing this inventory" href="{% url 'ims:site_detail' siteId=item.site.pk %}">{{ item.information }}</a>
                                     </li>
                                 {% endfor %}
                             </ul>
