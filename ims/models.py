@@ -48,7 +48,7 @@ class Site(models.Model):
                               help_text='user that last modified this record')
     
     @classmethod
-    def recently_changed_inventory(cls,numSites=20):
+    def recently_changed_inventory(cls, pageSize):
         """
         list of sites that had inventory changes recently.  Limit to numSites.
         """
@@ -62,7 +62,7 @@ class Site(models.Model):
         for inventoryItem in recentInventoryList:
             if inventoryItem.site not in sitesList:
                 sitesList.append(inventoryItem.site)
-        return sitesList[:numSites]
+        return sitesList[:pageSize]
     
     @classmethod
     def import_sites_from_xls(cls,filename=None, file_contents=None):
@@ -297,10 +297,7 @@ class Site(models.Model):
         else:
             inventory=InventoryItem.objects.filter(
                                site=self).filter(information=code)
-        inventoryList=[]
-        for item in inventory:
-            inventoryList.append(item)
-        return inventoryList
+        return inventory
     
     def product_in_inventory_history(self,item=None, stopDate=None):
         """
@@ -762,7 +759,7 @@ class InventoryItem(models.Model):
     modifier=models.CharField(max_length=50, default="admin", blank=True,
                               help_text='user that last modified this record')
     @classmethod
-    def recently_changed(cls,numInventory=20):
+    def recently_changed(cls, pageSize):
         """
         list of recently changed inventory.
         """
@@ -775,7 +772,7 @@ class InventoryItem(models.Model):
         for inventoryItem in recentInventoryList:
             if not inventoryList.has_key(inventoryItem.information):
                 inventoryList[inventoryItem.information]=inventoryItem
-            if len(inventoryList)>=numInventory:
+            if len(inventoryList)>=pageSize:
                 break
         return inventoryList.values()
     
