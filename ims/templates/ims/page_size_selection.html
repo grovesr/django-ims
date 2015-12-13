@@ -1,0 +1,38 @@
+<div class="table-nav-pages">
+    {% if pageSizeSelectionLabel %}
+        {{ pageSizeSelectionLabel }}
+    {% else %}
+        Items per page:
+    {% endif %}
+    <a class="
+    {% if pageSize == 10 and pageSize < totalItemCount %}
+        current
+    {% else %}
+        page
+    {% endif %}
+    " href="?pageSize=10">10</a>&nbsp;
+    <a class="
+    {% if pageSize == 20 and pageSize < totalItemCount %}
+        current
+    {% else %}
+        page
+    {% endif %}
+    "
+    title="page size" href="?pageSize=20">20</a>&nbsp;
+    <a class="
+    {% if pageSize == 50 and pageSize < totalItemCount %}
+        current
+    {% else %}
+        page
+    {% endif %}
+    "
+    title="page size" href="?pageSize=50">50</a>&nbsp;
+    <a class="
+    {% if pageSize >= totalItemCount %}
+        current
+    {% else %}
+        page
+    {% endif %}
+    "
+    title="page size" href="?pageSize={{ totalItemCount }}">all&nbsp;({{ totalItemCount }})</a>
+</div>
