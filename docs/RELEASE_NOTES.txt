@@ -27,3 +27,4 @@ Version 1.11.0:
 * 485b72f (HEAD, master) fix restore of originalPictureName
 2015/11/22 Version 1.15.3:
 * 248e289 (HEAD, master) handle backups without picture files
+2015/12/14 Version 1.16.0:

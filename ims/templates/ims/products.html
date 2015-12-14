@@ -5,77 +5,79 @@
     <a href="{% url 'ims:products' %}">products</a>
 {% endblock breadcrumbs %}
 {% block content %}
-    <table id="report-table">
-        <tr>
-            <th>
-                <h3>Products:</h3>
-            </th>
-        </tr>
-        <tr>
-            <td>
-                {% include "ims/page_navigation.html" %}
-            </td>
-        </tr>
-        <tr>
-            <td id="products-list-cell-frame" class="cell-frame">
-                <form action="{% url 'ims:products' %}?page={{ page }}&pageSize={{ pageSize }}" method="post">
-                    {% csrf_token  %}
-                    <div class="detail-form">
-                        <table id="products-list-form">
-                            {{ paginatedForms.management_form }}
-                            <tr class="detail-form-header">
-                                <th colspan=4>
-                                    {% if canAdd %}
-                                        <input title="add new product" class="cell-left-btn" type="submit" value="Add" name="Add">
-                                    {% endif %}
-                                    {% if canDelete and paginatedForms.total_form_count %}
-                                        <input title="delete checked product(s) from the database" class="cell-right-btn" type="submit" value="Delete" name="Delete">
-                                    {% endif %}
-                                </th>
-                            </tr>
-                            {% for productForm in paginatedForms %}
-                                {% if forloop.first %}
-                                        <tr class="detail-form-header">
-                                            <th>Product</th>
-                                            <th>Category</th>
-                                            <th>Code</th>
-                                            {% for field in productForm.visible_fields %}
-                                                <th>{{ field.label|capfirst }}</th>
-                                            {% endfor %}
-                                        </tr>
-                                {% endif %}
-                                <tr>
-                                    <td class=
-                                        {% if productForm.instance.check_product %}
-                                            "detail-table-text cell-left"
-                                        {% else %}
-                                            "detail-table-error cell-left"
-                                        {% endif %}>
-                                        <a title="edit product details" href="{% url 'ims:product_detail' code=productForm.instance.code %}">{{ productForm.instance.name }}</a>
-                                    </td>
-                                    <td class="cell-left">
-                                        {{ productForm.instance.category }}
-                                    </td>
-                                    <td class="cell-left">
-                                        {{ productForm.instance.meaningful_code }}
-                                    </td>
-                                    {% for field in productForm.visible_fields %}
-                                        <td class="{{ field.css_classes }} cell-lef" title="{{ field.errors | escape}}">
-                                            {# Include the hidden fields in the form #}
-                                            {% if forloop.first %}
-                                                {% for hidden in productForm.hidden_fields %}
-                                                    {{ hidden }}
-                                                {% endfor %}
-                                            {% endif %}
-                                            {{ field }}
-                                        </td>
-                                    {% endfor %}
+    {% if paginatedItems.total_form_count %}
+        <table id="report-table">
+            <tr>
+                <th>
+                    <h3>Products:</h3>
+                </th>
+            </tr>
+            <tr>
+                <td>
+                    {% include "ims/page_navigation.html" %}
+                </td>
+            </tr>
+            <tr>
+                <td id="products-list-cell-frame" class="cell-frame">
+                    <form action="{% url 'ims:products' %}?page={{ page }}&pageSize={{ pageSize }}" method="post">
+                        {% csrf_token  %}
+                        <div class="detail-form">
+                            <table id="products-list-form">
+                                {{ paginatedItems.management_form }}
+                                <tr class="detail-form-header">
+                                    <th colspan=4>
+                                        {% if canAdd %}
+                                            <input title="add new product" class="cell-left-btn" type="submit" value="Add" name="Add">
+                                        {% endif %}
+                                        {% if canDelete and paginatedItems.total_form_count %}
+                                            <input title="delete checked product(s) from the database" class="cell-right-btn" type="submit" value="Delete" name="Delete">
+                                        {% endif %}
+                                    </th>
                                 </tr>
-                        {% endfor %}
-                        </table>
-                    </div>
-                </form>
-            </td>
-        </tr>
-    </table>
+                                {% for productForm in paginatedItems %}
+                                    {% if forloop.first %}
+                                            <tr class="detail-form-header">
+                                                <th>Product</th>
+                                                <th>Category</th>
+                                                <th>Code</th>
+                                                {% for field in productForm.visible_fields %}
+                                                    <th>{{ field.label|capfirst }}</th>
+                                                {% endfor %}
+                                            </tr>
+                                    {% endif %}
+                                    <tr>
+                                        <td class=
+                                            {% if productForm.instance.check_product %}
+                                                "detail-table-text cell-left"
+                                            {% else %}
+                                                "detail-table-error cell-left"
+                                            {% endif %}>
+                                            <a title="edit product details" href="{% url 'ims:product_detail' code=productForm.instance.code %}">{{ productForm.instance.name }}</a>
+                                        </td>
+                                        <td class="cell-left">
+                                            {{ productForm.instance.category }}
+                                        </td>
+                                        <td class="cell-left">
+                                            {{ productForm.instance.meaningful_code }}
+                                        </td>
+                                        {% for field in productForm.visible_fields %}
+                                            <td class="{{ field.css_classes }} cell-lef" title="{{ field.errors | escape}}">
+                                                {# Include the hidden fields in the form #}
+                                                {% if forloop.first %}
+                                                    {% for hidden in productForm.hidden_fields %}
+                                                        {{ hidden }}
+                                                    {% endfor %}
+                                                {% endif %}
+                                                {{ field }}
+                                            </td>
+                                        {% endfor %}
+                                    </tr>
+                            {% endfor %}
+                            </table>
+                        </div>
+                    </form>
+                </td>
+            </tr>
+        </table>
+    {% endif %}
 {% endblock content %}

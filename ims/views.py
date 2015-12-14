@@ -114,28 +114,29 @@ def get_session_page_info(request):
     pageSize = pageDict.get('pageSize', settings.PAGE_SIZE)
     return page, pageSize
 
-def set_session_page_info(request, page = 1, pageSize = settings.PAGE_SIZE):
+def update_session_page_info(request):
     parsedUrl = urlparse(request.META.get('PATH_INFO'))
     pageDict = request.session.get(parsedUrl.path, {})
     if not isinstance(pageDict, dict):
         # something is wrong, this should be a dictionary
         pageDict = {}
-    pageDict['page'] = page
-    pageDict['pageSize'] = pageSize
-    request.session[parsedUrl.path] = pageDict
-
-def create_paginator(request, queryset):
-    totalItemCount = queryset.count()
     if 'page' not in request.GET:
         page, __ = get_session_page_info(request)
     else:
         page = int(request.GET.get('page'))
+    pageDict['page'] = page
     if 'pageSize' not in request.GET:
         __, pageSize = get_session_page_info(request)
     else:
         pageSize = int(request.GET.get('pageSize',settings.PAGE_SIZE))
-    paginator = Paginator(queryset, pageSize)
-    set_session_page_info(request, page, pageSize)
+    pageDict['pageSize'] = pageSize
+    request.session[parsedUrl.path] = pageDict
+    return page, pageSize
+
+def create_paginator(request, items = None):
+    page, pageSize = update_session_page_info(request)
+    paginator = Paginator(items, pageSize)
+    totalItemCount = items.count()
     try:
         paginatorPage = paginator.page(page)
     except PageNotAnInteger:
@@ -168,11 +169,7 @@ class RimsDuplicateKeyError(RimsError): pass
 @login_required()
 def home(request):
     # display most recently edited sites and inventory
-    if 'pageSize' not in request.GET:
-        __, pageSize = get_session_page_info(request)
-    else:
-        pageSize = int(request.GET.get('pageSize',settings.PAGE_SIZE))
-    set_session_page_info(request, pageSize = pageSize)
+    __, pageSize = update_session_page_info(request)
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     recentSites = Site.recently_changed_inventory(pageSize)
     recentInventory = InventoryItem.recently_changed(pageSize)
@@ -467,7 +464,7 @@ def inventory_history_dates(request, siteId=None, code=None, startDate=None, sto
     (paginatorPage, 
      page, 
      pageSize, 
-     totalItemCount) = create_paginator(request, inventoryList)
+     totalItemCount) = create_paginator(request, items = inventoryList)
     inventoryIds=[]
     for item in paginatorPage.object_list:
         inventoryIds.append(item.pk)
@@ -485,7 +482,7 @@ def inventory_history_dates(request, siteId=None, code=None, startDate=None, sto
                   'totalItemCount':totalItemCount,
                   'adjust':adjust,
                   'paginatorPage':paginatorPage,
-                  'paginatedForms':siteInventory,
+                  'paginatedItems':siteInventory,
                   'startDate':startDate,
                   'stopDate':stopDate,
                   'infoMessage':infoMessage,
@@ -513,7 +510,7 @@ def sites(request):
     (paginatorPage, 
      page, 
      pageSize, 
-     totalItemCount) = create_paginator(request, sitesList)
+     totalItemCount) = create_paginator(request, items = sitesList)
     SiteFormset=modelformset_factory( Site, form=SiteListForm, fields=['Delete'], extra=0)
     if request.method == "POST":
         paginatedForms=SiteFormset(request.POST,queryset=paginatorPage.object_list, error_class=TitleErrorList)
@@ -541,7 +538,7 @@ def sites(request):
                                               'page':page,
                                               'pageSize':pageSize,
                                               'totalItemCount':int(totalItemCount),
-                                              'paginatedForms':paginatedForms,
+                                              'paginatedItems':paginatedForms,
                                               'paginatorPage':paginatorPage,
                                               'infoMessage':infoMessage,
                                               'warningMessage':warningMessage,
@@ -573,7 +570,7 @@ def site_detail(request, siteId=1):
     (paginatorPage, 
      page, 
      pageSize, 
-     totalItemCount) = create_paginator(request, siteInventory)
+     totalItemCount) = create_paginator(request, items = siteInventory)
     siteForm=SiteForm(site.__dict__,instance=site, error_class=TitleErrorList)
     InventoryAdjustFormset=modelformset_factory(InventoryItem,extra=0, can_delete=False,
                                              form=InventoryItemFormNoSite)
@@ -672,7 +669,7 @@ def site_detail(request, siteId=1):
                                                 'pageSize':pageSize,
                                                 'totalItemCount':totalItemCount,
                                                 'paginatorPage':paginatorPage,
-                                                'paginatedForms':inventoryAdjustForms,
+                                                'paginatedItems':inventoryAdjustForms,
                                                 'inventoryAdjustForms':inventoryAdjustForms,
                                                 'inventoryAddSubtractForms':inventoryAddSubtractForms,
                                                 'adjust':adjust,
@@ -737,10 +734,14 @@ def site_add_inventory(request, siteId=1):
         return redirect(reverse('ims:sites'))
     canAdd=request.user.has_perm('ims.add_inventoryitem')
     productsList=ProductInformation.objects.all().order_by('name')
+    if not productsList:
+        request.session['warningMessage'] = 'No products found to add'
+        return redirect(reverse('ims:site_detail', 
+                                kwargs = {'siteId':siteId}))
     (paginatorPage, 
      page, 
      pageSize, 
-     totalItemCount) = create_paginator(request, productsList)
+     totalItemCount) = create_paginator(request, items = productsList)
     ProductFormset=modelformset_factory( ProductInformation, form=ProductListFormWithAdd, extra=0)
     if canAdd:
         if request.method == "POST":
@@ -772,7 +773,7 @@ def site_add_inventory(request, siteId=1):
                                                 'pageSize':pageSize,
                                                 'totalItemCount':totalItemCount,
                                                 'paginatorPage':paginatorPage,
-                                                'paginatedForms':paginatedForms,
+                                                'paginatedItems':paginatedForms,
                                                 'warningMessage':warningMessage,
                                                 'infoMessage':infoMessage,
                                                 'errorMessage':errorMessage,
@@ -892,7 +893,7 @@ def products(request):
     (paginatorPage, 
      page, 
      pageSize, 
-     totalItemCount) = create_paginator(request, productsList)
+     totalItemCount) = create_paginator(request, items = productsList)
     if request.method == 'POST':
         paginatedForms=ProductFormset(request.POST,queryset=paginatorPage.object_list, error_class=TitleErrorList)
         if 'Delete' in request.POST:
@@ -923,7 +924,7 @@ def products(request):
                                               'page':page,
                                               'pageSize':pageSize,
                                               'totalItemCount':int(totalItemCount),
-                                              'paginatedForms':paginatedForms,
+                                              'paginatedItems':paginatedForms,
                                               'paginatorPage':paginatorPage,
                                               'canAdd':canAdd,
                                               'canDelete':canDelete,
@@ -951,7 +952,7 @@ def product_detail(request, code='-1',):
     (paginatorPage, 
      page, 
      pageSize, 
-     totalItemCount) = create_paginator(request, inventorySites)
+     totalItemCount) = create_paginator(request, items = inventorySites)
     sitesList=[]
     for siteNumber in paginatorPage.object_list:
         site = Site.objects.get(pk=siteNumber['site'])
@@ -1054,7 +1055,7 @@ def product_detail(request, code='-1',):
                              'pageSize':pageSize,
                              'totalItemCount':totalItemCount,
                              'paginatorPage':paginatorPage,
-                             'paginatedForms':sitesList,
+                             'paginatedItems':sitesList,
                              'picture':picture,
                              'canChange':canChange,
                              'warningMessage':warningMessage,

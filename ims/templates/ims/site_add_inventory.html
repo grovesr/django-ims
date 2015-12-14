@@ -12,11 +12,11 @@
             <th>
                 <h3>Site: {{ site.name }}</h3>
             </th>
-            {% if paginatedForms.total_form_count and canAdd %}
+            {% if paginatedItems.total_form_count and canAdd %}
                 <th><h3>Products to Add:</h3></th>
             {% endif %}
         </tr>
-        {% if paginatedForms.total_form_count and canAdd %}
+        {% if paginatedItems.total_form_count and canAdd %}
             <tr>
                 <td></td>
                 <td>
@@ -30,11 +30,11 @@
                     {{ siteForm }}
                 </table>
             </td>
-            {% if paginatedForms.total_form_count and canAdd %}
+            {% if paginatedItems.total_form_count and canAdd %}
                 <td id="product-add-cell-frame"  class="cell-frame">
                     <table id="product-list-form" class="form-table">
-                    {{ paginatedForms.management_form }}
-                    {% for productForm in paginatedForms %}
+                    {{ paginatedItems.management_form }}
+                    {% for productForm in paginatedItems %}
                         {% if forloop.first %}
                             <thead>
                                 <tr class="detail-form-header">

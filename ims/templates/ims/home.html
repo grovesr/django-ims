@@ -36,51 +36,53 @@
     </div>
 {% endblock announcement %}
 {% block content %}
-    <table id="report-table">
-        <tr>
-            <td colspan="2">
-                {% include "ims/page_size_selection.html" %}
-            </td>
-        </tr>
-        <tr>
-            <th>
-                <h3>Sites with Recently Edited Inventory</h3>
-            </th>
-            <th>
-                <h3>Recently Edited Inventory</h3>
-            </th>
-        </tr>
-        <tr>
-            <td class="cell-frame">
-                <table class="home-list-cell-frame">
-                    <tr>
-                        <td  class="report-column">
-                            <ul>
-                                {% for site in sitesList %}
-                                    <li class="home-list">
-                                        <a title="edit site" href="{% url 'ims:site_detail' siteId=site.pk %}">{{ site.name }}</a>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-            <td class="cell-frame" >
-                <table class="home-list-cell-frame">
-                    <tr>
-                        <td  class="report-column">
-                            <ul>
-                                {% for item in inventoryList %}
-                                    <li class="home-list">
-                                        <a title="edit site containing this inventory" href="{% url 'ims:site_detail' siteId=item.site.pk %}">{{ item.information }}</a>
-                                    </li>
-                                {% endfor %}
-                            </ul>
-                        </td>
-                    </tr>
-                </table>
-            </td>
-        </tr>
-    </table>
+    {% if sitesList or inventoryList %}
+        <table id="report-table">
+            <tr>
+                <td colspan="2">
+                    {% include "ims/page_size_selection.html" %}
+                </td>
+            </tr>
+            <tr>
+                <th>
+                    <h3>Sites with Recently Edited Inventory</h3>
+                </th>
+                <th>
+                    <h3>Recently Edited Inventory</h3>
+                </th>
+            </tr>
+            <tr>
+                <td class="cell-frame">
+                    <table class="home-list-cell-frame">
+                        <tr>
+                            <td  class="report-column">
+                                <ul>
+                                    {% for site in sitesList %}
+                                        <li class="home-list">
+                                            <a title="edit site" href="{% url 'ims:site_detail' siteId=site.pk %}">{{ site.name }}</a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <td class="cell-frame" >
+                    <table class="home-list-cell-frame">
+                        <tr>
+                            <td  class="report-column">
+                                <ul>
+                                    {% for item in inventoryList %}
+                                        <li class="home-list">
+                                            <a title="edit site containing this inventory" href="{% url 'ims:site_detail' siteId=item.site.pk %}">{{ item.information }}</a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    {% endif %}
 {% endblock content %}

@@ -32,7 +32,7 @@
                     <h3>New product</h3>
                 {% endif %}
             </th>
-            {% if paginatedForms.total_form_count%}
+            {% if paginatedItems %}
                 <th><h3>Sites Containing This Product:</h3></th>
             {% endif %}
         </tr>
@@ -79,23 +79,25 @@
                     </div>
                  {% endif %}
             </td>
-            {% if paginatedForms.total_form_count %}
+            {% if paginatedItems %}
                 <td id="site-list-form" class="cell-frame">
-                    {% if paginatedForms.total_form_count %}
-                        <table>
-                            {% for site in paginatedForms %}
-                                <tr>
-                                    <td class="cell-left">
-                                        <a title="edit site containing this product in inventory" href="{% url 'ims:site_detail' siteId=site.0.number %}">
-                                            {{ site.0.name }}
-                                        </a>
-                                    </td>
-                                    <td class="cell-left">
-                                        ({{ site.1 }})
-                                    </td>
-                                </tr>
-                            {% endfor %}
-                        </table>
+                    {% if paginatedItems %}
+                        <div class="detail-form">
+                            <table>
+                                {% for site in paginatedItems %}
+                                    <tr>
+                                        <td class="cell-left">
+                                            <a title="edit site containing this product in inventory" href="{% url 'ims:site_detail' siteId=site.0.number %}">
+                                                {{ site.0.name }}
+                                            </a>
+                                        </td>
+                                        <td class="cell-left">
+                                            ({{ site.1 }})
+                                        </td>
+                                    </tr>
+                                {% endfor %}
+                            </table>
+                        </div>
                     {% endif %}
                 </td>
             {% endif %}

@@ -8,4 +8,5 @@
 #VERSION=('1.15.0','21/11/2015','add category and picture export and import')
 #VERSION=('1.15.1','22/11/2015','fix ProductInformation.originalPictureName path and thumbnail backup')
 #VERSION=('1.15.2','22/11/2015','fix restore of originalPictureName')
-VERSION=('1.15.3','22/11/2015','handle backups without picture files')
+#VERSION=('1.15.3','22/11/2015','handle backups without picture files')
+VERSION=('1.16.0','14/12/2015','New pagination using Pagination class')
