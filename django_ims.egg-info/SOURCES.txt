@@ -84,6 +84,7 @@ ims/templates/ims/inventory_history_dates.html
 ims/templates/ims/inventory_status_print.html
 ims/templates/ims/page_navigation.html
 ims/templates/ims/page_size_selection.html
+ims/templates/ims/print_page.html
 ims/templates/ims/product_add_to_site_inventory.html
 ims/templates/ims/product_delete.html
 ims/templates/ims/product_delete_all.html
@@ -91,7 +92,6 @@ ims/templates/ims/product_detail.html
 ims/templates/ims/product_details_detail.html
 ims/templates/ims/product_details_picture.html
 ims/templates/ims/products.html
-ims/templates/ims/report_sort_controls.html
 ims/templates/ims/reports.html
 ims/templates/ims/restore.html
 ims/templates/ims/site_add_inventory.html

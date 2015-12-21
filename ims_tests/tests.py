@@ -80,7 +80,7 @@ def create_products_with_inventory_items_for_sites(numSites=1,
 def get_announcement_from_response(response=None, cls=None):
     if response and cls:
         m=re.search(('^.*<div\s*id="announcement".*?<p.*?class="' +
-                    cls + '">\s*<img.*?</img>\s*<img.*?</img>\s*(.*?)\s*</p>.*?</div>'),
+                    cls + '">\s*<i .*?</i>\s*<i .*?</i>\s*(.*?)\s*</p>.*?</div>'),
                     response.content, re.S)
         if m and len(m.groups()) > 0:
             return m.groups()[0].replace('\n','')
@@ -733,8 +733,7 @@ class InventoryHistoryViewTests(TestCase):
         response=self.client.get(reverse('ims:inventory_history',
                                  kwargs = 
                                   {'siteId':siteId,
-                                   'code':code,
-                                   'page':1}),
+                                   'code':code,}),
                                   follow=True)
         resultError = get_announcement_from_response(response=response,
                                                        cls="errornote")
@@ -753,8 +752,7 @@ class InventoryHistoryViewTests(TestCase):
         response=self.client.get(reverse('ims:inventory_history',
                                  kwargs = 
                                   {'siteId':siteId,
-                                   'code':code,
-                                   'page':1}),
+                                   'code':code,}),
                                   follow=True)
         resultError = get_announcement_from_response(response=response,
                                                        cls="errornote")
@@ -776,8 +774,7 @@ class InventoryHistoryViewTests(TestCase):
         response=self.client.get(reverse('ims:inventory_history',
                                  kwargs = 
                                   {'siteId':site.number,
-                                   'code':product.code,
-                                   'page':1}),
+                                   'code':product.code,}),
                                   follow=True)
         self.assertEqual(response.status_code, 200,
                          'Inventory History generated a non-200 response code')
@@ -815,7 +812,7 @@ class SitesViewTests(TestCase):
                                   follow=True)
         resultWarning = get_announcement_from_response(response=response,
                                                        cls="warningnote")
-        self.assertIn('No sites found',
+        self.assert_('No sites found' in resultWarning,
                       'IMS sites view didn''t generate the correct warning when no sites were found.\nactual message = %s' %
                       resultWarning)
 
@@ -836,8 +833,7 @@ class SiteDetailViewTests(TestCase):
         siteId = 1
         response=self.client.get(reverse('ims:site_detail',
                                  kwargs = 
-                                  {'siteId':siteId,
-                                   'page':1}),
+                                  {'siteId':siteId,}),
                                   follow=True)
         resultError = get_announcement_from_response(response=response,
                                                        cls="errornote")
@@ -861,11 +857,8 @@ class SiteAddInventoryViewTests(TestCase):
         print 'running SiteAddInventoryViewTests.test_site_add_inventory_with_invalid_site... '
         self.client.login(username='testUser', password='12345678')
         siteId = 1
-        page = 1
         response=self.client.get(reverse('ims:site_add_inventory',
-                                         kwargs = {'siteId':siteId,
-                                                   'page':page,
-                                                   }),
+                                         kwargs = {'siteId':siteId,}),
                                   follow=True)
         resultError = get_announcement_from_response(response=response,
                                                        cls="errornote")
@@ -913,8 +906,7 @@ class ProductDetailViewTests(TestCase):
         code="D11"
         response=self.client.get(reverse('ims:product_detail',
                                  kwargs = 
-                                  {'code':code,
-                                   'page':1}),
+                                  {'code':code,}),
                                   follow=True)
         resultError = get_announcement_from_response(response=response,
                                                        cls="errornote")

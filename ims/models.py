@@ -245,8 +245,7 @@ class Site(models.Model):
     def latest_inventory(self,
                          startDate=None, 
                          stopDate=None, 
-                         orderBy = 'name',
-                         orderDir = 'asc'):
+                         orderBy = {'information__name':'information__name'}):
         # get the inventory entries associated with this site. These are records
         # detailing the history of inventory states for products at this site.  Includes
         # adjustments to inventory as well as deletions
@@ -275,15 +274,7 @@ class Site(models.Model):
         # now look through the site inventory and remove any inventory that was deleted
         # as its last state.  We do this because we need a queryset, not a list
         # because we are using it to generate a formset later
-        siteInventory=InventoryItem.objects.filter(pk__in=latestInventoryIds)
-        if orderDir == 'asc':
-            direction = ''
-        else:
-            direction = '-'
-        if orderBy == 'name':
-            siteInventory=siteInventory.order_by(direction + 'information__name')
-        else:
-            siteInventory=siteInventory.order_by(direction + 'information__code')
+        siteInventory=InventoryItem.objects.filter(pk__in=latestInventoryIds).order_by(*orderBy.values())
         return siteInventory
     
     def inventory_history_for_product(self,code=None, stopDate=None):
@@ -733,6 +724,9 @@ class ProductInformation(models.Model):
                 return ''
             return filePieces[0] + 'thumb.' + filePieces[1]
         return ''
+
+    def num_sites_containing(self):
+        return self.inventoryitem_set.filter(deleted = False).count()
 
 ###########################################################
 #  The below models have relations to the base models above

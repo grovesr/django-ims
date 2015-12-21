@@ -15,7 +15,7 @@
 {% endblock breadcrumbs %}
 {% block content %}
     {% if site %}
-        <form action="{% url 'ims:site_detail' siteId=site.number  %}?page={{ page }}&pageSize={{ pageSize }}&adjust={{ adjust }}" method="post">
+        <form action="{% url 'ims:site_detail' siteId=site.number  %}?page={{ paginatorPage.number }}&pageSize={{ paginatorPage.paginator.per_page }}&adjust={{ adjust }}" method="post">
     {% else %}
         <form action="{% url 'ims:site_add' %}" method="post">
     {% endif %}

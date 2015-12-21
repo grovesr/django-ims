@@ -10,7 +10,7 @@ urlpatterns = patterns('',
     url(r'^import_sites$', views.import_sites, name='import_sites'),
     # import products
     url(r'^import_products$', views.import_products, name='import_products'),
-    # import invcentory
+    # import inventory
     url(r'^import_inventory$', views.import_inventory, name='import_inventory'),
     # restore the database
     url(r'^restore$', views.restore, name='restore'),
@@ -18,20 +18,16 @@ urlpatterns = patterns('',
     url(r'^sites/(?P<siteId>\d+)/product/\s*(?P<code>[\w\d\_\-]+)\s*$', views.inventory_history, name='inventory_history'),
      # this will display inventory history with no report without dates
     url(r'^sites/(?P<siteId>\d+)/product/\s*(?P<code>[\w\d\_\-]+)\s*/(?P<startDate>\d{2}-\d{2}-\d{4})/(?P<stopDate>\d{2}-\d{2}-\d{4})$', views.inventory_history_dates, name='inventory_history_dates'),
-    # this will display reports page with no report without dates
+    # this will display site inventory print report
+    url(r'^reports/site_inventory_print$', views.site_inventory_print, name='site_inventory_print'),
+    # this will display site inventory print report
+    url(r'^reports/site_detail_print$', views.site_detail_print, name='site_detail_print'),
+    # this will display site inventory print report
+    url(r'^reports/inventory_detail_print$', views.inventory_detail_print, name='inventory_detail_print'),
+    # this will display site inventory print report
+    url(r'^reports/inventory_status_print$', views.inventory_status_print, name='inventory_status_print'),
+        # this will display reports page with no report without dates
     url(r'^reports$', views.reports, name='reports'),
-    # this will display reports page with no report with dates
-    url(r'^reports/(?P<startDate>\d{2}-\d{2}-\d{4})/(?P<stopDate>\d{2}-\d{2}-\d{4})$', views.reports_dates, name='reports_dates'),
-    # this will display reports page with no report with dates
-    url(r'^reports/(?P<report>[\w\_]+)/(?P<startDate>\d{2}-\d{2}-\d{4})/(?P<stopDate>\d{2}-\d{2}-\d{4})$', views.reports_dates, name='reports_dates'),
-    # this will display reports page with with dates paged
-    url(r'^reports/(?P<report>[\w\_]+)/(?P<startDate>\d{2}-\d{2}-\d{4})/(?P<stopDate>\d{2}-\d{2}-\d{4})/page_(?P<page>\d+)$', views.reports_dates, name='reports_dates'),
-    # this will display reports paged from page 1 with dates
-    url(r'^reports/(?P<report>[\w\_]+)/(?P<startDate>\d{2}-\d{2}-\d{4})/(?P<stopDate>\d{2}-\d{2}-\d{4})/orderby_(?P<orderBy>\w+)/orderdir_(?P<orderDir>\w+)$', views.reports_dates, name='reports_dates'),
-    # this will display reports paged with dates
-    url(r'^reports/(?P<report>[\w\_]+)/(?P<startDate>\d{2}-\d{2}-\d{4})/(?P<stopDate>\d{2}-\d{2}-\d{4})/page_(?P<page>\d+)/orderby_(?P<orderBy>\w+)/orderdir_(?P<orderDir>\w+)$', views.reports_dates, name='reports_dates'),
-    # this will display reports un-paged with dates
-    url(r'^reports/(?P<report>[\w\_]+)/(?P<startDate>\d{2}-\d{2}-\d{4})/(?P<stopDate>\d{2}-\d{2}-\d{4})/page_(?P<page>all)/orderby_(?P<orderBy>\w+)/orderdir_(?P<orderDir>\w+)$', views.reports_dates, name='reports_dates'),
     # this will display sites, paged from page 1
     url(r'^sites$', views.sites, name='sites'),
      # this will display details of a particular site with all inventory paged from page 1
@@ -40,6 +36,8 @@ urlpatterns = patterns('',
     url(r'^sites/site_add$', views.site_add, name='site_add'),
     # this is the add site inventory
     url(r'^sites/(?P<siteId>\d+)/site_add_inventory$', views.site_add_inventory, name='site_add_inventory'),
+    # this is the add site inventory confirmation page
+    url(r'^sites/(?P<siteId>\d+)/product_add_to_site_inventory$', views.product_add_to_site_inventory, name='product_add_to_site_inventory'),
     # this is the delete site page
     url(r'^sites/delete$', views.site_delete, name='site_delete'),
     # this is the delete all sites page

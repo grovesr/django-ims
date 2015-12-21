@@ -107,26 +107,51 @@ def get_session_messages(request):
     request.session['infoMessage'] = ''
     return errorMessage, warningMessage, infoMessage
 
-def get_session_page_info(request):
-    parsedUrl = urlparse(request.META.get('PATH_INFO'))
-    pageDict = request.session.get(parsedUrl.path, {})
-    page = pageDict.get('page', 1)
-    pageSize = pageDict.get('pageSize', settings.PAGE_SIZE)
-    return page, pageSize
-
-def update_session_page_info(request):
+def get_page_dict(request):
     parsedUrl = urlparse(request.META.get('PATH_INFO'))
     pageDict = request.session.get(parsedUrl.path, {})
     if not isinstance(pageDict, dict):
         # something is wrong, this should be a dictionary
         pageDict = {}
+    return pageDict, parsedUrl
+
+def get_session_order_by_info(request, pageDict):
+    orderByString = pageDict.get('orderBy','')
+    return orderByString
+
+def update_order_by(request, priorityFields = ()):
+    pageDict, parsedUrl = get_page_dict(request)
+    if 'orderBy' not in request.GET:
+        orderByString = get_session_order_by_info(request, pageDict)
+    else:
+        orderByString = request.GET.get('orderBy')
+    pageDict['orderBy'] = orderByString
+    request.session[parsedUrl.path] = pageDict
+    orderByFields = orderByString.split(':')
+    orderByDict = OrderedDict()
+    if orderByFields:
+        for priorityField in priorityFields:
+            for orderByField in orderByFields:
+                if priorityField in orderByField:
+                    orderByDict[priorityField] = orderByField
+    if priorityFields and not orderByDict:
+        orderByDict[priorityFields[0]] = priorityFields[0]
+    return orderByDict
+
+def get_session_page_info(request, pageDict):
+    page = pageDict.get('page', 1)
+    pageSize = pageDict.get('pageSize', settings.PAGE_SIZE)
+    return page, pageSize
+
+def update_session_page_info(request):
+    pageDict, parsedUrl = get_page_dict(request)
     if 'page' not in request.GET:
-        page, __ = get_session_page_info(request)
+        page, __ = get_session_page_info(request, pageDict)
     else:
         page = int(request.GET.get('page'))
     pageDict['page'] = page
     if 'pageSize' not in request.GET:
-        __, pageSize = get_session_page_info(request)
+        __, pageSize = get_session_page_info(request, pageDict)
     else:
         pageSize = int(request.GET.get('pageSize',settings.PAGE_SIZE))
     pageDict['pageSize'] = pageSize
@@ -136,7 +161,6 @@ def update_session_page_info(request):
 def create_paginator(request, items = None):
     page, pageSize = update_session_page_info(request)
     paginator = Paginator(items, pageSize)
-    totalItemCount = items.count()
     try:
         paginatorPage = paginator.page(page)
     except PageNotAnInteger:
@@ -145,7 +169,7 @@ def create_paginator(request, items = None):
     except EmptyPage:
         # If page is out of range (e.g. 9999), deliver last page of results.
         paginatorPage = paginator.page(paginator.num_pages)
-    return paginatorPage, page, pageSize, totalItemCount
+    return paginatorPage
 
 #TODO: rename to Ims from Rims
 # Error classes 
@@ -169,29 +193,29 @@ class RimsDuplicateKeyError(RimsError): pass
 @login_required()
 def home(request):
     # display most recently edited sites and inventory
-    __, pageSize = update_session_page_info(request)
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
-    recentSites = Site.recently_changed_inventory(pageSize)
-    recentInventory = InventoryItem.recently_changed(pageSize)
     totalSites = Site.objects.all().count()
-    totalProducts = ProductInformation.objects.all().count()
-    totalItemCount = max(totalSites, totalProducts)
+    totalProducts = InventoryItem.objects.all().values('information').distinct().count()
+    paginatorPage = create_paginator(request, [None] * max(totalSites, totalProducts))
+    recentSites = Site.recently_changed_inventory(paginatorPage.paginator.per_page)
+    recentInventory = InventoryItem.recently_changed(paginatorPage.paginator.per_page)
+    recentSites = recentSites[:paginatorPage.paginator.per_page]
+    recentInventory = recentInventory[:paginatorPage.paginator.per_page]
     if len(recentInventory) == 0:
         warningMessage += 'No inventory found.'
     return render(request,'ims/home.html', {'nav_rims':1,
-                                             'sitesList':recentSites,
-                                             'inventoryList':recentInventory,
-                                             'pageSize':pageSize,
-                                             'totalItemCount':totalItemCount,
-                                             'pageSizeSelectionLabel':'Display most recent:',
-                                             'errorMessage':errorMessage,
-                                             'warningMessage':warningMessage,
-                                             'infoMessage':infoMessage,
-                                             'adminName':adminName,
-                                             'adminEmail':adminEmail,
-                                             'siteVersion':siteVersion,
-                                             'imsVersion':imsVersion,
-                                             })
+                                            'sitesList':recentSites,
+                                            'inventoryList':recentInventory,
+                                            'paginatorPage':paginatorPage,
+                                            'pageSizeSelectionLabel':'Display most recent:',
+                                            'errorMessage':errorMessage,
+                                            'warningMessage':warningMessage,
+                                            'infoMessage':infoMessage,
+                                            'adminName':adminName,
+                                            'adminEmail':adminEmail,
+                                            'siteVersion':siteVersion,
+                                            'imsVersion':imsVersion,
+                                            })
 
 @login_required()
 def imports(request):
@@ -267,33 +291,46 @@ def imports(request):
                                                 'imsVersion':imsVersion,
                                                 })
 
-def get_sorted_inventory(report = '', 
+def get_sorted_inventory(request,
+                         report = '', 
                          startDate = None, 
-                         stopDate = None, 
-                         orderBy = 'name',
-                         orderDir = 'asc',
-                         sortReverse = False):
+                         stopDate = None):
     sitesList=None
     inventoryList=None
     includesCategories = False
+    orderBy = OrderedDict()
     if report and startDate and stopDate:
         #parsedStartDate = parse_datestr_tz(reorder_date_mdy_to_ymd(startDate, '-'), 0, 0)
         parsedStopDate = parse_datestr_tz(reorder_date_mdy_to_ymd(stopDate, '-'), 23, 59)
-        sites = Site.objects.all().order_by('name')
+        if re.match('^site_', report):
+            orderBy = update_order_by(request, ('name',))
+            sites = Site.objects.all().order_by(*orderBy.values())
+        else:
+            sites = Site.objects.all().order_by('name')
         sitesList = OrderedDict()
-        inventoryList = {}
-        if re.match('site_detail', report): # site detail reports don't contain inventory details, just get
+        inventoryList = OrderedDict()
+        if re.match('^site_detail', report): 
+            # site detail reports don't contain inventory details, just get
             # the site data and pass it to the template for rendering
             sitesList = sites
         else:
             # other reports require information about the inventory at each site
             for site in sites:
-                siteInventory = site.latest_inventory(stopDate=parsedStopDate, 
-                    orderBy=orderBy, orderDir = orderDir)
+                if re.match('^inventory_', report):
+                    orderBy = update_order_by(request,
+                                              ('information__name',
+                                               'information__code',))
+                    if orderBy:
+                        siteInventory=site.latest_inventory(stopDate = parsedStopDate,
+                                                            orderBy = orderBy)
+                    else:
+                        siteInventory=site.latest_inventory(stopDate = parsedStopDate,)
+                else:
+                    siteInventory=site.latest_inventory(stopDate = parsedStopDate,)
                 sitesList[site] = siteInventory
                 if not includesCategories:
                     includesCategories = siteInventory.filter(information__category__isnull = False).count() > 0
-                if re.match('inventory_detail', report) or re.match('inventory_status', report):
+                if re.match('^inventory_', report):
                     # these reports require details about each inventory item
                     # contained at each site
                     for item in siteInventory:
@@ -307,111 +344,40 @@ def get_sorted_inventory(report = '',
             
             sortedInventory = OrderedDict()
             informationItems = inventoryList.keys()
-            if orderBy == 'code':
-                # sort by code
-                sortedCodes = [information.code for information in informationItems]
-                sortedCodes.sort(reverse=sortReverse)
-                for code in sortedCodes:
-                    thisInfo = [information for information in inventoryList.keys() if information.code == code]
-                    sortedInventory[thisInfo[0]] = inventoryList[thisInfo[0]]
+            if re.match('^inventory_', report):
+                if re.match('information__name',orderBy.keys()[0]):
+                    sortReverse = '-' in orderBy['information__name']
+                    sortedNames = [information.name for information in informationItems]
+                    sortedNames.sort(reverse=sortReverse)
+                    for name in sortedNames:
+                        thisInfo = [information for information in inventoryList.keys() if information.name == name]
+                        sortedInventory[thisInfo[0]] = inventoryList[thisInfo[0]] #sortProductByName
+                else:
+                    # sort by code
+                    sortReverse = '-' in orderBy['information__code']
+                    sortedCodes = [information.code for information in informationItems]
+                    sortedCodes.sort(reverse=sortReverse)
+                    for code in sortedCodes:
+                        thisInfo = [information for information in inventoryList.keys() if information.code == code]
+                        sortedInventory[thisInfo[0]] = inventoryList[thisInfo[0]]
             else:
                 
                 sortedNames = [information.name for information in informationItems]
-                sortedNames.sort(reverse=sortReverse)
+                #sortedNames.sort(reverse=sortReverse)
                 for name in sortedNames:
                     thisInfo = [information for information in inventoryList.keys() if information.name == name]
                     sortedInventory[thisInfo[0]] = inventoryList[thisInfo[0]] #sortProductByName
             
             inventoryList = sortedInventory
-    return sitesList, inventoryList, includesCategories
+    return orderBy, sitesList, inventoryList, includesCategories
 
 @login_required()
-
 def reports_dates(request, 
-                  report = None,
-                  page = 1, 
+                  report = None, 
                   startDate = None, 
-                  stopDate = None,
-                  orderBy = 'name', 
-                  orderDir = 'asc'):
+                  stopDate = None,):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     dateSpanForm=DateSpanQueryForm()
-    if orderDir == 'asc':
-        sortReverse = False
-        altOrderDir = 'desc'
-    else:
-        sortReverse = True
-        altOrderDir = 'asc'
-    if orderBy == 'name':
-        altOrderBy = 'code'
-    else:
-        altOrderBy = 'name'
-    if request.method == 'POST':
-        beginDate = startDate
-        endDate = stopDate
-        if 'Site Inventory Print' in request.POST:
-            return redirect(reverse('ims:reports_dates',
-                             kwargs={'report':'site_inventory_print',
-                                     'page':page,
-                                     'startDate':beginDate,
-                                     'stopDate':endDate,
-                                     'orderBy':orderBy,
-                                     'orderDir':orderDir}))
-        elif 'Site Inventory XLS' in request.POST:
-            return redirect(reverse('ims:reports_dates',
-                             kwargs={'report':'site_inventory_xls',
-                                     'page':page,
-                                     'startDate':beginDate,
-                                     'stopDate':endDate,}))
-        elif 'Site Detail Print' in request.POST:
-            return redirect(reverse('ims:reports_dates',
-                             kwargs={'report':'site_detail_print',
-                                     'page':page,
-                                     'startDate':beginDate,
-                                     'stopDate':endDate,}))
-        elif 'Site Detail XLS' in request.POST:
-            return redirect(reverse('ims:reports_dates',
-                             kwargs={'report':'site_detail_xls',
-                                     'page':page,
-                                     'startDate':beginDate,
-                                     'stopDate':endDate}))
-        elif 'Inventory Detail Print' in request.POST:
-            return redirect(reverse('ims:reports_dates',
-                             kwargs={'report':'inventory_detail_print',
-                                     'page':page,
-                                     'startDate':beginDate,
-                                     'stopDate':endDate,
-                                     'orderBy':orderBy,
-                                     'orderDir':orderDir}))
-        elif 'Inventory Detail XLS' in request.POST:
-            return redirect(reverse('ims:reports_dates',
-                             kwargs={'report':'inventory_detail_xls',
-                                     'page':page,
-                                     'startDate':beginDate,
-                                     'stopDate':endDate}))
-        elif 'Inventory Status Print' in request.POST:
-            return redirect(reverse('ims:reports_dates',
-                             kwargs={'report':'inventory_status_print',
-                                     'page':page,
-                                     'startDate':beginDate,
-                                     'stopDate':endDate,
-                                     'orderBy':orderBy,
-                                     'orderDir':orderDir}))
-        elif 'Inventory Status XLS' in request.POST:
-            return redirect(reverse('ims:reports_dates',
-                             kwargs={'report':'inventory_status_xls',
-                                     'page':page,
-                                     'startDate':beginDate,
-                                     'stopDate':endDate}))
-    (sitesList, 
-     inventoryList, 
-     includesCategories) = get_sorted_inventory(report = report, 
-                                                startDate = startDate, 
-                                                stopDate = stopDate, 
-                                                orderBy = orderBy, 
-                                                orderDir = orderDir,
-                                                sortReverse = sortReverse)
-    
     return render(request,'ims/reports.html', {'nav_reports':1,
                                                 'warningMessage':warningMessage,
                                                 'infoMessage':infoMessage,
@@ -420,13 +386,44 @@ def reports_dates(request,
                                                 'dateSpanForm':dateSpanForm,
                                                 'startDate':startDate,
                                                 'stopDate':stopDate,
-                                                'pageNo':page,
+                                                'adminName':adminName,
+                                                'adminEmail':adminEmail,
+                                                'siteVersion':siteVersion,
+                                                'imsVersion':imsVersion,})
+    
+@login_required()
+def reports(request):
+    startDate = request.GET.get('startDate',timezone.now().strftime('%m-%d-%Y'))
+    stopDate = request.GET.get('stopDate',timezone.now().strftime('%m-%d-%Y'))
+    return reports_dates(request, startDate=startDate, stopDate=stopDate)
+
+
+@login_required()
+def site_inventory_print(request):
+    errorMessage, warningMessage, infoMessage = get_session_messages(request)
+    startDate = request.GET.get('startDate',timezone.now().strftime('%m-%d-%Y'))
+    stopDate = request.GET.get('stopDate',timezone.now().strftime('%m-%d-%Y'))
+    (orderBy,
+     sitesList, 
+     inventoryList, 
+     includesCategories) = get_sorted_inventory(request,
+                                                report = 'site_inventory_print', 
+                                                startDate = startDate, 
+                                                stopDate = stopDate,)
+    if not sitesList:
+        request.session['warningMessage'] = 'No sites found.'
+        return redirect(reverse('ims:reports') + 
+                        '?startDate=' + startDate +
+                        '&stopDate' + stopDate)
+    return render(request,'ims/site_inventory_print.html', {'nav_reports':1,
+                                                'warningMessage':warningMessage,
+                                                'infoMessage':infoMessage,
+                                                'errorMessage':errorMessage,
+                                                'orderBy':orderBy,
+                                                'startDate':startDate,
+                                                'stopDate':stopDate,
                                                 'sitesList':sitesList,
                                                 'inventoryList':inventoryList,
-                                                'orderBy':orderBy,
-                                                'altOrderBy':altOrderBy,
-                                                'orderDir':orderDir,
-                                                'altOrderDir':altOrderDir,
                                                 'addCategory':includesCategories,
                                                 'adminName':adminName,
                                                 'adminEmail':adminEmail,
@@ -434,11 +431,100 @@ def reports_dates(request,
                                                 'imsVersion':imsVersion,})
 
 @login_required()
-def reports(request):
-    today=timezone.now()
-    startDate=today.strftime('%m-%d-%Y')
-    stopDate=today.strftime('%m-%d-%Y')
-    return reports_dates(request, startDate=startDate, stopDate=stopDate)
+def site_detail_print(request):
+    errorMessage, warningMessage, infoMessage = get_session_messages(request)
+    startDate = request.GET.get('startDate',timezone.now().strftime('%m-%d-%Y'))
+    stopDate = request.GET.get('stopDate',timezone.now().strftime('%m-%d-%Y'))
+    (orderBy,
+     sitesList, 
+     inventoryList, 
+     includesCategories) = get_sorted_inventory(request,
+                                                report = 'site_detail_print', 
+                                                startDate = startDate, 
+                                                stopDate = stopDate,)
+    if not sitesList:
+        request.session['warningMessage'] = 'No sites found.'
+        return redirect(reverse('ims:reports') + 
+                        '?startDate=' + startDate +
+                        '&stopDate' + stopDate)
+    return render(request,'ims/site_detail_print.html', {'nav_reports':1,
+                                                'warningMessage':warningMessage,
+                                                'infoMessage':infoMessage,
+                                                'errorMessage':errorMessage,
+                                                'orderBy':orderBy,
+                                                'startDate':startDate,
+                                                'stopDate':stopDate,
+                                                'sitesList':sitesList,
+                                                'inventoryList':inventoryList,
+                                                'addCategory':includesCategories,
+                                                'adminName':adminName,
+                                                'adminEmail':adminEmail,
+                                                'siteVersion':siteVersion,
+                                                'imsVersion':imsVersion,})
+
+@login_required()
+def inventory_detail_print(request):
+    errorMessage, warningMessage, infoMessage = get_session_messages(request)
+    startDate = request.GET.get('startDate',timezone.now().strftime('%m-%d-%Y'))
+    stopDate = request.GET.get('stopDate',timezone.now().strftime('%m-%d-%Y'))
+    (orderBy,
+     sitesList, 
+     inventoryList, 
+     includesCategories) = get_sorted_inventory(request,
+                                                report = 'inventory_detail_print', 
+                                                startDate = startDate, 
+                                                stopDate = stopDate,)
+    if not inventoryList:
+        request.session['warningMessage'] = 'No inventory found.'
+        return redirect(reverse('ims:reports') + 
+                        '?startDate=' + startDate +
+                        '&stopDate' + stopDate)
+    return render(request,'ims/inventory_detail_print.html', {'nav_reports':1,
+                                                'warningMessage':warningMessage,
+                                                'infoMessage':infoMessage,
+                                                'errorMessage':errorMessage,
+                                                'orderBy':orderBy,
+                                                'startDate':startDate,
+                                                'stopDate':stopDate,
+                                                'sitesList':sitesList,
+                                                'inventoryList':inventoryList,
+                                                'addCategory':includesCategories,
+                                                'adminName':adminName,
+                                                'adminEmail':adminEmail,
+                                                'siteVersion':siteVersion,
+                                                'imsVersion':imsVersion,})
+
+@login_required()
+def inventory_status_print(request):
+    errorMessage, warningMessage, infoMessage = get_session_messages(request)
+    startDate = request.GET.get('startDate',timezone.now().strftime('%m-%d-%Y'))
+    stopDate = request.GET.get('stopDate',timezone.now().strftime('%m-%d-%Y'))
+    (orderBy,
+     sitesList, 
+     inventoryList, 
+     includesCategories) = get_sorted_inventory(request,
+                                                report = 'inventory_status_print', 
+                                                startDate = startDate, 
+                                                stopDate = stopDate,)
+    if not inventoryList:
+        request.session['warningMessage'] = 'No inventory found.'
+        return redirect(reverse('ims:reports') + 
+                        '?startDate=' + startDate +
+                        '&stopDate' + stopDate)
+    return render(request,'ims/inventory_status_print.html', {'nav_reports':1,
+                                                'warningMessage':warningMessage,
+                                                'infoMessage':infoMessage,
+                                                'errorMessage':errorMessage,
+                                                'orderBy':orderBy,
+                                                'startDate':startDate,
+                                                'stopDate':stopDate,
+                                                'sitesList':sitesList,
+                                                'inventoryList':inventoryList,
+                                                'addCategory':includesCategories,
+                                                'adminName':adminName,
+                                                'adminEmail':adminEmail,
+                                                'siteVersion':siteVersion,
+                                                'imsVersion':imsVersion,})
 
 @login_required()
 def inventory_history_dates(request, siteId=None, code=None, startDate=None, stopDate=None):
@@ -461,10 +547,7 @@ def inventory_history_dates(request, siteId=None, code=None, startDate=None, sto
     #parsedStartDate=parse_datestr_tz(reorder_date_mdy_to_ymd(startDate,'-'),0,0)
     parsedStopDate=parse_datestr_tz(reorder_date_mdy_to_ymd(stopDate,'-'),23,59)
     inventoryList=site.inventory_history_for_product(code=product.code, stopDate=parsedStopDate)
-    (paginatorPage, 
-     page, 
-     pageSize, 
-     totalItemCount) = create_paginator(request, items = inventoryList)
+    paginatorPage = create_paginator(request, items = inventoryList)
     inventoryIds=[]
     for item in paginatorPage.object_list:
         inventoryIds.append(item.pk)
@@ -477,9 +560,6 @@ def inventory_history_dates(request, siteId=None, code=None, startDate=None, sto
     return render(request, 'ims/inventory_history_dates.html',{
                   'site':site,
                   'product':product,
-                  'page':page,
-                  'pageSize':pageSize,
-                  'totalItemCount':totalItemCount,
                   'adjust':adjust,
                   'paginatorPage':paginatorPage,
                   'paginatedItems':siteInventory,
@@ -506,11 +586,9 @@ def sites(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canDelete=request.user.has_perm('ims.delete_site') and request.user.has_perm('ims.delete_inventoryitem')
     canAdd=request.user.has_perm('ims.add_site')
-    sitesList=Site.objects.all().order_by('name')
-    (paginatorPage, 
-     page, 
-     pageSize, 
-     totalItemCount) = create_paginator(request, items = sitesList)
+    orderBy = update_order_by(request, ('name',))
+    sitesList=Site.objects.all().order_by(*orderBy.values())
+    paginatorPage = create_paginator(request, items = sitesList)
     SiteFormset=modelformset_factory( Site, form=SiteListForm, fields=['Delete'], extra=0)
     if request.method == "POST":
         paginatedForms=SiteFormset(request.POST,queryset=paginatorPage.object_list, error_class=TitleErrorList)
@@ -532,14 +610,12 @@ def sites(request):
             else:
                 errorMessage='You don''t have permission to add sites'
     paginatedForms=SiteFormset(queryset=paginatorPage.object_list, error_class=TitleErrorList)
-    if len(sitesList) == 0:
+    if Site.objects.all().count() == 0:
         warningMessage += 'No sites found'
     return render(request,'ims/sites.html', {'nav_sites':1,
-                                              'page':page,
-                                              'pageSize':pageSize,
-                                              'totalItemCount':int(totalItemCount),
                                               'paginatedItems':paginatedForms,
                                               'paginatorPage':paginatorPage,
+                                              'orderBy':orderBy,
                                               'infoMessage':infoMessage,
                                               'warningMessage':warningMessage,
                                               'errorMessage':errorMessage,
@@ -566,17 +642,23 @@ def site_detail(request, siteId=1):
     canChangeInventory=request.user.has_perm('ims.change_inventoryitem')
     canChangeSite=request.user.has_perm('ims.change_site')
     canDelete=request.user.has_perm('ims.delete_inventoryitem')
-    siteInventory=site.latest_inventory()
-    (paginatorPage, 
-     page, 
-     pageSize, 
-     totalItemCount) = create_paginator(request, items = siteInventory)
+    orderBy = update_order_by(request, ('information__name', 
+                                        'information__code',
+                                        'information__unitOfMeasure',
+                                        'information__category',
+                                        'quantity',))
+    if orderBy:
+        siteInventory=site.latest_inventory(orderBy = orderBy)
+    else:
+        siteInventory=site.latest_inventory()
+    paginatorPage = create_paginator(request, items = siteInventory)
     siteForm=SiteForm(site.__dict__,instance=site, error_class=TitleErrorList)
     InventoryAdjustFormset=modelformset_factory(InventoryItem,extra=0, can_delete=False,
                                              form=InventoryItemFormNoSite)
     InventoryAddSubtractFormset=modelformset_factory(InventoryItem,extra=0, can_delete=False,
                                              form=InventoryItemFormAddSubtractNoSite)
-    inventoryAdjustForms=InventoryAdjustFormset(queryset=paginatorPage.object_list, error_class=TitleErrorList)
+    inventoryAdjustForms=InventoryAdjustFormset(queryset=paginatorPage.object_list,
+                                                error_class=TitleErrorList,)
     inventoryAddSubtractForms=InventoryAddSubtractFormset(queryset=paginatorPage.object_list, error_class=TitleErrorList)
     if request.method == "POST":
         siteForm=SiteForm(request.POST,instance=site, error_class=TitleErrorList)
@@ -598,8 +680,9 @@ def site_detail(request, siteId=1):
                             request.session['infoMessage'] = infoMessage
                             return redirect(reverse('ims:site_detail',
                                                     kwargs={'siteId':site.pk,},) + 
-                                            '?' + urlencode({'page':page,
-                                                             'pageSize':pageSize,}))
+                                            '?' + urlencode({'page':paginatorPage.number,
+                                                             'pageSize':paginatorPage.paginator.per_page,
+                                                             'adjust':adjust}))
                         else:
                             warningMessage = 'No changes made to the site information'
                     else:
@@ -622,11 +705,10 @@ def site_detail(request, siteId=1):
                                 newItem.save()
                             siteInventory=site.latest_inventory()
                             request.session['infoMessage'] = 'Successfully changed site inventory'
-                            inventoryAdjustForms=InventoryAdjustFormset(queryset=siteInventory, error_class=TitleErrorList)
                             return redirect(reverse('ims:site_detail',
                                                     kwargs={'siteId':site.pk,},) + 
-                                            '?' + urlencode({'page':page,
-                                                             'pageSize':pageSize,
+                                            '?' + urlencode({'page':paginatorPage.number,
+                                                             'pageSize':paginatorPage.paginator.per_page,
                                                              'adjust':adjust}))
                         else:
                             warningMessage = 'No changes made to the site inventory'
@@ -646,11 +728,11 @@ def site_detail(request, siteId=1):
                                 newItem.save()
                             siteInventory=site.latest_inventory()
                             request.session['infoMessage'] = 'Successfully changed site inventory'
-                            inventoryAddSubtractForms=InventoryAddSubtractFormset(queryset=siteInventory, error_class=TitleErrorList)
                             return redirect(reverse('ims:site_detail',
                                                     kwargs={'siteId':site.pk,},) + 
-                                            '?' + urlencode({'page':page,
-                                                             'pageSize':pageSize,}))
+                                            '?' + urlencode({'page':paginatorPage.number,
+                                                             'pageSize':paginatorPage.paginator.per_page,
+                                                             'adjust':adjust}))
                         else:
                             warningMessage = 'No changes made to the site inventory'
                 else:
@@ -665,9 +747,7 @@ def site_detail(request, siteId=1):
     return render(request, 'ims/site_detail.html', {"nav_sites":1,
                                                 'site': site,
                                                 'siteForm':siteForm,
-                                                'page':page,
-                                                'pageSize':pageSize,
-                                                'totalItemCount':totalItemCount,
+                                                'orderBy':orderBy,
                                                 'paginatorPage':paginatorPage,
                                                 'paginatedItems':inventoryAdjustForms,
                                                 'inventoryAdjustForms':inventoryAdjustForms,
@@ -733,15 +813,13 @@ def site_add_inventory(request, siteId=1):
         request.session['errorMessage'] = errorMessage
         return redirect(reverse('ims:sites'))
     canAdd=request.user.has_perm('ims.add_inventoryitem')
-    productsList=ProductInformation.objects.all().order_by('name')
-    if not productsList:
+    orderBy = update_order_by(request, ('name', 'code',))
+    productsList=ProductInformation.objects.all().order_by(*orderBy.values())
+    paginatorPage = create_paginator(request, items = productsList)
+    if ProductInformation.objects.all().count() == 0:
         request.session['warningMessage'] = 'No products found to add'
         return redirect(reverse('ims:site_detail', 
                                 kwargs = {'siteId':siteId}))
-    (paginatorPage, 
-     page, 
-     pageSize, 
-     totalItemCount) = create_paginator(request, items = productsList)
     ProductFormset=modelformset_factory( ProductInformation, form=ProductListFormWithAdd, extra=0)
     if canAdd:
         if request.method == "POST":
@@ -769,11 +847,9 @@ def site_add_inventory(request, siteId=1):
     return render(request, 'ims/site_add_inventory.html', {"nav_sites":1,
                                                 'site':site,
                                                 'siteForm':siteForm,
-                                                'page':page,
-                                                'pageSize':pageSize,
-                                                'totalItemCount':totalItemCount,
                                                 'paginatorPage':paginatorPage,
                                                 'paginatedItems':paginatedForms,
+                                                'orderBy':orderBy,
                                                 'warningMessage':warningMessage,
                                                 'infoMessage':infoMessage,
                                                 'errorMessage':errorMessage,
@@ -889,11 +965,10 @@ def products(request):
         ProductFormset=modelformset_factory( ProductInformation, form=ProductListFormWithDelete, extra=0)
     else:
         ProductFormset=modelformset_factory( ProductInformation, form=ProductListFormWithoutDelete, extra=0)
-    productsList=ProductInformation.objects.all().order_by('name')
-    (paginatorPage, 
-     page, 
-     pageSize, 
-     totalItemCount) = create_paginator(request, items = productsList)
+    # pass in allowed order by fields
+    orderBy = update_order_by(request, ('name', 'category__category', 'code'))
+    productsList=ProductInformation.objects.all().order_by(*orderBy.values())
+    paginatorPage = create_paginator(request, items = productsList)
     if request.method == 'POST':
         paginatedForms=ProductFormset(request.POST,queryset=paginatorPage.object_list, error_class=TitleErrorList)
         if 'Delete' in request.POST:
@@ -907,8 +982,8 @@ def products(request):
                                           productsToDelete=productsToDelete)
                 request.session['warningMessage'] = 'No products selected for deletion'
                 return redirect(reverse('ims:products') + '?' +
-                                        urlencode({'page':page,
-                                                'pageSize':pageSize,}))
+                                        urlencode({'page':paginatorPage.number,
+                                                'pageSize':paginatorPage.paginator.per_page,}))
             else:
                 errorMessage='You don''t have permission to delete products'
         if 'Add' in request.POST:
@@ -918,14 +993,12 @@ def products(request):
                 errorMessage='You don''t have permission to add products'
     else:
         paginatedForms=ProductFormset(queryset=paginatorPage.object_list, error_class=TitleErrorList)
-    if len(productsList) == 0:
+    if ProductInformation.objects.all().count() == 0:
         warningMessage='No products found'
     return render(request,'ims/products.html', {'nav_products':1,
-                                              'page':page,
-                                              'pageSize':pageSize,
-                                              'totalItemCount':int(totalItemCount),
                                               'paginatedItems':paginatedForms,
                                               'paginatorPage':paginatorPage,
+                                              'orderBy':orderBy,
                                               'canAdd':canAdd,
                                               'canDelete':canDelete,
                                               'warningMessage':warningMessage,
@@ -948,11 +1021,9 @@ def product_detail(request, code='-1',):
         request.session['errorMessage'] = errorMessage
         return redirect(reverse('ims:products'))
     canChange=request.user.has_perm('ims.change_productinformation')
-    inventorySites=product.inventoryitem_set.all().values('site').distinct()
-    (paginatorPage, 
-     page, 
-     pageSize, 
-     totalItemCount) = create_paginator(request, items = inventorySites)
+    orderBy = update_order_by(request, ('site__name', ))
+    inventorySites=product.inventoryitem_set.all().order_by(*orderBy.values()).values('site').distinct()
+    paginatorPage = create_paginator(request, items = inventorySites)
     sitesList=[]
     for siteNumber in paginatorPage.object_list:
         site = Site.objects.get(pk=siteNumber['site'])
@@ -1009,6 +1080,15 @@ def product_detail(request, code='-1',):
                                 else:
                                     product.save()                                
                                 process_picture(request, product)
+                        except OSError as e:
+                            errorMessage += ('<br/>Unhandled exception occurred during product save.<br/>No database changes were made.<br/>Site admin has been informed:<br/> %s<br/>' 
+                                % repr(e))
+                            log_actions(request = request, modifier=request.user.username,
+                                        modificationMessage=errorMessage,
+                                        logError = True)
+                            request.session['errorMessage'] += errorMessage
+                            return redirect(reverse('ims:product_detail',
+                                                kwargs={'code':product.code,})+ picture)
                         except (RimsImageProcessingError, RimsDuplicateKeyError):
                             pass
                         if 'errorMessage' not in request.session or request.session['errorMessage'] == '':
@@ -1051,11 +1131,9 @@ def product_detail(request, code='-1',):
                             {"nav_products":1,
                              'product': product,
                              'productForm':productForm,
-                             'page':page,
-                             'pageSize':pageSize,
-                             'totalItemCount':totalItemCount,
                              'paginatorPage':paginatorPage,
                              'paginatedItems':sitesList,
+                             'orderBy':orderBy,
                              'picture':picture,
                              'canChange':canChange,
                              'warningMessage':warningMessage,
@@ -1139,8 +1217,7 @@ def product_add_to_site_inventory(request, siteId=1, productToAdd=None, productL
                 newProduct=newProduct.exclude(pk=productItem.pk)
     if request.method == 'POST':
         if newProduct.count() == 0:
-            return redirect(reverse('ims:site_detail', kwargs={'siteId':site.pk,
-                                                                'page':1}))
+            return redirect(reverse('ims:site_detail', kwargs={'siteId':site.pk,}))
         if 'Save Inventory' in request.POST:
             if canAdd:
                 productForms=ProductFormset(request.POST, queryset=newProduct, error_class=TitleErrorList)
@@ -1153,13 +1230,11 @@ def product_add_to_site_inventory(request, siteId=1, productToAdd=None, productL
                                                   modifier=request.user.username,)
                         request.session['infoMessage'] += 'Successfully added product %s to inventory<br/>' % str(item)
                     return redirect(reverse('ims:site_detail',
-                                    kwargs={'siteId':site.pk,
-                                            'page':1}))
+                                    kwargs={'siteId':site.pk,}))
                 else:
                     warningMessage = 'More information required before the inventory can be saved'
         if 'Cancel' in request.POST:
-            return redirect(reverse('ims:site_detail', kwargs={'siteId':site.pk,
-                                                                'page':1}),
+            return redirect(reverse('ims:site_detail', kwargs={'siteId':site.pk,}),
                                         )
     if not canAdd:
         errorMessage='You don''t have permission to add to site inventory'

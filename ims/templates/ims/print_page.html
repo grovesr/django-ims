@@ -1,0 +1,26 @@
+{% load staticfiles %}
+<script>
+    "use strict";
+    $(document).ready(function() {
+        $("#printButton").click(function(){
+            printElem('#ims-report');
+        });
+    });
+    function printElem(elem) {
+        popup($(elem).html());
+    }
+
+    function popup(data) {
+        var mywindow = window.open('', 'report', 'height=300px,width=1000px');
+        mywindow.document.write('<html><head>');
+        mywindow.document.write('<link rel="stylesheet" href="{% static 'ims/css/style.css' %}" type="text/css" />');
+        mywindow.document.write('</head><body >');
+        mywindow.document.write(data);
+        mywindow.document.write('</body></html>');
+        mywindow.document.close(); // necessary for IE >= 10
+        mywindow.focus(); // necessary for IE >= 10
+        mywindow.print();
+        mywindow.close();
+        return true;
+    }
+</script>

@@ -10,7 +10,7 @@
     {{ block.super }}
     <i class="fa fa-angle-double-right"></i>
     {% if product %}
-        <a href="{% url 'ims:product_detail' code=product.pk }">product details</a>
+        <a href="{% url 'ims:product_detail' code=product.pk %}">product details</a>
     {% else %}
         <a href="{% url 'ims:product_add' %}">add product</a>
     {% endif %}
@@ -84,6 +84,16 @@
                     {% if paginatedItems %}
                         <div class="detail-form">
                             <table>
+                                <tr>
+                                    <tr class="detail-form-header">
+                                    <th class="sort-header">Site&nbsp;
+                                        <a title="{% if "-" in orderBy.site__name %}sort ascending{% elif orderBy.site__name == 'site__name' %}sort descending{% else %}sort ascending{% endif %}"
+                                        href="?page=1{% if "-" in orderBy.site__name %}&orderBy=site__name{% elif orderBy.site__name == 'site__name' %}&orderBy=-site__name{%else %}&orderBy=site__name{% endif %}" 
+                                        ><i
+                                        class="fa {% if "-" in orderBy.site__name %}fa-sort-desc{% elif orderBy.site__name == 'site__name' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
+                                    </th>
+                                    <th>Quantity</th>
+                                </tr>
                                 {% for site in paginatedItems %}
                                     <tr>
                                         <td class="cell-left">
@@ -92,7 +102,7 @@
                                             </a>
                                         </td>
                                         <td class="cell-left">
-                                            ({{ site.1 }})
+                                            {{ site.1 }}
                                         </td>
                                     </tr>
                                 {% endfor %}

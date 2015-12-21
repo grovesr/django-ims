@@ -1,13 +1,13 @@
-{% if totalItemCount > 0 %}
+{% if paginatorPage.paginator.count > 0 %}
     {% include "ims/page_size_selection.html" %}
     <div class="table-nav-pages
-    {% if pageSize >= totalItemCount %}
+    {% if pageSize >= paginatorPage.paginator.count %}
         hidden
     {% endif %}
     ">
         <a class="
         {% if paginatorPage.has_previous %}
-            " href="?page=1&pageSize={{ pageSize }}"
+            " href="?page=1&pageSize={{ paginatorPage.paginator.per_page }}"
         {% else %}
             disabled" href="#"
         {% endif %}
@@ -15,7 +15,7 @@
         ><i class="fa fa-angle-double-left fa-lg"></i></a>
         <a class="
         {% if paginatorPage.has_previous %}
-            " href="?page={{ paginatorPage.previous_page_number }}&pageSize={{ pageSize }}"
+            " href="?page={{ paginatorPage.previous_page_number }}&pageSize={{ paginatorPage.paginator.per_page }}"
         {% else %}
             disabled" href="#"
         {% endif %}
@@ -26,7 +26,7 @@
         </span>
         <a class="
         {% if paginatorPage.has_next %}
-            " href="?page={{ paginatorPage.next_page_number }}&pageSize={{ pageSize }}"
+            " href="?page={{ paginatorPage.next_page_number }}&pageSize={{ paginatorPage.paginator.per_page }}"
         {% else %}
             disabled" href="#"
         {% endif %}
@@ -34,7 +34,7 @@
         ><i class="fa fa-angle-right fa-lg"></i></a>
         <a class="
         {% if paginatorPage.has_next %}
-            " href="?page={{ paginatorPage.paginator.num_pages }}&pageSize={{ pageSize }}"
+            " href="?page={{ paginatorPage.paginator.num_pages }}&pageSize={{ paginatorPage.paginator.per_page }}"
         {% else %}
             disabled" href="#"
         {% endif %}

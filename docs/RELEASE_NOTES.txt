@@ -28,3 +28,15 @@ Version 1.11.0:
 2015/11/22 Version 1.15.3:
 * 248e289 (HEAD, master) handle backups without picture files
 2015/12/14 Version 1.16.0:
+* e744490 (pagination) refactor Update pagination to reference paginatedItems.  Refactor pagination methods
+* eb28854 feat replace laquo and raquo with font-awesome.  replace page navigation with new pagination class based approach.
+* 94a00d6 style unify page display style across site.  Also add pagination css.
+* 5b74185 feat remove PAGE_SIZE from settings
+* 3230ee0 feat use pagination class and session for paging now
+* ef789e9 feat remove paging information frm URLs, use session and pagination now
+* e84ae03 feat pass in pageSize information to changed inventory methods
+* b14fc01 add font-awesome css to ims/static
+* 93931c2 fix link to style.css in report print popup javascript function
+* 4c6f0ec added category creation to tests
+2015/12/21 Version 1.17.0:
+* 99df58b (HEAD, master) Add new sorting features

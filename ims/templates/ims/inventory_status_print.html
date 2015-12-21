@@ -1,59 +1,80 @@
+{% extends "ims/reports.html" %}
 {% load staticfiles %}
-<div id="ims-report-container"  class="cell-frame" >
-    <button title="print report" id="printButton" class="report-sort">Print</button>
-    {% include "ims/report_sort_controls.html" %}
-    <img class="announcement-close" src="{% static 'base/img/delete.png' %}"></img>
-    <div title="print report" id="ims-report">
-         <h3>Inventory Status Report </h3>
-         <span class="body">(ordered by: product {{ orderBy | capfirst }} in {{ orderDir }}ending order)</span>
-         <h4>as of {{ stopDate }}</h4>
-        <table>
-            <tr class="bottom-bordered-row">
-                <th>
-                    Product
-                </th>
-                {% if addCategory %}
-                    <th>
-                        Category
+{% block extra_scripts %}
+    {{ block.super }}
+    {% include "ims/print_page.html" %}
+{% endblock extra_scripts %}
+{% block breadcrumbs %}
+    {{ block.super }}
+    <i class="fa fa-angle-double-right"></i>
+    <a href="{% url 'ims:inventory_status_print' %}?startDate={{ startDate }}&stopDate={{ stopDate }}">inventory status</a>
+{% endblock breadcrumbs %}
+{% block content %}
+    <div id="ims-report-container"  class="cell-frame" >
+        <button title="print report" id="printButton" class="report-sort">Print</button>
+        <div title="print report" id="ims-report">
+             <h3>Inventory Status Report </h3>
+             <h4>as of {{ stopDate }}</h4>
+            <table>
+                <tr class="bottom-bordered-row">
+                    <th class="sort-header">Product&nbsp;
+                        <a title="{% if "-" in orderBy.information__name %}sort ascending{% elif orderBy.information__name == 'name' %}sort descending{% else %}sort ascending{% endif %}"
+                        href="?startDate={{ startDate }}&stopDate={{ stopDate }}{% if "-" in orderBy.information__name %}&orderBy=information__name{% elif orderBy.information__name == 'information__name' %}&orderBy=-information__name{%else %}&orderBy=information__name{% endif %}" 
+                        ><i
+                        class="fa {% if "-" in orderBy.information__name %}fa-sort-desc{% elif orderBy.information__name == 'information__name' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
                     </th>
-                {% endif %}
-                <th>uom</th>
-                <th>qom</th>
-                <th>
-                    Units
-                </th>
-                <th>
-                    Total
-                </th>
-            </tr>
-            {% for product,siteQuantity in inventoryList.iteritems %}
-                {% comment %} 
-                    siteQuantity is a tuple containing a list of tuples and a tuple: 
-                    ([(site, quantity,extended quantity)],(total quantity for all sites, total extended quantity for all sites))
-                {% endcomment %}
-                <tr>
-                    <td>
-                        {{ product }}
-                    </td>
+                    <th class="sort-header">Code&nbsp;
+                        <a title="{% if "-" in orderBy.information__code %}sort ascending{% elif orderBy.information__code == 'name' %}sort descending{% else %}sort ascending{% endif %}"
+                        href="?startDate={{ startDate }}&stopDate={{ stopDate }}{% if "-" in orderBy.information__code %}&orderBy=information__code{% elif orderBy.information__code == 'information__code' %}&orderBy=-information__code{%else %}&orderBy=information__code{% endif %}" 
+                        ><i
+                        class="fa {% if "-" in orderBy.information__code %}fa-sort-desc{% elif orderBy.information__code == 'information__code' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
+                    </th>
                     {% if addCategory %}
-                        <td>
-                            {{ product.category }}
-                        </td>
+                        <th>
+                            Category
+                        </th>
                     {% endif %}
-                     <td>
-                        {{ product.unitOfMeasure | lower }}
-                    </td>
-                    <td>
-                        {{ product.quantityOfMeasure }}
-                    </td>
-                    <td>
-                        {{ siteQuantity.1.0 }}
-                    </td>
-                    <td>
-                        {{ siteQuantity.1.1 }}
-                    </td>
+                    <th>uom</th>
+                    <th>qom</th>
+                    <th>
+                        Units
+                    </th>
+                    <th>
+                        Total
+                    </th>
                 </tr>
-            {% endfor %}
-        </table>
+                {% for product,siteQuantity in inventoryList.iteritems %}
+                    {% comment %} 
+                        siteQuantity is a tuple containing a list of tuples and a tuple: 
+                        ([(site, quantity,extended quantity)],(total quantity for all sites, total extended quantity for all sites))
+                    {% endcomment %}
+                    <tr>
+                        <td>
+                            {{ product.name }}
+                        </td>
+                        <td>
+                            {{ product.meaningful_code }}
+                        </td>
+                        {% if addCategory %}
+                            <td>
+                                {{ product.category }}
+                            </td>
+                        {% endif %}
+                         <td>
+                            {{ product.unitOfMeasure | lower }}
+                        </td>
+                        <td>
+                            {{ product.quantityOfMeasure }}
+                        </td>
+                        <td>
+                            {{ siteQuantity.1.0 }}
+                        </td>
+                        <td>
+                            {{ siteQuantity.1.1 }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
     </div>
-</div>
+{% endblock content %}

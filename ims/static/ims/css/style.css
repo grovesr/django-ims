@@ -56,16 +56,27 @@ li, #form-table th, #form-table td {
     background:#FFEFEF;
 }
 
+#error-note i.fa-minus-circle {
+    color:#a44;
+}
 .warningnote {
     border: 1px solid #CC2;
     color: #000;
     background:#FFA;
 }
 
+#warning-note i.fa-exclamation-circle {
+	color:#aa4;
+}
+
 .infonote {
     border: 1px solid #2C2;
     color: #000;
     background:#EFFFEF;
+}
+
+#info-note i.fa-info-circle {
+    color:#4a4;
 }
 
 #delete-list {
@@ -81,10 +92,22 @@ li, #form-table th, #form-table td {
     cursor:pointer;
 }
 
-.table-nav-pages a, .pagination a, .page-list {
+.table-nav-pages a, .pagination a {
     text-decoration: none;
     cursor: pointer;
     color:#555;
+}
+
+.page-list {
+	color:#555;
+	background-color:#e8e8e8;
+	border:solid 1px #CCC;
+	border-radius: 5px;
+	padding-left:5px;
+	padding-right: 2px;
+	margin-left:5px;
+	margin-right:5px;
+	cursor:default;
 }
 
 .table-nav-pages a:hover, .pagination a:hover {
@@ -97,6 +120,10 @@ div.table-nav-pages {
 	display:block;
 	margin-right:5px;
 	margin-bottom:5px;
+}
+
+th.sort-header {
+	white-space:nowrap;
 }
 
 .current {
@@ -210,6 +237,15 @@ input[type="number"] {
     width: 100px;
 }
 
+input[id="id_name"] {
+	width:20em;
+}
+
+input[id$="addSubtract"],
+input[id$="quantity"] {
+	width:60px;
+}
+
 .cell-frame,
 #products-list-cell-frame, 
 #sites-list-cell-frame,
@@ -230,15 +266,18 @@ td.cell-frame, div.cell-frame {
     background:#fff;
 }
 
-#products-list-cell-frame, 
-#sites-list-cell-frame,
 #site-inventory-cell-frame,
-#product-add-cell-frame,
-#inventory-detail-form,
-#product-edit-form, 
-#product-picture,
 #adjust-quantity-form, 
 #add-subtract-form,
+#inventory-detail-form {
+	width:45em;
+}
+
+#products-list-cell-frame, 
+#sites-list-cell-frame,
+#product-add-cell-frame,
+#product-edit-form, 
+#product-picture,
 #product-detail-form,
 #sites-list-form {
     width:40em;
@@ -305,7 +344,7 @@ tr.detail-form-header:hover {
 }
 
 th.tabbed {
-    align:left;
+    text-align:left;
     margin-bottom:0px;
     padding-bottom:0px;
     padding-left: 7px;

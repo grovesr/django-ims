@@ -19,7 +19,7 @@
             </tr>
             <tr>
                 <td id="sites-list-cell-frame"class="cell-frame">
-                    <form action="{% url 'ims:sites' %}?page={{ page }}&pageSize={{ pageSize }}" method="post">
+                    <form action="{% url 'ims:sites' %}?page={{ paginatorPage.number }}&pageSize={{ paginatorPage.paginator.per_page }}" method="post">
                         {% csrf_token  %}
                         <div class="detail-form">
                             <table id="sites-list-form">
@@ -37,8 +37,13 @@
                                 {% for siteForm in paginatedItems %}
                                     {% if forloop.first %}
                                         <tr class="detail-form-header">
-                                            <th>Site</th>
-                                            <th>Inventory</th>
+                                            <th class="sort-header">Site&nbsp;
+                                                <a title="{% if "-" in orderBy.name %}sort ascending{% elif orderBy.name == 'name' %}sort descending{% else %}sort ascending{% endif %}"
+                                                href="?page=1{% if "-" in orderBy.name %}&orderBy=name{% elif orderBy.name == 'name' %}&orderBy=-name{%else %}&orderBy=name{% endif %}" 
+                                                ><i
+                                                class="fa {% if "-" in orderBy.name %}fa-sort-desc{% elif orderBy.name == 'name' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
+                                            </th>
+                                            <th>Products</th>
                                             {% for field in siteForm.visible_fields %}
                                                 <th>{{ field.label|capfirst }}</th>
                                             {% endfor %}
@@ -55,7 +60,7 @@
                                             <a href="{% url 'ims:site_detail' siteId=siteForm.instance.number %}">{{ siteForm.instance.name }}</a>
                                         </td>
                                         <td class="cell-left">
-                                            {{ siteForm.instance.total_inventory }}
+                                            {{ siteForm.instance.latest_inventory.count }}
                                         </td>
                                         {% for field in siteForm.visible_fields %}
                                             <td class="{{ field.css_classes }} cell-left" title="{{ field.errors | escape}}">

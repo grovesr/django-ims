@@ -19,7 +19,7 @@
             </tr>
             <tr>
                 <td id="products-list-cell-frame" class="cell-frame">
-                    <form action="{% url 'ims:products' %}?page={{ page }}&pageSize={{ pageSize }}" method="post">
+                    <form action="{% url 'ims:products' %}?page={{ paginatorPage.number }}&pageSize={{ paginatorPage.paginator.per_page }}" method="post">
                         {% csrf_token  %}
                         <div class="detail-form">
                             <table id="products-list-form">
@@ -37,9 +37,25 @@
                                 {% for productForm in paginatedItems %}
                                     {% if forloop.first %}
                                             <tr class="detail-form-header">
-                                                <th>Product</th>
-                                                <th>Category</th>
-                                                <th>Code</th>
+                                                <th class="sort-header">Product&nbsp;
+                                                    <a title="{% if "-" in orderBy.name %}sort ascending{% elif orderBy.name == 'name' %}sort descending{% else %}sort ascending{% endif %}"
+                                                    href="?page=1{% if "-" in orderBy.name %}&orderBy=name{% elif orderBy.name == 'name' %}&orderBy=-name{%else %}&orderBy=name{% endif %}" 
+                                                    ><i
+                                                    class="fa {% if "-" in orderBy.name %}fa-sort-desc{% elif orderBy.name == 'name' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
+                                                </th>
+                                                <th class="sort-header">Category&nbsp;
+                                                    <a title="{% if "-" in orderBy.category__category %}sort ascending{% elif orderBy.category_category == 'category__category' %}sort descending{% else %}sort ascending{% endif %}"
+                                                    href="?page=1{% if "-" in orderBy.category__category %}&orderBy=category__category{% elif orderBy.category__category == 'category__category' %}&orderBy=-category__category{% else %}&orderBy=category__category{% endif %}"
+                                                    ><i 
+                                                    class="fa {% if "-" in orderBy.category__category %}fa-sort-desc{% elif orderBy.category__category == 'category__category'  %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
+                                                </th>
+                                                <th class="sort-header">Code&nbsp;
+                                                    <a title="{% if "-" in orderBy.code %}sort ascending{% elif orderBy.code == 'code' %}sort descending{% else %}sort ascending{% endif %}"
+                                                    href="?page=1{% if "-" in orderBy.code %}&orderBy=code{% elif orderBy.code == 'code' %}&orderBy=-code{% else %}&orderBy=code{% endif %}"
+                                                    ><i 
+                                                    class="fa {% if "-" in orderBy.code %}fa-sort-desc{% elif orderBy.code == 'code' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
+                                                </th>
+                                                <th>Sites</th>
                                                 {% for field in productForm.visible_fields %}
                                                     <th>{{ field.label|capfirst }}</th>
                                                 {% endfor %}
@@ -59,6 +75,9 @@
                                         </td>
                                         <td class="cell-left">
                                             {{ productForm.instance.meaningful_code }}
+                                        </td>
+                                        <td class="cell-left">
+                                            {{ productForm.instance.num_sites_containing }}
                                         </td>
                                         {% for field in productForm.visible_fields %}
                                             <td class="{{ field.css_classes }} cell-lef" title="{{ field.errors | escape}}">

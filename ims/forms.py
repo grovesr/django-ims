@@ -1,6 +1,6 @@
 from django.forms import Form, ClearableFileInput, FileField, DateInput, \
 DateField, ModelForm, HiddenInput, BooleanField, IntegerField, TextInput, \
-Textarea, CheckboxInput
+Textarea, CheckboxInput, CharField
 from django.utils.safestring import mark_safe
 from django.utils.encoding import force_text
 from django.utils.html import conditional_escape, format_html
@@ -8,7 +8,6 @@ from django.forms.utils import ErrorList
 from django.core.exceptions import ValidationError
 from django.conf import settings
 from ims.models import InventoryItem, ProductInformation, Site
-from functools import partial
 import re
 
 class ImsClearableFileInput(ClearableFileInput):
@@ -55,9 +54,11 @@ class UploadFileForm(Form):
     file = FileField()
 
 class DateSpanQueryForm(Form):
-    DateInput = partial(DateInput, {'class': 'datepicker'})
-    startDate=DateField(widget=DateInput(), label="start")
-    stopDate=DateField(widget=DateInput(), label="end")
+    # this is hidden for now until we have reports that need a startDate
+    startDate=CharField(widget = HiddenInput(), 
+                        label="start")
+    stopDate=DateField(widget=DateInput(), 
+                       label="end")
     
 class InventoryItemForm(ModelForm):
     class Meta:

@@ -1,68 +1,80 @@
+{% extends "ims/reports.html" %}
 {% load staticfiles %}
-<div id="ims-report-container"  class="cell-frame" >
-    <button title="print report" id="printButton" class="report-sort">Print</button>
-    {% include "ims/report_sort_controls.html" %}
-    <img class="announcement-close" src="{% static 'base/img/delete.png' %}"></img>
-    <div title="print report" id="ims-report">
-         <h3>Site Inventory Report </h3>
-         <span class="body">(inventory ordered by: product {{ orderBy | capfirst }} in {{ orderDir }}ending order)</span>
-         <h4>as of {{ stopDate }}</h4>
-        <table id="report-table">
-            <tr class="bottom-bordered-row">
-                <th>
-                    Site
-                </th>
-                <th>
-                    Inventory
-                </th>
-                {% if addCategory %}
-                    <th>
-                        Category
+{% block extra_scripts %}
+    {{ block.super }}
+    {% include "ims/print_page.html" %}
+{% endblock extra_scripts %}
+{% block breadcrumbs %}
+    {{ block.super }}
+    <i class="fa fa-angle-double-right"></i>
+    <a href="{% url 'ims:site_inventory_print' %}?startDate={{ startDate }}&stopDate={{ stopDate }}">site inventory</a>
+{% endblock breadcrumbs %}
+{% block content %}
+    <div id="ims-report-container"  class="cell-frame" >
+        <button title="print report" id="printButton" class="report-sort">Print</button>
+        <div title="print report" id="ims-report">
+             <h3>Site Inventory Report </h3>
+             <h4>as of {{ stopDate }}</h4>
+            <table id="report-table">
+                <tr class="bottom-bordered-row">
+                    <th class="sort-header">Site&nbsp;
+                        <a title="{% if "-" in orderBy.name %}sort ascending{% elif orderBy.name == 'name' %}sort descending{% else %}sort ascending{% endif %}"
+                        href="?startDate={{ startDate }}&stopDate={{ stopDate }}{% if "-" in orderBy.name %}&orderBy=name{% elif orderBy.name == 'name' %}&orderBy=-name{%else %}&orderBy=name{% endif %}" 
+                        ><i
+                        class="fa {% if "-" in orderBy.name %}fa-sort-desc{% elif orderBy.name == 'name' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
                     </th>
-                {% endif %}
-                <th>uom</th>
-                <th>qom</th>
-                <th>
-                    Units
-                </th>
-                <th>
-                    Total
-                </th>
-            </tr>
-            {% for site,inventory in sitesList.iteritems %}
-                {% if inventory %}
-                    <tr>
-                        <td>
-                            <h4>{{ site.name }}</h4>
-                        </td>
-                    </tr>
-                        {%for item in inventory %}
-                            <tr>
-                                <td></td>
-                                <td>
-                                    {{ item.information }}
-                                </td>
-                                {% if addCategory %}
-                                    <td>
-                                        {{ item.information.category }}
-                                    </td>
-                                {% endif %}
-                                <td>
-                                    {{ item.information.unitOfMeasure | lower}}
-                                </td>
-                                <td>
-                                    {{ item.information.quantityOfMeasure }}
-                                </td>
-                                <td>
-                                    {{ item.quantity }}
-                                </td>
-                                <td>
-                                    {{ item.pieces }}
-                                </td>
-                            </tr>
-                        {% endfor %}
+                    <th>
+                        Inventory
+                    </th>
+                    {% if addCategory %}
+                        <th>
+                            Category
+                        </th>
                     {% endif %}
-            {% endfor %}
-        </table>
+                    <th>uom</th>
+                    <th>qom</th>
+                    <th>
+                        Units
+                    </th>
+                    <th>
+                        Total
+                    </th>
+                </tr>
+                {% for site,inventory in sitesList.iteritems %}
+                    {% if inventory %}
+                        <tr>
+                            <td>
+                                <h4>{{ site.name }}</h4>
+                            </td>
+                        </tr>
+                            {%for item in inventory %}
+                                <tr>
+                                    <td></td>
+                                    <td>
+                                        {{ item.information }}
+                                    </td>
+                                    {% if addCategory %}
+                                        <td>
+                                            {{ item.information.category }}
+                                        </td>
+                                    {% endif %}
+                                    <td>
+                                        {{ item.information.unitOfMeasure | lower}}
+                                    </td>
+                                    <td>
+                                        {{ item.information.quantityOfMeasure }}
+                                    </td>
+                                    <td>
+                                        {{ item.quantity }}
+                                    </td>
+                                    <td>
+                                        {{ item.pieces }}
+                                    </td>
+                                </tr>
+                            {% endfor %}
+                        {% endif %}
+                {% endfor %}
+            </table>
+        </div>
     </div>
-</div>
+{% endblock content %}

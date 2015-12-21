@@ -15,15 +15,27 @@
                         </th>
                     </tr>
                     <tr class="detail-form-header">
-                        <th>Item</th>
-                        <th>Unit</th>
-                        <th>Category</th>
-                        {% for field in inventoryForm.visible_fields %}
-                            <th>{{ field.label }}</th>
-                        {% endfor %}
-                        <th>
-                            History
+                        <th class="sort-header">Item&nbsp;
+                            <a title="{% if "-" in orderBy. %}sort ascending{% elif orderBy.information__name == 'information__name' %}sort descending{% else %}sort ascending{% endif %}"
+                            href="?page=1{% if "-" in orderBy.information__name %}&orderBy=information__name{% elif orderBy.information__name == 'information__name' %}&orderBy=-information__name{%else %}&orderBy=information__name{% endif %}" 
+                            ><i
+                            class="fa {% if "-" in orderBy.information__name %}fa-sort-desc{% elif orderBy.information__name == 'information__name' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
                         </th>
+                        <th class="sort-header">Code&nbsp;
+                            <a title="{% if "-" in orderBy.information__code %}sort ascending{% elif orderBy.information__code == 'information__code' %}sort descending{% else %}sort ascending{% endif %}"
+                            href="?page=1{% if "-" in orderBy.information__code %}&orderBy=information__code{% elif orderBy.information__code == 'information__code' %}&orderBy=-information__code{%else %}&orderBy=information__code{% endif %}" 
+                            ><i
+                            class="fa {% if "-" in orderBy.information__code %}fa-sort-desc{% elif orderBy.information__code == 'information__code' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
+                        </th>
+                        <th class="sort-header">Category&nbsp;
+                            <a title="{% if "-" in orderBy.information__category %}sort ascending{% elif orderBy.information__category == 'information__category' %}sort descending{% else %}sort ascending{% endif %}"
+                            href="?page=1{% if "-" in orderBy.information__category %}&orderBy=information__category{% elif orderBy.information__category == 'information__category' %}&orderBy=-information__category{%else %}&orderBy=information__category{% endif %}" 
+                            ><i
+                            class="fa {% if "-" in orderBy.information__category %}fa-sort-desc{% elif orderBy.information__category == 'information__category' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
+                        </th>
+                        <th>Quantity</th>
+                        <th>Delete</th>
+                        <th>History</th>
                     </tr>
                 </thead>
             {% endif %}
@@ -34,11 +46,11 @@
                 {% else %}
                     "detail-table-error-text cell-left"
                 {% endif %}
-                ><a class="pkt-link" href="{% url 'ims:product_detail' code=inventoryForm.instance.information.code %}"
+                ><a class="pkt-link" href="{% url 'ims:product_detail' code=inventoryForm.instance.information.code %}?page=1"
                  title="{% if inventoryForm.instance.check_information %}edit item details{% else %}edit item details, this product has errors the need to be corrected{% endif %}">
-                {{ inventoryForm.instance.information }}
+                {{ inventoryForm.instance.information.name }}
                 </a></td>
-                <td>{{ inventoryForm.instance.information.unitOfMeasure | lower }}</td>
+                <td>{{ inventoryForm.instance.information.code | lower }}</td>
                 <td>{{ inventoryForm.instance.information.category }}</td>
                 {% for field in inventoryForm.visible_fields %}
                     <td class="{{ field.css_classes }} cell-left" title="{{ field.errors | escape}}">
@@ -57,9 +69,9 @@
                 <td>
                     {% if inventoryForm.instance.inventory_history_count >= 1 %}
                     <a title="history of inventory changes at this site for this product"
-                    href="{% url 'ims:inventory_history' siteId=site.pk code=inventoryForm.instance.information.code %}?adjust={{ adjust }}">
-                        history
-                    </a> ({{ inventoryForm.instance.inventory_history_count }})
+                    href="{% url 'ims:inventory_history' siteId=site.pk code=inventoryForm.instance.information.code %}">
+                        ({{ inventoryForm.instance.inventory_history_count }})
+                    </a>
                     {% endif %}
                 </td>
             </tr>
