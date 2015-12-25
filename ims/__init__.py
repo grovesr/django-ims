@@ -10,4 +10,5 @@
 #VERSION=('1.15.2','22/11/2015','fix restore of originalPictureName')
 #VERSION=('1.15.3','22/11/2015','handle backups without picture files')
 #VERSION=('1.16.0','14/12/2015','New pagination using Pagination class')
-VERSION=('1.17.0','21/12/2015','Add new sorting features')
+#VERSION=('1.17.0','21/12/2015','Add new sorting features')
+VERSION=('1.18.0','21/12/2015','Add new filtering features')

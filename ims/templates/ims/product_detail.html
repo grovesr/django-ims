@@ -33,25 +33,26 @@
                 {% endif %}
             </th>
             {% if paginatedItems %}
-                <th><h3>Sites Containing This Product:</h3></th>
+                <th><h3>Sites Containing This Product:<i title="filter list"
+                    class="fa fa-search fa-lg search search-off" ></i></h3></th>
             {% endif %}
         </tr>
-        {% if product.picture %}
-            <tr>
-               <th class="tabbed">
-                    <ul>
-                        <li meta="product-edit-form" title="Product information form" class="tabbed-left {% if picture == '' %}tabbed-selected{% endif %}">Details</li>
-                        <li meta="product-picture" title="Product picture" class="tabbed {% if picture == 'picture' %}tabbed-selected{% endif %}">Picture</li>
-                    </ul>
-                </th>
-                <th></th>
-            </tr>
-        {% endif %}
         <tr>
             <td colspan="2">
                 {% include "ims/page_navigation.html" %}
             </td>
         </tr>
+        {% if product.picture %}
+            <tr>
+               <th class="tabbed">
+                    <ul>
+                        <li meta="product-edit-form" title="Product information form" class="tabbed-left {% if not picture %}tabbed-selected{% endif %}">Details</li>
+                        <li meta="product-picture" title="Product picture" class="tabbed {% if picture %}tabbed-selected{% endif %}">Picture</li>
+                    </ul>
+                </th>
+                <th></th>
+            </tr>
+        {% endif %}
         <tr class="cell-frame">
             <td id="product-detail-form" class="cell-frame">
                  {% if product %}
@@ -88,11 +89,19 @@
                                     <tr class="detail-form-header">
                                     <th class="sort-header">Site&nbsp;
                                         <a title="{% if "-" in orderBy.site__name %}sort ascending{% elif orderBy.site__name == 'site__name' %}sort descending{% else %}sort ascending{% endif %}"
-                                        href="?page=1{% if "-" in orderBy.site__name %}&orderBy=site__name{% elif orderBy.site__name == 'site__name' %}&orderBy=-site__name{%else %}&orderBy=site__name{% endif %}" 
+                                        href="?page=1{% if "-" in orderBy.site__name %}&orderBy=site__name{% elif orderBy.site__name == 'site__name' %}&orderBy=-site__name{%else %}&orderBy=site__name{% endif %}&{{ filterQuery }}" 
                                         ><i
                                         class="fa {% if "-" in orderBy.site__name %}fa-sort-desc{% elif orderBy.site__name == 'site__name' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
                                     </th>
                                     <th>Quantity</th>
+                                </tr>
+                                <tr class="filter-row">
+                                    <th id="filter-site__name" >
+                                        <input class="filter-field">
+                                        </input>
+                                        <div class="filter-btn" title="filter" ><i class="fa fa-search"></i></div>
+                                    </th>
+                                    <th></th>
                                 </tr>
                                 {% for site in paginatedItems %}
                                     <tr>

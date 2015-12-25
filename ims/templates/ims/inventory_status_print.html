@@ -23,12 +23,14 @@
                         ><i
                         class="fa {% if "-" in orderBy.information__name %}fa-sort-desc{% elif orderBy.information__name == 'information__name' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
                     </th>
-                    <th class="sort-header">Code&nbsp;
-                        <a title="{% if "-" in orderBy.information__code %}sort ascending{% elif orderBy.information__code == 'name' %}sort descending{% else %}sort ascending{% endif %}"
-                        href="?startDate={{ startDate }}&stopDate={{ stopDate }}{% if "-" in orderBy.information__code %}&orderBy=information__code{% elif orderBy.information__code == 'information__code' %}&orderBy=-information__code{%else %}&orderBy=information__code{% endif %}" 
-                        ><i
-                        class="fa {% if "-" in orderBy.information__code %}fa-sort-desc{% elif orderBy.information__code == 'information__code' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
-                    </th>
+                    {% if addCode %}
+                        <th class="sort-header">Code&nbsp;
+                            <a title="{% if "-" in orderBy.information__code %}sort ascending{% elif orderBy.information__code == 'name' %}sort descending{% else %}sort ascending{% endif %}"
+                            href="?startDate={{ startDate }}&stopDate={{ stopDate }}{% if "-" in orderBy.information__code %}&orderBy=information__code{% elif orderBy.information__code == 'information__code' %}&orderBy=-information__code{%else %}&orderBy=information__code{% endif %}" 
+                            ><i
+                            class="fa {% if "-" in orderBy.information__code %}fa-sort-desc{% elif orderBy.information__code == 'information__code' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
+                        </th>
+                    {% endif %}
                     {% if addCategory %}
                         <th>
                             Category
@@ -52,9 +54,11 @@
                         <td>
                             {{ product.name }}
                         </td>
-                        <td>
-                            {{ product.meaningful_code }}
-                        </td>
+                        {% if addCode %}
+                            <td>
+                                {{ product.meaningful_code }}
+                            </td>
+                        {% endif %}
                         {% if addCategory %}
                             <td>
                                 {{ product.category }}

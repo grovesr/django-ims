@@ -8,14 +8,14 @@
     {{ block.super }}
     <i class="fa fa-angle-double-right"></i>
     {% if site %}
-        <a href="{% url 'ims:site_detail' siteId=site.number %}?adjust={{ adjust }}">site details</a>
+        <a href="{% url 'ims:site_detail' siteId=site.number %}">site details</a>
     {% else %}
         <a href="{% url 'ims:site_add' %}">add site</a>
     {% endif %}
 {% endblock breadcrumbs %}
 {% block content %}
     {% if site %}
-        <form action="{% url 'ims:site_detail' siteId=site.number  %}?page={{ paginatorPage.number }}&pageSize={{ paginatorPage.paginator.per_page }}&adjust={{ adjust }}" method="post">
+        <form action="{% url 'ims:site_detail' siteId=site.number  %}?page={{ paginatorPage.number }}&pageSize={{ paginatorPage.paginator.per_page }}&adjust={{ adjust }}&{{ filterQuery }}" method="post">
     {% else %}
         <form action="{% url 'ims:site_add' %}" method="post">
     {% endif %}
@@ -29,7 +29,7 @@
                     {% endif %}
                 </th>
                 {% if inventoryAdjustForms.total_form_count %}
-                    <th><h3>Inventory:</h3></th>
+                    <th><h3>Inventory:<i class="fa fa-search fa-lg search search-off" ></h3></th>
                 {% endif %}
             </tr>
             <tr>

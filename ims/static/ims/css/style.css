@@ -79,6 +79,25 @@ li, #form-table th, #form-table td {
     color:#4a4;
 }
 
+i.search {
+	float:right;
+	padding:5px;
+	cursor:pointer;
+}
+
+i.search-on {
+	color:#000;
+}
+
+i.search-off {
+    color:#aaa;
+}
+
+i.search:hover,
+div.filter-btn:hover {
+	background-color:#CCC;
+}
+
 #delete-list {
 	width: 500px;
     margin-left: auto;
@@ -131,7 +150,12 @@ th.sort-header {
 	border-bottom: 2px solid #000;
 }
 
-a.report-sort, button.report-sort {
+input[type="submit"].cell-left-btn {
+    float: left;
+}
+a.report-sort, 
+button.report-sort,
+input[type="submit"] {
 	text-decoration: none;
 	color:#000;
 	background: #EEE;
@@ -139,7 +163,27 @@ a.report-sort, button.report-sort {
 	-moz-padding-end: 6px;
 	-moz-padding-start: 6px;
 	border: 2px outset #F9F9F8;
+	border-radius:5px;
 	cursor:pointer;
+}
+
+div.filter-btn {
+	cursor:pointer;
+	display:inline;
+}
+
+input[type="submit"]:active,
+a.report-sort:active, 
+button.report-sort:active {
+	border-style:inset;
+}
+
+input.filter-field {
+	width:80%;
+}
+
+th[id^=filter-] {
+	white-space:nowrap;
 }
 
 #nav-bar-1, #nav-bar-2 {
@@ -201,11 +245,6 @@ input[type="submit"].cell-right-btn {
 
 input[type="submit"].cell-center-btn {
     text-align:center;
-    cursor:pointer;
-}
-
-input[type="submit"].cell-left-btn {
-    float: left;
     cursor:pointer;
 }
 
@@ -302,6 +341,10 @@ tr.cell-frame, td.cell-frame {
     border: 2px solid red;
 }
 
+td.detail-table-text {
+	word-break:break-all;
+}
+
 .helptext {
 	color: #000000;
 }
@@ -333,8 +376,14 @@ ul.errorlist li {
     background-color: darkgrey;
 }
 
-tr.detail-form-header:hover {
+tr.detail-form-header:hover,
+tr.filter-row:hover {
     background-color: white;
+}
+
+tr.filter-row input,
+tr.filter-row select {
+	max-width: 150px;
 }
 
 #printButton {

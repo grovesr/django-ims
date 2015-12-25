@@ -13,7 +13,7 @@ from .models import Site, InventoryItem, ProductInformation, ProductCategory
 from .forms import InventoryItemFormNoSite, InventoryItemFormAddSubtractNoSite,\
 ProductInformationForm, ProductInformationFormWithQuantity, SiteForm, \
 SiteFormReadOnly, SiteListForm,ProductListFormWithDelete, TitleErrorList, \
-DateSpanQueryForm, ProductListFormWithAdd, UploadFileForm, \
+ProductListFormWithAdd, UploadFileForm, \
 ProductListFormWithoutDelete
 from collections import OrderedDict
 from subprocess import check_call, check_output, CalledProcessError
@@ -57,6 +57,12 @@ except AttributeError:
 logger = logging.getLogger(__name__)
     
 # Helper functions
+def validate_date(dateString, sep):
+    parts=dateString.split(sep)
+    if len(parts) == 3:
+        return dateString
+    return timezone.now().strftime('%m-%d-%Y')
+        
 def reorder_date_mdy_to_ymd(dateString,sep):
     parts=dateString.split(sep)
     return parts[2]+"-"+parts[0]+"-"+parts[1]
@@ -137,6 +143,19 @@ def update_order_by(request, priorityFields = ()):
     if priorityFields and not orderByDict:
         orderByDict[priorityFields[0]] = priorityFields[0]
     return orderByDict
+
+def get_filter_by(request):
+    field = request.GET.get('searchField','')
+    value = request.GET.get('searchValue','')
+    filterBy = {}
+    filterQuery = ""
+    if field and value:
+        if value == 'None':
+            filterBy = {"%s__isnull" % field: True}
+        else:
+            filterBy = {"%s__icontains" % field: value}
+        filterQuery = "searchField=" + field + "&searchValue=" + value
+    return filterBy, filterQuery
 
 def get_session_page_info(request, pageDict):
     page = pageDict.get('page', 1)
@@ -298,8 +317,11 @@ def get_sorted_inventory(request,
     sitesList=None
     inventoryList=None
     includesCategories = False
+    includesMeaningfulCodes = False
     orderBy = OrderedDict()
     if report and startDate and stopDate:
+        startDate = validate_date(startDate, '-')
+        stopDate = validate_date(stopDate, '-')
         #parsedStartDate = parse_datestr_tz(reorder_date_mdy_to_ymd(startDate, '-'), 0, 0)
         parsedStopDate = parse_datestr_tz(reorder_date_mdy_to_ymd(stopDate, '-'), 23, 59)
         if re.match('^site_', report):
@@ -337,6 +359,8 @@ def get_sorted_inventory(request,
                         if item.information not in inventoryList:
                             # accumulation list
                             inventoryList[item.information] = list(), (0, 0)
+                            if not includesMeaningfulCodes:
+                                includesMeaningfulCodes = not item.information.code_is_uuid()
                         siteQuantityList = inventoryList[item.information][0]
                         siteQuantityList.append((site, item.quantity, item.quantity * item.information.quantityOfMeasure))
                         newSiteQuantity = inventoryList[item.information][1][0] + item.quantity, inventoryList[item.information][1][1] + item.quantity * item.information.quantityOfMeasure
@@ -369,7 +393,7 @@ def get_sorted_inventory(request,
                     sortedInventory[thisInfo[0]] = inventoryList[thisInfo[0]] #sortProductByName
             
             inventoryList = sortedInventory
-    return orderBy, sitesList, inventoryList, includesCategories
+    return orderBy, sitesList, inventoryList, includesCategories, includesMeaningfulCodes
 
 @login_required()
 def reports_dates(request, 
@@ -377,13 +401,11 @@ def reports_dates(request,
                   startDate = None, 
                   stopDate = None,):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
-    dateSpanForm=DateSpanQueryForm()
     return render(request,'ims/reports.html', {'nav_reports':1,
                                                 'warningMessage':warningMessage,
                                                 'infoMessage':infoMessage,
                                                 'errorMessage':errorMessage,
                                                 'report':report,
-                                                'dateSpanForm':dateSpanForm,
                                                 'startDate':startDate,
                                                 'stopDate':stopDate,
                                                 'adminName':adminName,
@@ -401,12 +423,17 @@ def reports(request):
 @login_required()
 def site_inventory_print(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
-    startDate = request.GET.get('startDate',timezone.now().strftime('%m-%d-%Y'))
-    stopDate = request.GET.get('stopDate',timezone.now().strftime('%m-%d-%Y'))
+    startDate = validate_date(request.GET.get('startDate',
+                                              timezone.now().strftime('%m-%d-%Y')), 
+                              '-')
+    stopDate = validate_date(request.GET.get('stopDate',
+                                              timezone.now().strftime('%m-%d-%Y')), 
+                              '-')
     (orderBy,
      sitesList, 
      inventoryList, 
-     includesCategories) = get_sorted_inventory(request,
+     includesCategories,
+     __) = get_sorted_inventory(request,
                                                 report = 'site_inventory_print', 
                                                 startDate = startDate, 
                                                 stopDate = stopDate,)
@@ -433,12 +460,17 @@ def site_inventory_print(request):
 @login_required()
 def site_detail_print(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
-    startDate = request.GET.get('startDate',timezone.now().strftime('%m-%d-%Y'))
-    stopDate = request.GET.get('stopDate',timezone.now().strftime('%m-%d-%Y'))
+    startDate = validate_date(request.GET.get('startDate',
+                                              timezone.now().strftime('%m-%d-%Y')), 
+                              '-')
+    stopDate = validate_date(request.GET.get('stopDate',
+                                              timezone.now().strftime('%m-%d-%Y')), 
+                              '-')
     (orderBy,
      sitesList, 
      inventoryList, 
-     includesCategories) = get_sorted_inventory(request,
+     includesCategories,
+     __) = get_sorted_inventory(request,
                                                 report = 'site_detail_print', 
                                                 startDate = startDate, 
                                                 stopDate = stopDate,)
@@ -465,12 +497,17 @@ def site_detail_print(request):
 @login_required()
 def inventory_detail_print(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
-    startDate = request.GET.get('startDate',timezone.now().strftime('%m-%d-%Y'))
-    stopDate = request.GET.get('stopDate',timezone.now().strftime('%m-%d-%Y'))
+    startDate = validate_date(request.GET.get('startDate',
+                                              timezone.now().strftime('%m-%d-%Y')), 
+                              '-')
+    stopDate = validate_date(request.GET.get('stopDate',
+                                              timezone.now().strftime('%m-%d-%Y')), 
+                              '-')
     (orderBy,
      sitesList, 
      inventoryList, 
-     includesCategories) = get_sorted_inventory(request,
+     includesCategories,
+     includesMeaningfulCodes) = get_sorted_inventory(request,
                                                 report = 'inventory_detail_print', 
                                                 startDate = startDate, 
                                                 stopDate = stopDate,)
@@ -489,6 +526,7 @@ def inventory_detail_print(request):
                                                 'sitesList':sitesList,
                                                 'inventoryList':inventoryList,
                                                 'addCategory':includesCategories,
+                                                'addCode':includesMeaningfulCodes,
                                                 'adminName':adminName,
                                                 'adminEmail':adminEmail,
                                                 'siteVersion':siteVersion,
@@ -497,12 +535,17 @@ def inventory_detail_print(request):
 @login_required()
 def inventory_status_print(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
-    startDate = request.GET.get('startDate',timezone.now().strftime('%m-%d-%Y'))
-    stopDate = request.GET.get('stopDate',timezone.now().strftime('%m-%d-%Y'))
+    startDate = validate_date(request.GET.get('startDate',
+                                              timezone.now().strftime('%m-%d-%Y')), 
+                              '-')
+    stopDate = validate_date(request.GET.get('stopDate',
+                                              timezone.now().strftime('%m-%d-%Y')), 
+                              '-')
     (orderBy,
      sitesList, 
      inventoryList, 
-     includesCategories) = get_sorted_inventory(request,
+     includesCategories,
+     includesMeaningfulCodes) = get_sorted_inventory(request,
                                                 report = 'inventory_status_print', 
                                                 startDate = startDate, 
                                                 stopDate = stopDate,)
@@ -521,6 +564,7 @@ def inventory_status_print(request):
                                                 'sitesList':sitesList,
                                                 'inventoryList':inventoryList,
                                                 'addCategory':includesCategories,
+                                                'addCode':includesMeaningfulCodes,
                                                 'adminName':adminName,
                                                 'adminEmail':adminEmail,
                                                 'siteVersion':siteVersion,
@@ -544,6 +588,8 @@ def inventory_history_dates(request, siteId=None, code=None, startDate=None, sto
         code)
         request.session['errorMessage'] = errorMessage
         return redirect(reverse('ims:site_detail', kwargs = {'siteId':siteId,}))
+    startDate = validate_date(startDate, '-')
+    stopDate = validate_date(stopDate, '-')
     #parsedStartDate=parse_datestr_tz(reorder_date_mdy_to_ymd(startDate,'-'),0,0)
     parsedStopDate=parse_datestr_tz(reorder_date_mdy_to_ymd(stopDate,'-'),23,59)
     inventoryList=site.inventory_history_for_product(code=product.code, stopDate=parsedStopDate)
@@ -587,8 +633,14 @@ def sites(request):
     canDelete=request.user.has_perm('ims.delete_site') and request.user.has_perm('ims.delete_inventoryitem')
     canAdd=request.user.has_perm('ims.add_site')
     orderBy = update_order_by(request, ('name',))
-    sitesList=Site.objects.all().order_by(*orderBy.values())
+    filterBy, filterQuery = get_filter_by(request)
+    sitesList=Site.objects.filter(**filterBy).order_by(*orderBy.values())
     paginatorPage = create_paginator(request, items = sitesList)
+    if filterQuery and Site.objects.count() and sitesList.count() == 0:
+        request.session['warningMessage'] = 'No sites found using filter criteria.<br/>Showing all sites.'
+        return redirect(reverse('ims:sites',) + '?' +
+                        urlencode({'page':paginatorPage.number,
+                                'pageSize':paginatorPage.paginator.per_page,}))
     SiteFormset=modelformset_factory( Site, form=SiteListForm, fields=['Delete'], extra=0)
     if request.method == "POST":
         paginatedForms=SiteFormset(request.POST,queryset=paginatorPage.object_list, error_class=TitleErrorList)
@@ -616,6 +668,7 @@ def sites(request):
                                               'paginatedItems':paginatedForms,
                                               'paginatorPage':paginatorPage,
                                               'orderBy':orderBy,
+                                              'filterQuery':filterQuery,
                                               'infoMessage':infoMessage,
                                               'warningMessage':warningMessage,
                                               'errorMessage':errorMessage,
@@ -647,11 +700,18 @@ def site_detail(request, siteId=1):
                                         'information__unitOfMeasure',
                                         'information__category',
                                         'quantity',))
+    filterBy, filterQuery = get_filter_by(request)
     if orderBy:
-        siteInventory=site.latest_inventory(orderBy = orderBy)
+        siteInventory=site.latest_inventory(orderBy = orderBy,
+                                            filterBy = filterBy)
     else:
-        siteInventory=site.latest_inventory()
+        siteInventory=site.latest_inventory(filterBy = filterBy)
     paginatorPage = create_paginator(request, items = siteInventory)
+    allLatestInventory = site.latest_inventory()
+    if filterQuery and allLatestInventory.count() and siteInventory.count() == 0:
+        request.session['warningMessage'] = 'No inventory found using filter criteria.<br/>Showing all inventory.'
+        return redirect(reverse('ims:site_detail',kwargs={
+                                                                'siteId':siteId,}) + '?page=1')
     siteForm=SiteForm(site.__dict__,instance=site, error_class=TitleErrorList)
     InventoryAdjustFormset=modelformset_factory(InventoryItem,extra=0, can_delete=False,
                                              form=InventoryItemFormNoSite)
@@ -659,7 +719,16 @@ def site_detail(request, siteId=1):
                                              form=InventoryItemFormAddSubtractNoSite)
     inventoryAdjustForms=InventoryAdjustFormset(queryset=paginatorPage.object_list,
                                                 error_class=TitleErrorList,)
-    inventoryAddSubtractForms=InventoryAddSubtractFormset(queryset=paginatorPage.object_list, error_class=TitleErrorList)
+    inventoryAddSubtractForms=InventoryAddSubtractFormset(queryset=paginatorPage.object_list,
+                                                          error_class=TitleErrorList)
+    categoriesList = []
+    for item in allLatestInventory:
+        if item.information.category and str(item.information.category) not in categoriesList:
+            categoriesList.append(str(item.information.category))
+    categoriesList.sort()
+    categoriesList = ['all', 'None'] + categoriesList
+    includesCategories = ProductInformation.objects.filter(category__isnull = False).count() > 0
+    includesMeaningfulCodes = ProductInformation.objects.extra(where=["CHAR_LENGTH(code) < 36"]).count()
     if request.method == "POST":
         siteForm=SiteForm(request.POST,instance=site, error_class=TitleErrorList)
         if siteInventory.count() > 0:
@@ -748,6 +817,10 @@ def site_detail(request, siteId=1):
                                                 'site': site,
                                                 'siteForm':siteForm,
                                                 'orderBy':orderBy,
+                                                'filterQuery':filterQuery,
+                                                'addCategory':includesCategories,
+                                                'addCode':includesMeaningfulCodes,
+                                                'categoriesList':categoriesList,
                                                 'paginatorPage':paginatorPage,
                                                 'paginatedItems':inventoryAdjustForms,
                                                 'inventoryAdjustForms':inventoryAdjustForms,
@@ -782,8 +855,7 @@ def site_add(request):
                         site=siteForm.instance
                         request.session['infoMessage'] = 'Successfully added site'
                         return redirect(reverse('ims:site_detail',
-                                                kwargs={'siteId':site.pk, 
-                                                        'page':1,},))
+                                                kwargs={'siteId':site.pk,},))
                     else:
                         warningMessage='More information required before site can be added'
                 else:
@@ -813,14 +885,27 @@ def site_add_inventory(request, siteId=1):
         request.session['errorMessage'] = errorMessage
         return redirect(reverse('ims:sites'))
     canAdd=request.user.has_perm('ims.add_inventoryitem')
-    orderBy = update_order_by(request, ('name', 'code',))
-    productsList=ProductInformation.objects.all().order_by(*orderBy.values())
+    filterBy, filterQuery = get_filter_by(request)
+    orderBy = update_order_by(request, ('name', 'code', 'category'))
+    productsList=ProductInformation.objects.filter(**filterBy).order_by(*orderBy.values())
     paginatorPage = create_paginator(request, items = productsList)
+    if filterQuery and ProductInformation.objects.all().count() and productsList.count() == 0:
+        request.session['warningMessage'] = 'No products found using filter criteria.<br/>Showing all products.'
+        return redirect(reverse('ims:site_add_inventory',kwargs={
+                                                                'siteId':siteId,}) + '?page=1')
     if ProductInformation.objects.all().count() == 0:
         request.session['warningMessage'] = 'No products found to add'
         return redirect(reverse('ims:site_detail', 
                                 kwargs = {'siteId':siteId}))
     ProductFormset=modelformset_factory( ProductInformation, form=ProductListFormWithAdd, extra=0)
+    categoriesList = []
+    for product in productsList:
+        if product.category and str(product.category) not in categoriesList:
+            categoriesList.append(str(product.category))
+    categoriesList.sort()
+    categoriesList = ['all', 'None'] + categoriesList
+    includesCategories = ProductInformation.objects.filter(category__isnull = False).count() > 0
+    includesMeaningfulCodes = ProductInformation.objects.extra(where=["CHAR_LENGTH(code) < 36"]).count()
     if canAdd:
         if request.method == "POST":
             paginatedForms=ProductFormset(request.POST,queryset=paginatorPage.object_list, error_class=TitleErrorList)
@@ -837,7 +922,8 @@ def site_add_inventory(request, siteId=1):
                                 productList.append(productForm.instance)
                         return product_add_to_site_inventory(request, siteId=site.pk,
                                                              productToAdd=productToAdd,
-                                                             productList=productList,)
+                                                             productList=productList,
+                                                             filterBy = filterBy)
             else:
                 errorMessage='You don''t have permission to add site inventory'
     else:
@@ -849,7 +935,11 @@ def site_add_inventory(request, siteId=1):
                                                 'siteForm':siteForm,
                                                 'paginatorPage':paginatorPage,
                                                 'paginatedItems':paginatedForms,
+                                                'filterQuery':filterQuery,
                                                 'orderBy':orderBy,
+                                                'addCategory':includesCategories,
+                                                'addCode':includesMeaningfulCodes,
+                                                'categoriesList':categoriesList,
                                                 'warningMessage':warningMessage,
                                                 'infoMessage':infoMessage,
                                                 'errorMessage':errorMessage,
@@ -967,8 +1057,20 @@ def products(request):
         ProductFormset=modelformset_factory( ProductInformation, form=ProductListFormWithoutDelete, extra=0)
     # pass in allowed order by fields
     orderBy = update_order_by(request, ('name', 'category__category', 'code'))
-    productsList=ProductInformation.objects.all().order_by(*orderBy.values())
+    filterBy, filterQuery = get_filter_by(request)
+    productsList=ProductInformation.objects.filter(**filterBy).order_by(*orderBy.values())
     paginatorPage = create_paginator(request, items = productsList)
+    if filterQuery and ProductInformation.objects.count() and productsList.count() == 0:
+        request.session['warningMessage'] = 'No products found using filter criteria.<br/>Showing all products.'
+        return redirect(reverse('ims:products',) + '?page=1')
+    categoriesList = []
+    for product in productsList:
+        if product.category and str(product.category) not in categoriesList:
+            categoriesList.append(str(product.category))
+    categoriesList.sort()
+    categoriesList = ['all', 'None'] + categoriesList
+    includesCategories = ProductInformation.objects.filter(category__isnull = False).count() > 0
+    includesMeaningfulCodes = ProductInformation.objects.extra(where=["CHAR_LENGTH(code) < 36"]).count()
     if request.method == 'POST':
         paginatedForms=ProductFormset(request.POST,queryset=paginatorPage.object_list, error_class=TitleErrorList)
         if 'Delete' in request.POST:
@@ -983,7 +1085,8 @@ def products(request):
                 request.session['warningMessage'] = 'No products selected for deletion'
                 return redirect(reverse('ims:products') + '?' +
                                         urlencode({'page':paginatorPage.number,
-                                                'pageSize':paginatorPage.paginator.per_page,}))
+                                                'pageSize':paginatorPage.paginator.per_page,})
+                                + '&' + filterQuery)
             else:
                 errorMessage='You don''t have permission to delete products'
         if 'Add' in request.POST:
@@ -998,7 +1101,11 @@ def products(request):
     return render(request,'ims/products.html', {'nav_products':1,
                                               'paginatedItems':paginatedForms,
                                               'paginatorPage':paginatorPage,
+                                              'filterQuery':filterQuery,
                                               'orderBy':orderBy,
+                                              'addCategory':includesCategories,
+                                              'addCode':includesMeaningfulCodes,
+                                              'categoriesList':categoriesList,
                                               'canAdd':canAdd,
                                               'canDelete':canDelete,
                                               'warningMessage':warningMessage,
@@ -1021,17 +1128,20 @@ def product_detail(request, code='-1',):
         request.session['errorMessage'] = errorMessage
         return redirect(reverse('ims:products'))
     canChange=request.user.has_perm('ims.change_productinformation')
+    picture = request.GET.get('picture','')
     orderBy = update_order_by(request, ('site__name', ))
-    inventorySites=product.inventoryitem_set.all().order_by(*orderBy.values()).values('site').distinct()
+    filterBy, filterQuery = get_filter_by(request)
+    inventorySites=product.inventoryitem_set.filter(**filterBy).order_by(*orderBy.values()).values('site').distinct()
+    if filterQuery and product.inventoryitem_set.count() and inventorySites.count() == 0:
+        request.session['warningMessage'] = 'No sites found using filter criteria.<br/>Showing all sites.'
+        return redirect(reverse('ims:product_detail',
+                                    kwargs={'code':product.code,}) 
+                            + '?' + picture)
     paginatorPage = create_paginator(request, items = inventorySites)
     sitesList=[]
     for siteNumber in paginatorPage.object_list:
         site = Site.objects.get(pk=siteNumber['site'])
         sitesList.append((site,site.inventory_quantity(code)))
-    if 'picture' in request.GET:
-        picture = 'picture'
-    else:
-        picture = ''
     productForm=ProductInformationForm(instance=product, error_class=TitleErrorList)
     if request.method == "POST":
         if 'SavePicture' in request.POST and 'rotation' in request.POST and canChange:
@@ -1050,7 +1160,8 @@ def product_detail(request, code='-1',):
                              str(product),
                              logError = True)
             return redirect(reverse('ims:product_detail',
-                                                kwargs={'code':product.code,})+ picture)
+                                    kwargs={'code':product.code,}) 
+                            + '?' + picture + '&' + filterQuery)
         if 'Save' in request.POST:
             productForm=ProductInformationForm(request.POST,
                                                request.FILES,
@@ -1088,7 +1199,8 @@ def product_detail(request, code='-1',):
                                         logError = True)
                             request.session['errorMessage'] += errorMessage
                             return redirect(reverse('ims:product_detail',
-                                                kwargs={'code':product.code,})+ picture)
+                                            kwargs={'code':product.code,}) 
+                                            + '?' + picture + '&' + filterQuery)
                         except (RimsImageProcessingError, RimsDuplicateKeyError):
                             pass
                         if 'errorMessage' not in request.session or request.session['errorMessage'] == '':
@@ -1105,11 +1217,13 @@ def product_detail(request, code='-1',):
                                          (str(productForm.instance), request.session['errorMessage']),
                                          logError = True)
                             return redirect(reverse('ims:product_detail',
-                                                kwargs={'code':code,})+ picture)
+                                            kwargs={'code':code,}) 
+                                            + '?' + picture + '&' + filterQuery)
                     else:
                         request.session['warningMessage'] = 'No changes made to the product information.'
                     return redirect(reverse('ims:product_detail',
-                                                kwargs={'code':product.code,})+ picture)
+                                            kwargs={'code':product.code,}) 
+                                    + '?' + picture + '&' + filterQuery)
                 else:
                     warningMessage = 'More information required before the product can be saved'
             else:
@@ -1134,6 +1248,7 @@ def product_detail(request, code='-1',):
                              'paginatorPage':paginatorPage,
                              'paginatedItems':sitesList,
                              'orderBy':orderBy,
+                             'filterQuery':filterQuery,
                              'picture':picture,
                              'canChange':canChange,
                              'warningMessage':warningMessage,
@@ -1198,7 +1313,10 @@ def product_add(request):
                                                 })
     
 @login_required()
-def product_add_to_site_inventory(request, siteId=1, productToAdd=None, productList=None):
+def product_add_to_site_inventory(request, siteId=1, 
+                                  productToAdd=None, 
+                                  productList=None, 
+                                  filterBy = {}):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     try:
         site=Site.objects.get(pk=siteId)
@@ -1209,8 +1327,8 @@ def product_add_to_site_inventory(request, siteId=1, productToAdd=None, productL
         return redirect(reverse('ims:sites'))
     canAdd=request.user.has_perm('ims.add_inventoryitem')
     ProductFormset=modelformset_factory(ProductInformation,extra=0,
-                                                form=ProductInformationFormWithQuantity)
-    newProduct = ProductInformation.objects.all()
+                                        form=ProductInformationFormWithQuantity)
+    newProduct = ProductInformation.objects.filter(**filterBy)
     if productList:
         for productItem in newProduct:
             if productItem not in productList: 
@@ -1234,8 +1352,7 @@ def product_add_to_site_inventory(request, siteId=1, productToAdd=None, productL
                 else:
                     warningMessage = 'More information required before the inventory can be saved'
         if 'Cancel' in request.POST:
-            return redirect(reverse('ims:site_detail', kwargs={'siteId':site.pk,}),
-                                        )
+            return redirect(reverse('ims:site_detail', kwargs={'siteId':site.pk,}),)
     if not canAdd:
         errorMessage='You don''t have permission to add to site inventory'
     productForms=ProductFormset(queryset=newProduct, error_class=TitleErrorList)
@@ -1248,7 +1365,6 @@ def product_add_to_site_inventory(request, siteId=1, productToAdd=None, productL
     return render(request, 'ims/product_add_to_site_inventory.html', {'nav_sites':1,
                                                      'site':site,
                                                      'productForms':productForms,
-                                                     'page':1,
                                                      'warningMessage':warningMessage,
                                                      'infoMessage':infoMessage,
                                                      'errorMessage':errorMessage,

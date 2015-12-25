@@ -1,15 +1,22 @@
 {% extends "ims/home.html" %}
+{% load staticfiles %}
+{% block extra_scripts %}
+    {{ block.super }}
+    <script src="{% static 'ims/js/search.js' %}" ></script>
+{% endblock extra_scripts %}
 {% block breadcrumbs %}
     {{ block.super }}
     <i class="fa fa-angle-double-right"></i>
     <a href="{% url 'ims:sites' %}">sites</a>
 {% endblock breadcrumbs %}
+
 {% block content %}
     {% if paginatedItems.total_form_count %}
         <table id="report-table">
             <tr>
                 <th>
-                    <h3>Inventory Sites:</h3>
+                    <h3>Inventory Sites:<i title="filter list"
+                    class="fa fa-search fa-lg search search-off" ></i></h3>
                 </th>
             </tr>
             <tr>
@@ -19,7 +26,7 @@
             </tr>
             <tr>
                 <td id="sites-list-cell-frame"class="cell-frame">
-                    <form action="{% url 'ims:sites' %}?page={{ paginatorPage.number }}&pageSize={{ paginatorPage.paginator.per_page }}" method="post">
+                    <form action="{% url 'ims:sites' %}?page={{ paginatorPage.number }}&pageSize={{ paginatorPage.paginator.per_page }}&{{ filterQuery }}" method="post">
                         {% csrf_token  %}
                         <div class="detail-form">
                             <table id="sites-list-form">
@@ -39,7 +46,7 @@
                                         <tr class="detail-form-header">
                                             <th class="sort-header">Site&nbsp;
                                                 <a title="{% if "-" in orderBy.name %}sort ascending{% elif orderBy.name == 'name' %}sort descending{% else %}sort ascending{% endif %}"
-                                                href="?page=1{% if "-" in orderBy.name %}&orderBy=name{% elif orderBy.name == 'name' %}&orderBy=-name{%else %}&orderBy=name{% endif %}" 
+                                                href="?page=1{% if "-" in orderBy.name %}&orderBy=name{% elif orderBy.name == 'name' %}&orderBy=-name{%else %}&orderBy=name{% endif %}&{{ filterQuery }}" 
                                                 ><i
                                                 class="fa {% if "-" in orderBy.name %}fa-sort-desc{% elif orderBy.name == 'name' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
                                             </th>
@@ -47,6 +54,14 @@
                                             {% for field in siteForm.visible_fields %}
                                                 <th>{{ field.label|capfirst }}</th>
                                             {% endfor %}
+                                        </tr>
+                                        <tr class="filter-row">
+                                            <th id="filter-name" >
+                                                <input class="filter-field">
+                                                </input>
+                                                <div class="filter-btn" title="filter" ><i class="fa fa-search"></i></div>
+                                            </th>
+                                            <th></th>
                                         </tr>
                                     {% endif %}
                                     <tr>

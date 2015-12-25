@@ -1,6 +1,6 @@
-from django.forms import Form, ClearableFileInput, FileField, DateInput, \
-DateField, ModelForm, HiddenInput, BooleanField, IntegerField, TextInput, \
-Textarea, CheckboxInput, CharField
+from django.forms import Form, ClearableFileInput, FileField, \
+ModelForm, HiddenInput, BooleanField, IntegerField, TextInput, \
+Textarea, CheckboxInput
 from django.utils.safestring import mark_safe
 from django.utils.encoding import force_text
 from django.utils.html import conditional_escape, format_html
@@ -53,13 +53,6 @@ class ImsClearableFileInput(ClearableFileInput):
 class UploadFileForm(Form):
     file = FileField()
 
-class DateSpanQueryForm(Form):
-    # this is hidden for now until we have reports that need a startDate
-    startDate=CharField(widget = HiddenInput(), 
-                        label="start")
-    stopDate=DateField(widget=DateInput(), 
-                       label="end")
-    
 class InventoryItemForm(ModelForm):
     class Meta:
         model = InventoryItem

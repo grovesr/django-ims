@@ -1,4 +1,9 @@
 {% extends "ims/home.html" %}
+{% load staticfiles %}
+{% block extra_scripts %}
+    {{ block.super }}
+    <script src="{% static 'ims/js/search.js' %}" ></script>
+{% endblock extra_scripts %}
 {% block breadcrumbs %}
     {{ block.super }}
     <i class="fa fa-angle-double-right"></i>
@@ -9,7 +14,7 @@
         <table id="report-table">
             <tr>
                 <th>
-                    <h3>Products:</h3>
+                    <h3>Products:<i class="fa fa-search fa-lg search search-off" ></i></h3>
                 </th>
             </tr>
             <tr>
@@ -19,7 +24,7 @@
             </tr>
             <tr>
                 <td id="products-list-cell-frame" class="cell-frame">
-                    <form action="{% url 'ims:products' %}?page={{ paginatorPage.number }}&pageSize={{ paginatorPage.paginator.per_page }}" method="post">
+                    <form action="{% url 'ims:products' %}?page={{ paginatorPage.number }}&pageSize={{ paginatorPage.paginator.per_page }}&{{ filterQuery }}" method="post">
                         {% csrf_token  %}
                         <div class="detail-form">
                             <table id="products-list-form">
@@ -39,26 +44,55 @@
                                             <tr class="detail-form-header">
                                                 <th class="sort-header">Product&nbsp;
                                                     <a title="{% if "-" in orderBy.name %}sort ascending{% elif orderBy.name == 'name' %}sort descending{% else %}sort ascending{% endif %}"
-                                                    href="?page=1{% if "-" in orderBy.name %}&orderBy=name{% elif orderBy.name == 'name' %}&orderBy=-name{%else %}&orderBy=name{% endif %}" 
+                                                    href="?page=1{% if "-" in orderBy.name %}&orderBy=name{% elif orderBy.name == 'name' %}&orderBy=-name{%else %}&orderBy=name{% endif %}&{{ filterQuery }}" 
                                                     ><i
                                                     class="fa {% if "-" in orderBy.name %}fa-sort-desc{% elif orderBy.name == 'name' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
                                                 </th>
-                                                <th class="sort-header">Category&nbsp;
-                                                    <a title="{% if "-" in orderBy.category__category %}sort ascending{% elif orderBy.category_category == 'category__category' %}sort descending{% else %}sort ascending{% endif %}"
-                                                    href="?page=1{% if "-" in orderBy.category__category %}&orderBy=category__category{% elif orderBy.category__category == 'category__category' %}&orderBy=-category__category{% else %}&orderBy=category__category{% endif %}"
-                                                    ><i 
-                                                    class="fa {% if "-" in orderBy.category__category %}fa-sort-desc{% elif orderBy.category__category == 'category__category'  %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
-                                                </th>
-                                                <th class="sort-header">Code&nbsp;
-                                                    <a title="{% if "-" in orderBy.code %}sort ascending{% elif orderBy.code == 'code' %}sort descending{% else %}sort ascending{% endif %}"
-                                                    href="?page=1{% if "-" in orderBy.code %}&orderBy=code{% elif orderBy.code == 'code' %}&orderBy=-code{% else %}&orderBy=code{% endif %}"
-                                                    ><i 
-                                                    class="fa {% if "-" in orderBy.code %}fa-sort-desc{% elif orderBy.code == 'code' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
-                                                </th>
+                                                {% if addCode %}
+                                                    <th class="sort-header">Code&nbsp;
+                                                        <a title="{% if "-" in orderBy.code %}sort ascending{% elif orderBy.code == 'code' %}sort descending{% else %}sort ascending{% endif %}"
+                                                        href="?page=1{% if "-" in orderBy.code %}&orderBy=code{% elif orderBy.code == 'code' %}&orderBy=-code{% else %}&orderBy=code{% endif %}&{{ filterQuery }}"
+                                                        ><i 
+                                                        class="fa {% if "-" in orderBy.code %}fa-sort-desc{% elif orderBy.code == 'code' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
+                                                    </th>
+                                                {% endif %}
+                                                {% if addCategory %}
+                                                    <th class="sort-header">Category&nbsp;
+                                                        <a title="{% if "-" in orderBy.category__category %}sort ascending{% elif orderBy.category_category == 'category__category' %}sort descending{% else %}sort ascending{% endif %}"
+                                                        href="?page=1{% if "-" in orderBy.category__category %}&orderBy=category__category{% elif orderBy.category__category == 'category__category' %}&orderBy=-category__category{% else %}&orderBy=category__category{% endif %}&{{ filterQuery }}"
+                                                        ><i 
+                                                        class="fa {% if "-" in orderBy.category__category %}fa-sort-desc{% elif orderBy.category__category == 'category__category'  %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
+                                                    </th>
+                                                {% endif %}
                                                 <th>Sites</th>
                                                 {% for field in productForm.visible_fields %}
                                                     <th>{{ field.label|capfirst }}</th>
                                                 {% endfor %}
+                                            </tr>
+                                            <tr class="filter-row">
+                                                <th id="filter-name" >
+                                                    <input class="filter-field">
+                                                    </input>
+                                                    <div class="filter-btn" title="filter" ><i class="fa fa-search"></i></div>
+                                                </th>
+                                                {% if addCode %}
+                                                    <th id="filter-code" >
+                                                        <input class="filter-field">
+                                                        </input>
+                                                        <div class="filter-btn" title="filter" ><i class="fa fa-search"></i></div>
+                                                    </th>
+                                                {% endif %}
+                                                {% if addCategory %}
+                                                    <th id="filter-category__category" >
+                                                        <select class="filter-field">
+                                                            {% for category in categoriesList %}
+                                                                <option value="{{ category }}">{{ category }}</option>
+                                                            {% endfor %}
+                                                        </select>
+                                                        <div class="filter-btn" title="filter" ><i class="fa fa-search"></i></div>
+                                                    </th>
+                                                {% endif %}
+                                                <th colspan="2"></th>
                                             </tr>
                                     {% endif %}
                                     <tr>
@@ -70,13 +104,17 @@
                                             {% endif %}>
                                             <a title="edit product details" href="{% url 'ims:product_detail' code=productForm.instance.code %}">{{ productForm.instance.name }}</a>
                                         </td>
-                                        <td class="cell-left">
-                                            {{ productForm.instance.category }}
-                                        </td>
-                                        <td class="cell-left">
-                                            {{ productForm.instance.meaningful_code }}
-                                        </td>
-                                        <td class="cell-left">
+                                        {% if addCode %}
+                                            <td class="detail-table-text cell-left">
+                                                {{ productForm.instance.meaningful_code }}
+                                            </td>
+                                        {% endif %}
+                                        {% if addCategory %}
+                                            <td class="detail-table-text cell-left">
+                                                {{ productForm.instance.category }}
+                                            </td>
+                                        {% endif %}
+                                        <td class="detail-table-text cell-left">
                                             {{ productForm.instance.num_sites_containing }}
                                         </td>
                                         {% for field in productForm.visible_fields %}

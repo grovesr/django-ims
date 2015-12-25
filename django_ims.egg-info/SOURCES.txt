@@ -70,7 +70,9 @@ ims/static/font-awesome/scss/_stacked.scss
 ims/static/font-awesome/scss/_variables.scss
 ims/static/font-awesome/scss/font-awesome.scss
 ims/static/ims/css/style.css
+ims/static/ims/js/date_picker.js
 ims/static/ims/js/rotate_picture.js
+ims/static/ims/js/search.js
 ims/static/ims/js/tabbed_view.js
 ims/static/ims/js/uuid.js
 ims/templates/ims/home.html

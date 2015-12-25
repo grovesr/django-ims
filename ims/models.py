@@ -245,11 +245,12 @@ class Site(models.Model):
     def latest_inventory(self,
                          startDate=None, 
                          stopDate=None, 
-                         orderBy = {'information__name':'information__name'}):
+                         orderBy = {'information__name':'information__name'},
+                         filterBy = {}):
         # get the inventory entries associated with this site. These are records
         # detailing the history of inventory states for products at this site.  Includes
         # adjustments to inventory as well as deletions
-        siteInventory=self.inventoryitem_set.all()
+        siteInventory=self.inventoryitem_set.filter(**filterBy)
         if stopDate:
             # if we have a stop date, use it to filter the inventory, so we don't get
             # anything after the stop date

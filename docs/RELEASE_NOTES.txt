@@ -40,3 +40,5 @@ Version 1.11.0:
 * 4c6f0ec added category creation to tests
 2015/12/21 Version 1.17.0:
 * 99df58b (HEAD, master) Add new sorting features
+2015/12/25 Version 1.18.0:
+* c163100 (HEAD, master, filtering) Add new filtering features

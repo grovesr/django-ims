@@ -7,7 +7,7 @@
     ">
         <a class="
         {% if paginatorPage.has_previous %}
-            " href="?page=1&pageSize={{ paginatorPage.paginator.per_page }}"
+            " href="?page=1&pageSize={{ paginatorPage.paginator.per_page }}&{{ filterQuery }}"
         {% else %}
             disabled" href="#"
         {% endif %}
@@ -15,7 +15,7 @@
         ><i class="fa fa-angle-double-left fa-lg"></i></a>
         <a class="
         {% if paginatorPage.has_previous %}
-            " href="?page={{ paginatorPage.previous_page_number }}&pageSize={{ paginatorPage.paginator.per_page }}"
+            " href="?page={{ paginatorPage.previous_page_number }}&pageSize={{ paginatorPage.paginator.per_page }}&{{ filterQuery }}"
         {% else %}
             disabled" href="#"
         {% endif %}
@@ -26,7 +26,7 @@
         </span>
         <a class="
         {% if paginatorPage.has_next %}
-            " href="?page={{ paginatorPage.next_page_number }}&pageSize={{ paginatorPage.paginator.per_page }}"
+            " href="?page={{ paginatorPage.next_page_number }}&pageSize={{ paginatorPage.paginator.per_page }}&{{ filterQuery }}"
         {% else %}
             disabled" href="#"
         {% endif %}
@@ -34,7 +34,7 @@
         ><i class="fa fa-angle-right fa-lg"></i></a>
         <a class="
         {% if paginatorPage.has_next %}
-            " href="?page={{ paginatorPage.paginator.num_pages }}&pageSize={{ paginatorPage.paginator.per_page }}"
+            " href="?page={{ paginatorPage.paginator.num_pages }}&pageSize={{ paginatorPage.paginator.per_page }}&{{ filterQuery }}"
         {% else %}
             disabled" href="#"
         {% endif %}

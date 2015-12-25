@@ -1,47 +1,10 @@
 {% extends "ims/home.html" %}
 {% load staticfiles %}
 {% block extra_scripts %}
+    {{ block.super }}
     <link rel="stylesheet" href="http://code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css"> 
     <script src="http://code.jquery.com/ui/1.11.0/jquery-ui.js"></script>
-    <script>
-        "use strict";
-        $(document).ready(function() {
-            $("#id_startDate").change(function(){
-                var query = "?";
-                $("[id$=Date]").each(function(){
-                    var thisDate = $(this).val();
-                    var thisParam = $(this).attr("id").slice(3);
-                    query += thisParam + "=" + thisDate + "&";
-                });
-                $("[id$=-print]").each(function(){
-                    var basePath = $(this).attr("href").replace(/\?.*/,"");
-                    $(this).attr("href", basePath + query.slice(0,-1));
-                });
-            });
-            $("#id_stopDate").change(function(){
-                var query = "?";
-                $("[id$=Date]").each(function(){
-                    var thisDate = $(this).val();
-                    var thisParam = $(this).attr("id").slice(3);
-                    query += thisParam + "=" + thisDate + "&";
-                });
-                $("[id$=-print]").each(function(){
-                    var basePath = $(this).attr("href").replace(/\?.*/,"");
-                    $(this).attr("href", basePath + query.slice(0,-1));
-                });
-            });
-            $('#id_startDate').attr('class','datepicker');
-            $('#id_stopDate').attr('class','datepicker');
-            $('.datepicker').datepicker();
-            $('.datepicker').datepicker("option", "dateFormat", "mm-dd-yy");
-            var startDate = "{{ startDate }}";
-            var stopDate = "{{ stopDate }}";
-            $( '#id_startDate' ).val( startDate );
-            $( '#id_stopDate' ).val( stopDate );
-            $( '#id_startDate' ).change();
-            $( '#id_stopDate' ).change();
-        });
-    </script>
+    <script src="{% static 'ims/js/date_picker.js' %}" ></script>
 {% endblock extra_scripts %}
 {% block breadcrumbs %}
     {{ block.super }}
@@ -57,7 +20,22 @@
         </tr>
         <tr>
             <td>
-                {{ dateSpanForm }}
+                <tr style="display:none;" >
+                    <th>
+                        <label for="startDate" >begin date:</label>
+                    </th>
+                    <td>
+                        <input id="startDate" name="startDate" type="text" value="{{ startDate }}" />
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        <label for="stopDate">end date:</label>
+                    </th>
+                    <td>
+                        <input id="stopDate" name="stopDate" type="text" value="{{ stopDate }}" />
+                    </td>
+                </tr>
             </td>
         </tr>
     </table>

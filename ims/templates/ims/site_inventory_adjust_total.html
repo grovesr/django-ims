@@ -21,22 +21,51 @@
                             ><i
                             class="fa {% if "-" in orderBy.information__name %}fa-sort-desc{% elif orderBy.information__name == 'information__name' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
                         </th>
-                        <th class="sort-header">Code&nbsp;
-                            <a title="{% if "-" in orderBy.information__code %}sort ascending{% elif orderBy.information__code == 'information__code' %}sort descending{% else %}sort ascending{% endif %}"
-                            href="?page=1{% if "-" in orderBy.information__code %}&orderBy=information__code{% elif orderBy.information__code == 'information__code' %}&orderBy=-information__code{%else %}&orderBy=information__code{% endif %}" 
-                            ><i
-                            class="fa {% if "-" in orderBy.information__code %}fa-sort-desc{% elif orderBy.information__code == 'information__code' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
-                        </th>
-                        <th class="sort-header">Category&nbsp;
-                            <a title="{% if "-" in orderBy.information__category %}sort ascending{% elif orderBy.information__category == 'information__category' %}sort descending{% else %}sort ascending{% endif %}"
-                            href="?page=1{% if "-" in orderBy.information__category %}&orderBy=information__category{% elif orderBy.information__category == 'information__category' %}&orderBy=-information__category{%else %}&orderBy=information__category{% endif %}" 
-                            ><i
-                            class="fa {% if "-" in orderBy.information__category %}fa-sort-desc{% elif orderBy.information__category == 'information__category' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
-                        </th>
+                        {% if addCode %}
+                            <th class="sort-header">Code&nbsp;
+                                <a title="{% if "-" in orderBy.information__code %}sort ascending{% elif orderBy.information__code == 'information__code' %}sort descending{% else %}sort ascending{% endif %}"
+                                href="?page=1{% if "-" in orderBy.information__code %}&orderBy=information__code{% elif orderBy.information__code == 'information__code' %}&orderBy=-information__code{%else %}&orderBy=information__code{% endif %}" 
+                                ><i
+                                class="fa {% if "-" in orderBy.information__code %}fa-sort-desc{% elif orderBy.information__code == 'information__code' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
+                            </th>
+                        {% endif %}
+                        {% if addCategory %}
+                            <th class="sort-header">Category&nbsp;
+                                <a title="{% if "-" in orderBy.information__category %}sort ascending{% elif orderBy.information__category == 'information__category' %}sort descending{% else %}sort ascending{% endif %}"
+                                href="?page=1{% if "-" in orderBy.information__category %}&orderBy=information__category{% elif orderBy.information__category == 'information__category' %}&orderBy=-information__category{%else %}&orderBy=information__category{% endif %}" 
+                                ><i
+                                class="fa {% if "-" in orderBy.information__category %}fa-sort-desc{% elif orderBy.information__category == 'information__category' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
+                            </th>
+                        {% endif %}
                         <th>Quantity</th>
                         <th>Delete</th>
                         <th>History</th>
                     </tr>
+                    <tr class="filter-row">
+                    <th id="filter-information__name" >
+                        <input class="filter-field">
+                        </input>
+                        <div class="filter-btn" title="filter" ><i class="fa fa-search"></i></div>
+                    </th>
+                    {% if addCode %}
+                        <th id="filter-information__code" >
+                            <input class="filter-field">
+                            </input>
+                            <div class="filter-btn" title="filter" ><i class="fa fa-search"></i></div>
+                        </th>
+                    {% endif %}
+                    {% if addCategory %}
+                        <th id="filter-information__category__category" >
+                            <select class="filter-field">
+                                {% for category in categoriesList %}
+                                    <option value="{{ category }}">{{ category }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="filter-btn" title="filter" ><i class="fa fa-search"></i></div>
+                        </th>
+                    {% endif %}
+                    <th colspan="3"></th>
+                </tr>
                 </thead>
             {% endif %}
             <tr>
@@ -50,8 +79,12 @@
                  title="{% if inventoryForm.instance.check_information %}edit item details{% else %}edit item details, this product has errors the need to be corrected{% endif %}">
                 {{ inventoryForm.instance.information.name }}
                 </a></td>
-                <td>{{ inventoryForm.instance.information.code | lower }}</td>
-                <td>{{ inventoryForm.instance.information.category }}</td>
+                {% if addCode %}
+                    <td class="detail-table-text cell-left">{{ inventoryForm.instance.information.meaningful_code | lower }}</td>
+                {% endif %}
+                {% if addCategory %}
+                    <td class="detail-table-text cell-left">{{ inventoryForm.instance.information.category }}</td>
+                {% endif %}
                 {% for field in inventoryForm.visible_fields %}
                     <td class="{{ field.css_classes }} cell-left" title="{{ field.errors | escape}}">
                         {# Include the hidden fields in the form #}

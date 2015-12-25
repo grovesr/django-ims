@@ -11,7 +11,7 @@
         page
     {% endif %}
     " 
-    title="page size" href="?page=1&pageSize=10">10</a>&nbsp;
+    title="page size" href="?page=1&pageSize=10&{{ filterQuery }}">10</a>&nbsp;
     <a class="
     {% if paginatorPage.paginator.per_page == 20 and paginatorPage.paginator.per_page < paginatorPage.paginator.count %}
         current
@@ -19,7 +19,7 @@
         page
     {% endif %}
     "
-    title="page size" href="?page=1&pageSize=20">20</a>&nbsp;
+    title="page size" href="?page=1&pageSize=20&{{ filterQuery }}">20</a>&nbsp;
     <a class="
     {% if paginatorPage.paginator.per_page == 50 and paginatorPage.paginator.per_page < paginatorPage.paginator.count %}
         current
@@ -27,7 +27,7 @@
         page
     {% endif %}
     "
-    title="page size" href="?page=1&pageSize=50">50</a>&nbsp;
+    title="page size" href="?page=1&pageSize=50&{{ filterQuery }}">50</a>&nbsp;
     <a class="
     {% if paginatorPage.paginator.per_page >= paginatorPage.paginator.count %}
         current
@@ -35,5 +35,5 @@
         page
     {% endif %}
     "
-    title="page size" href="?pageSize={{ paginatorPage.paginator.count }}">all&nbsp;({{ paginatorPage.paginator.count }})</a>
+    title="page size" href="?pageSize={{ paginatorPage.paginator.count }}&{{ filterQuery }}">all&nbsp;({{ paginatorPage.paginator.count }})</a>
 </div>
