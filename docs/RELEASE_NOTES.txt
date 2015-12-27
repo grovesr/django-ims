@@ -40,5 +40,7 @@ Version 1.11.0:
 * 4c6f0ec added category creation to tests
 2015/12/21 Version 1.17.0:
 * 99df58b (HEAD, master) Add new sorting features
-2015/12/25 Version 1.18.0:
+2015/12/26 Version 1.18.0:
 * c163100 (HEAD, master, filtering) Add new filtering features
+2015/12/27 Version 1.19.0:
+* c27e259 (HEAD, tag: v1.19.0, master) Update to Django 1.9 from 1.7

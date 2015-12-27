@@ -11,4 +11,5 @@
 #VERSION=('1.15.3','22/11/2015','handle backups without picture files')
 #VERSION=('1.16.0','14/12/2015','New pagination using Pagination class')
 #VERSION=('1.17.0','21/12/2015','Add new sorting features')
-VERSION=('1.18.0','21/12/2015','Add new filtering features')
+#VERSION=('1.18.0','26/12/2015','Add new filtering features')
+VERSION=('1.19.0','27/12/2015','Update to Django 1.9 from 1.7')

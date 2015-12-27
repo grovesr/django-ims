@@ -46,8 +46,8 @@
             <tr>
                <th class="tabbed">
                     <ul>
-                        <li meta="product-edit-form" title="Product information form" class="tabbed-left {% if not picture %}tabbed-selected{% endif %}">Details</li>
-                        <li meta="product-picture" title="Product picture" class="tabbed {% if picture %}tabbed-selected{% endif %}">Picture</li>
+                        <li meta="product-edit-form" title="Product information form" class="tabbed-left {% if picture == 'picture=False' %}tabbed-selected{% endif %}">Details</li>
+                        <li meta="product-picture" title="Product picture" class="tabbed {% if picture == 'picture=True' %}tabbed-selected{% endif %}">Picture</li>
                     </ul>
                 </th>
                 <th></th>

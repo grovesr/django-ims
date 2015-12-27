@@ -32,6 +32,8 @@ ims/migrations/0008_auto_20151112_0719.py
 ims/migrations/0008_auto_20151112_0719.pyc
 ims/migrations/0009_auto_20151115_0846.py
 ims/migrations/0009_auto_20151115_0846.pyc
+ims/migrations/0010_auto_20151227_1147.py
+ims/migrations/0010_auto_20151227_1147.pyc
 ims/migrations/__init__.py
 ims/migrations/__init__.pyc
 ims/static/font-awesome/HELP-US-OUT.txt

@@ -482,7 +482,7 @@ class ProductInformation(models.Model):
                                 upload_to = 'inventory_pictures/%Y/%m',
                                 help_text = "Picture of this product")
     originalPictureName = models.CharField(max_length = 256, 
-                                           default=None, blank=True,)
+                                           default="", blank=True,)
     modified=models.DateTimeField(default=None, blank=True,
                                   help_text='last modified on this date')
     modifiedMicroseconds=models.IntegerField(default=0,

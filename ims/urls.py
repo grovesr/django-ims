@@ -1,7 +1,7 @@
 from django.conf.urls import patterns, url
 from ims import views
 
-urlpatterns = patterns('',
+urlpatterns = [
     # ims home
     url(r'^$', views.home, name='home'),
     # this will display the import
@@ -54,4 +54,4 @@ urlpatterns = patterns('',
     url(r'^products/delete_all$', views.product_delete_all, name='product_delete_all'),
     # this is the delete all inventory page
     url(r'^inventory/delete_all$', views.inventory_delete_all, name='inventory_delete_all'),
-    )
+    ]

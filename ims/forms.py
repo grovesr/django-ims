@@ -33,13 +33,11 @@ class ImsClearableFileInput(ClearableFileInput):
             else:
                 urlText = 'Invalid'
             if not self.fileUrl and hasattr(value, "url"):
-                substitutions['initial'] = format_html(self.url_markup_template,
-                                                       value.url,
-                                                       urlText)
+                substitutions['initial_url'] = value.url
+                substitutions['initial'] = urlText
             else:
-                substitutions['initial'] = format_html(self.url_markup_template,
-                                                       self.fileUrl,
-                                                       urlText)
+                substitutions['initial_url'] = self.fileUrl
+                substitutions['initial'] = urlText
             if not self.is_required:
                 checkbox_name = self.clear_checkbox_name(name)
                 checkbox_id = self.clear_checkbox_id(checkbox_name)

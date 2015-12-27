@@ -1128,7 +1128,7 @@ def product_detail(request, code='-1',):
         request.session['errorMessage'] = errorMessage
         return redirect(reverse('ims:products'))
     canChange=request.user.has_perm('ims.change_productinformation')
-    picture = request.GET.get('picture','')
+    picture = 'picture=' + request.GET.get('picture','False')
     orderBy = update_order_by(request, ('site__name', ))
     filterBy, filterQuery = get_filter_by(request)
     inventorySites=product.inventoryitem_set.filter(**filterBy).order_by(*orderBy.values()).values('site').distinct()
@@ -1230,7 +1230,7 @@ def product_detail(request, code='-1',):
                 errorMessage='You don''t have permission to change product information.'
     if product.picture:
         productForm.fields['picture'].widget.fileUrl = reverse('ims:product_detail',
-                                            kwargs={'code':product.code,})+ '?picture'
+                                            kwargs={'code':product.code,})+ '?picture=True'
     if product.picture and not product.thumbnail_exists():
         errorMessage += ('<br />Product picture thumbnail [%s]<br />missing from file system.'
                            % product.thumbnail_name())
