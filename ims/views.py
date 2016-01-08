@@ -401,6 +401,8 @@ def reports_dates(request,
                   startDate = None, 
                   stopDate = None,):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
+    #TODO: add category sort to report print pages
+    #TODO: add filtering to report print pages
     return render(request,'ims/reports.html', {'nav_reports':1,
                                                 'warningMessage':warningMessage,
                                                 'infoMessage':infoMessage,
@@ -1118,8 +1120,32 @@ def products(request):
                                               })
 
 @login_required()
+def product_save_picture_rotation(request, 
+                                  product = None,
+                                  picture = None,
+                                  filterQuery = None):
+    try:
+        with transaction.atomic():
+            rotate_picture(request, product, float(request.POST['rotation']))
+    except:
+        pass
+    if 'errorMessage' not in request.session or request.session['errorMessage'] == '':
+        request.session['infoMessage'] = 'Successfully saved picture rotation'
+        log_actions(request = request, modifier=request.user.username,
+                    modificationMessage='changed picture rotation for ' + str(product))
+    else:
+        log_actions(request = request, modifier=request.user.username,
+                    modificationMessage='unable to change picture rotation for %s due to image processing error' %
+                     str(product),
+                     logError = True)
+    return redirect(reverse('ims:product_detail',
+                            kwargs={'code':product.code,}) 
+                    + '?' + picture + '&' + filterQuery)
+
+@login_required()
 def product_detail(request, code='-1',):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
+    #TODO: add "Add Product to Site" Button
     try:
         product = ProductInformation.objects.get(pk=code)
     except ProductInformation.DoesNotExist:
@@ -1132,36 +1158,24 @@ def product_detail(request, code='-1',):
     orderBy = update_order_by(request, ('site__name', ))
     filterBy, filterQuery = get_filter_by(request)
     inventorySites=product.inventoryitem_set.filter(**filterBy).order_by(*orderBy.values()).values('site').distinct()
-    if filterQuery and product.inventoryitem_set.count() and inventorySites.count() == 0:
+    if filterQuery and product.inventoryitem_set.count() > 0 and inventorySites.count() == 0:
         request.session['warningMessage'] = 'No sites found using filter criteria.<br/>Showing all sites.'
         return redirect(reverse('ims:product_detail',
                                     kwargs={'code':product.code,}) 
                             + '?' + picture)
     paginatorPage = create_paginator(request, items = inventorySites)
     sitesList=[]
-    for siteNumber in paginatorPage.object_list:
-        site = Site.objects.get(pk=siteNumber['site'])
-        sitesList.append((site,site.inventory_quantity(code)))
+    if inventorySites.count() > 0:
+        for siteNumber in paginatorPage.object_list:
+            site = Site.objects.get(pk=siteNumber['site'])
+            sitesList.append((site,site.inventory_quantity(code)))
     productForm=ProductInformationForm(instance=product, error_class=TitleErrorList)
     if request.method == "POST":
         if 'SavePicture' in request.POST and 'rotation' in request.POST and canChange:
-            try:
-                with transaction.atomic():
-                    rotate_picture(request, product, float(request.POST['rotation']))
-            except:
-                pass
-            if 'errorMessage' not in request.session or request.session['errorMessage'] == '':
-                request.session['infoMessage'] = 'Successfully saved picture rotation'
-                log_actions(request = request, modifier=request.user.username,
-                            modificationMessage='changed picture rotation for ' + str(product))
-            else:
-                log_actions(request = request, modifier=request.user.username,
-                            modificationMessage='unable to change picture rotation for %s due to image processing error' %
-                             str(product),
-                             logError = True)
-            return redirect(reverse('ims:product_detail',
-                                    kwargs={'code':product.code,}) 
-                            + '?' + picture + '&' + filterQuery)
+            product_save_picture_rotation(request, 
+                                          product = product,
+                                          picture = picture,
+                                          filterQuery = filterQuery)
         if 'Save' in request.POST:
             productForm=ProductInformationForm(request.POST,
                                                request.FILES,
@@ -1296,8 +1310,8 @@ def product_add(request):
                             return redirect(reverse('ims:products',))
                     else:
                         request.message['warningMessage'] = 'No changes made to the product information'
-                    return redirect(reverse('ims:product_detail', kwargs={'code':product.pk,
-                                                                        'page': 1,})+picture)
+                    return redirect(reverse('ims:product_detail', 
+                                            kwargs={'code':product.pk,})+picture)
     if not canAdd:
         errorMessage='You don''t have permission to add new products'
     return render(request, 'ims/product_detail.html', {"nav_products":1,

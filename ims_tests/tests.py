@@ -9,6 +9,7 @@ import re
 import logging
 from ims.models import Site, ProductInformation, InventoryItem, ProductCategory
 from ims.views import inventory_delete_all, site_delete_all, product_delete_all
+from ims.forms import ProductInformationForm
 from ims.settings import PAGE_SIZE, APP_DIR
 import zipfile
 logging.disable(logging.CRITICAL)
@@ -889,6 +890,44 @@ class ProductsViewTests(TestCase):
                       'IMS products view didn''t generate the correct warning when no products were found.\nactual message = %s' %
                       resultWarning)
 
+class ProductAddViewTests(TestCase):
+    """
+    ims_tests for product_add view
+    """
+    def setUp(self):
+        # Most ims_tests need access to the request factory and/or a user.
+        self.factory = RequestFactory()
+        self.user = User.objects.create_user(
+            username='testUser', password='12345678')
+        
+    def test_product_add_post(self):
+        print 'running ProductAddViewTests.test_product_add_post... '
+        perms = ['add_productinformation']
+        permissions = Permission.objects.filter(codename__in = perms)
+        self.user.user_permissions=permissions
+        self.client.login(username='testUser', password='12345678')
+        form = ProductInformationForm({'name':'test product',
+                                       'code':'D11',
+                                       'quantityOfMeasure':1,
+                                       'unitOfMeasure':'EACH'})
+        postData = form.data
+        postData.update({'Save':'Save'})
+        response = self.client.post(reverse('ims:product_add'),
+                                    form.data,
+                                    follow = True)
+        resultInfo = get_announcement_from_response(response=response,
+                                                       cls="infonote")
+        self.assertIn('Successfully saved product.', resultInfo,
+                      'IMS product_add view didn''t generate the correct info when saving.\nactual message = %s' %
+                      resultInfo)
+        self.assertEquals(response.status_code, 200)
+        
+    def test_product_add_get(self):
+        print 'running ProductAddViewTests.test_product_add_get... '
+        self.client.login(username='testUser', password='12345678')
+        response = self.client.get(reverse('ims:product_add'))
+        self.assertEquals(response.status_code, 200)
+
 class ProductDetailViewTests(TestCase):
     """
     ims_tests for product_detail view
@@ -899,9 +938,21 @@ class ProductDetailViewTests(TestCase):
         self.user = User.objects.create_user(
             username='testUser', password='12345678')
         
+    def test_product_detail_get(self):
+        print 'running ProductDetailViewTests.test_product_detail_get... '
+        self.client.login(username='testUser', password='12345678')
+        product = ProductInformation(code='D11')
+        product.save()
+        code="D11"
+        response=self.client.get(reverse('ims:product_detail',
+                                 kwargs = 
+                                  {'code':code,}),
+                                  follow=True)
+        self.assertEqual(response.status_code, 200,
+                         "Product Detail View didn't return status code 200 with a valid product code.")
         
-    def test_product_detail_with_invalid_product(self):
-        print 'running ProductDetailViewTests.test_product_detail_with_invalid_product... '
+    def test_product_detail_get_with_invalid_product(self):
+        print 'running ProductDetailViewTests.test_product_detail_get_with_invalid_product... '
         self.client.login(username='testUser', password='12345678')
         code="D11"
         response=self.client.get(reverse('ims:product_detail',
