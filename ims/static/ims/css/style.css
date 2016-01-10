@@ -7,6 +7,18 @@
 	visibility:hidden;
 	cursor:default;
 }
+
+select {
+    background:#fff;
+}
+
+input[readonly],
+textarea[readonly],
+select[readonly]
+ {
+    background: #eee;
+}
+
 #report-table, #form-table, .report-table {
 	margin-left:auto;
     margin-right:auto;
