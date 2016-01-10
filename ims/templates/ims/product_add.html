@@ -1,0 +1,45 @@
+{% extends "ims/products.html" %}
+{% load staticfiles %}
+{% block extra_scripts %}
+    {{ block.super }}
+    <script src="{% static 'ims/js/rotate_picture.js' %}" ></script>
+    <script src="{% static 'ims/js/tabbed_view.js' %}" ></script>
+    <script src="{% static 'ims/js/uuid.js' %}" ></script>
+{% endblock extra_scripts %}
+{% block breadcrumbs %}
+    {{ block.super }}
+    <i class="fa fa-angle-double-right"></i>
+    <a href="{% url 'ims:product_add' %}">add product</a>
+{% endblock breadcrumbs %}
+{% block content %}
+    <table id="report-table">
+        <tr>
+            <th>
+                <h3>New product</h3>
+            </th>
+        </tr>
+        <tr class="cell-frame">
+            <td id="product-detail-form" class="cell-frame">
+                <div id="product-add-form">
+                    <form action="{% url 'ims:product_add' %}" method="post" enctype="multipart/form-data">
+                        {% csrf_token %}
+                        <table id="form-table">
+                            <tr>
+                                <th>
+                                    <button title="generate new unique product code" id="generate-code" class="cell-left-btn report-sort"  type="button" >Generate Code</button>
+                                </th>
+                                <th>
+                                    {% if canAdd %}
+                                        <input title="save new product" class="cell-right-btn" type="submit" value="Save" name="Save">
+                                    {% endif %}
+                                </th>
+                                {{ productForm }}
+                                
+                            </tr>
+                        </table>
+                    </form>
+                </div>
+            </td>
+        </tr>
+    </table>
+{% endblock content %}
