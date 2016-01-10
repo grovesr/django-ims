@@ -76,6 +76,21 @@ class InventoryItemFormNoSite(ModelForm):
             raise ValidationError('quantity must be >= 0')
         return quantity
     
+class InventoryItemFormNoSiteNoDelete(ModelForm):
+    class Meta:
+        model = InventoryItem
+        fields=['information','quantity','site']
+        widgets = {'information': HiddenInput(),
+                   'site':HiddenInput(),}
+    error_css_class = 'detail-error-text'
+    required_css_class = 'ims-required-field'
+    
+    def clean_quantity(self):
+        quantity = self.cleaned_data['quantity']
+        if quantity < 0:
+            raise ValidationError('quantity must be >= 0')
+        return quantity
+    
 class InventoryItemFormAddSubtractNoSite(ModelForm):
     class Meta:
         model = InventoryItem
@@ -125,6 +140,29 @@ class ProductInformationForm(ModelForm):
         if m:
             raise ValidationError('Use only numbers, letters, dashes, or underscores')
         return code
+    
+class ProductInformationFormReadOnly(ModelForm):
+    class Meta:
+        model = ProductInformation
+        try:
+            additionalFields = settings.PRODUCT_INFORMATION_FORM_ADDED_FIELDS
+        except AttributeError:
+            additionalFields = ['expendable',
+                'cartonsPerPallet', 'doubleStackPallets', 'warehouseLocation',
+                'canExpire', 'expirationDate', 'expirationNotes', 'costPerItem',]
+        fields=['modifier', 'category', 'name', 'code', 'unitOfMeasure', 
+                'quantityOfMeasure',] + additionalFields 
+        if 'picture' in fields:
+            del(fields[fields.index('picture')])
+        widgets = {}
+        for field in fields:
+            widget = model._meta.get_field(field).formfield().widget
+            widget.attrs = widget.build_attrs({'readonly':1})
+            widgets[field] = widget
+        labels = {'expirationNotes':'Notes',}
+        help_texts = {'expirationNotes':'Special product notes',}
+    error_css_class = 'detail-table-error-text'
+    required_css_class = 'ims-required-field'
     
 class ProductInformationFormWithQuantity(ModelForm):
     class Meta:
