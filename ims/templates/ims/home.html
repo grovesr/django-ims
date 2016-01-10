@@ -12,11 +12,11 @@
 {% endblock breadcrumbs %}
 {% block announcement %}
     <div id="announcement">
-        {% if errorMessage %}
-            <p id="error-note" class="errornote">
+        {% if infoMessage %}
+            <p id="info-note" class="infonote">
                 <i class="fa fa-times fa-lg announcement-close"></i>
-                <i class="fa fa-minus-circle fa-lg announcement-icon"></i>
-                {{ errorMessage | safe }}
+                <i class="fa fa-info-circle fa-lg announcement-icon"></i>
+                {{ infoMessage | safe }}
             </p>
         {%endif %}
         {% if warningMessage %}
@@ -26,11 +26,11 @@
                 {{ warningMessage | safe }}
             </p>
         {%endif %}
-        {% if infoMessage %}
-            <p id="info-note" class="infonote">
+        {% if errorMessage %}
+            <p id="error-note" class="errornote">
                 <i class="fa fa-times fa-lg announcement-close"></i>
-                <i class="fa fa-info-circle fa-lg announcement-icon"></i>
-                {{ infoMessage | safe }}
+                <i class="fa fa-minus-circle fa-lg announcement-icon"></i>
+                {{ errorMessage | safe }}
             </p>
         {%endif %}
     </div>
