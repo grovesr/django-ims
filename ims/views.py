@@ -13,8 +13,8 @@ from .models import Site, InventoryItem, ProductInformation, ProductCategory
 from .forms import InventoryItemFormNoSite, InventoryItemFormAddSubtractNoSite,\
 ProductInformationForm, ProductInformationFormWithQuantity, SiteForm, \
 SiteFormReadOnly, SiteListForm,ProductListFormWithDelete, TitleErrorList, \
-ProductListFormWithAdd, UploadFileForm, \
-ProductListFormWithoutDelete
+ProductListFormWithAdd, UploadFileForm, ProductInformationFormReadOnly, \
+ProductListFormWithoutDelete, InventoryItemFormNoSiteNoDelete
 from collections import OrderedDict
 from subprocess import check_call, check_output, CalledProcessError
 from urllib import urlencode
@@ -648,12 +648,13 @@ def sites(request):
         paginatedForms=SiteFormset(request.POST,queryset=paginatorPage.object_list, error_class=TitleErrorList)
         if 'Delete' in request.POST:
             if canDelete:
-                sitesToDelete={}
+                sitesToDelete='?'
                 for siteForm in paginatedForms:
                     if siteForm.prefix+'-'+'Delete' in request.POST:
-                        sitesToDelete[siteForm.instance]=siteForm.instance.inventoryitem_set.all()
-                if len(sitesToDelete) > 0:
-                    return site_delete(request,sitesToDelete=sitesToDelete)
+                        sitesToDelete += 'site' + str(siteForm.instance.number) + '&'
+                if len(sitesToDelete) > 1:
+                    return redirect(reverse('ims:site_delete',) +
+                                    sitesToDelete)
                 else:
                     warningMessage = 'No sites selected for deletion'
             else:
@@ -922,7 +923,7 @@ def site_add_inventory(request, siteId=1):
                                 if siteInventory.filter(information=productForm.instance.pk).count() == 0:
                                     productToAdd.append(productForm.instance)
                                 productList.append(productForm.instance)
-                        return product_add_to_site_inventory(request, siteId=site.pk,
+                        return products_add_to_site_inventory(request, siteId=site.pk,
                                                              productToAdd=productToAdd,
                                                              productList=productList,
                                                              filterBy = filterBy)
@@ -953,9 +954,15 @@ def site_add_inventory(request, siteId=1):
                                                 })
 
 @login_required()
-def site_delete(request, sitesToDelete={}):
+def site_delete(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
-    canDelete=request.user.has_perm('ims.delete_site')
+    canDelete=request.user.has_perm('ims.delete_site') and request.user.has_perm('ims.delete_inventoryitem')
+    sitesToDelete={}
+    for arg in request.GET.keys():
+        m = re.match(r'^site(\d+)$', arg)
+        if m and m.groups():
+            site = Site.objects.get(pk=m.groups()[0])
+            sitesToDelete[site]=site.inventoryitem_set.all()
     page = int(request.GET.get('page','1'))
     pageSize = int(request.GET.get('pageSize',settings.PAGE_SIZE))
     numSites = Site.objects.all().count()
@@ -982,7 +989,7 @@ def site_delete(request, sitesToDelete={}):
                 request.session['warningMessage'] = warningMessage
                 request.session['infoMessage'] = infoMessage
                 numSites = Site.objects.all().count()
-                if pageSize > numSites:
+                if numSites and (pageSize > numSites):
                     pageSize = numSites
                 return redirect(reverse('ims:sites') + '?' + 
                             urlencode({'page':1,
@@ -1176,6 +1183,9 @@ def product_detail(request, code='-1',):
                                           product = product,
                                           picture = picture,
                                           filterQuery = filterQuery)
+        if 'Add to Site' in request.POST:
+            return redirect(reverse('ims:product_select_add_site',
+                                            kwargs={'code':code,}))
         if 'Save' in request.POST:
             productForm=ProductInformationForm(request.POST,
                                                request.FILES,
@@ -1275,6 +1285,43 @@ def product_detail(request, code='-1',):
                             })
 
 @login_required()
+def product_select_add_site(request, code = None):
+    errorMessage, warningMessage, infoMessage = get_session_messages(request)
+    try:
+        product = ProductInformation.objects.get(pk=code)
+    except ProductInformation.DoesNotExist:
+        errorMessage += ('Product %s does not exist.' % 
+        code)
+        request.session['errorMessage'] = errorMessage
+        return redirect(reverse('ims:products'))
+    productForm=ProductInformationFormReadOnly(instance=product)
+    orderBy = update_order_by(request, ('name',))
+    filterBy, filterQuery = get_filter_by(request)
+    sitesList=Site.objects.filter(**filterBy).order_by(*orderBy.values())
+    paginatorPage = create_paginator(request, items = sitesList)
+    if filterQuery and Site.objects.count() and sitesList.count() == 0:
+        request.session['warningMessage'] = 'No sites found using filter criteria.<br/>Showing all sites.'
+        return redirect(reverse('ims:sites',) + '?' +
+                        urlencode({'page':paginatorPage.number,
+                                'pageSize':paginatorPage.paginator.per_page,}))
+    return render(request, 'ims/product_select_add_site.html',
+                            {"nav_products":1,
+                             'product': product,
+                             'productForm':productForm,
+                             'paginatorPage':paginatorPage,
+                             'paginatedItems':sitesList,
+                             'orderBy':orderBy,
+                             'filterQuery':filterQuery,
+                             'warningMessage':warningMessage,
+                             'infoMessage':infoMessage,
+                             'errorMessage':errorMessage,
+                             'adminName':adminName,
+                             'adminEmail':adminEmail,
+                             'siteVersion':siteVersion,
+                             'imsVersion':imsVersion,
+                            })
+
+@login_required()
 def product_add(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canAdd=request.user.has_perm('ims.add_productinformation')
@@ -1314,7 +1361,7 @@ def product_add(request):
                                             kwargs={'code':product.pk,})+picture)
     if not canAdd:
         errorMessage='You don''t have permission to add new products'
-    return render(request, 'ims/product_detail.html', {"nav_products":1,
+    return render(request, 'ims/product_add.html', {"nav_products":1,
                                                 'productForm':productForm,
                                                 'canAdd':canAdd,
                                                 'warningMessage':warningMessage,
@@ -1327,7 +1374,61 @@ def product_add(request):
                                                 })
     
 @login_required()
-def product_add_to_site_inventory(request, siteId=1, 
+def product_add_to_site_inventory(request, code = None, siteId = None):
+    errorMessage, warningMessage, infoMessage = get_session_messages(request)
+    canAdd=request.user.has_perm('ims.add_inventoryitem')
+    try:
+        site=Site.objects.get(pk=siteId)
+    except Site.DoesNotExist:
+        errorMessage += ('Site %s does not exist.' % 
+        siteId)
+        request.session['errorMessage'] = errorMessage
+        return redirect(reverse('ims:sites'))
+    try:
+        product = ProductInformation.objects.get(pk=code)
+    except ProductInformation.DoesNotExist:
+        errorMessage += ('Product code %s does not exist.' % 
+        code)
+        request.session['errorMessage'] = errorMessage
+        return redirect(reverse('ims:products'))
+    if request.method == 'POST':
+        if 'Save Inventory' in request.POST:
+            if canAdd:
+                inventoryForm=InventoryItemFormNoSiteNoDelete(request.POST, error_class=TitleErrorList)
+                if inventoryForm.is_valid():
+                    inventoryForm.save()
+                    request.session['infoMessage'] += 'Successfully added product %s to inventory<br/>' % inventoryForm.instance.information.name
+                    return redirect(reverse('ims:product_detail',
+                                    kwargs={'code':code,}))
+                else:
+                    warningMessage = 'More information required before the inventory can be saved'
+        if 'Cancel' in request.POST:
+            return redirect(reverse('ims:product_detail', kwargs={'code':code,}),)
+    if not canAdd:
+        errorMessage='You don''t have permission to add to site inventory'
+    inventoryItem = InventoryItem(information = product,
+                                  site=site)
+    inventoryForm=InventoryItemFormNoSiteNoDelete(instance=inventoryItem, error_class=TitleErrorList)
+    siteInventory=site.latest_inventory()
+    if product in siteInventory:
+        inventoryItem=siteInventory.get(information__code=product.code)
+        inventoryForm.fields['Quantity'].initial=inventoryItem.quantity
+    return render(request, 'ims/product_add_to_site_inventory.html', {'nav_sites':1,
+                                                     'site':site,
+                                                     'product':product,
+                                                     'inventoryForm':inventoryForm,
+                                                     'warningMessage':warningMessage,
+                                                     'infoMessage':infoMessage,
+                                                     'errorMessage':errorMessage,
+                                                     'canAdd':canAdd,
+                                                     'adminName':adminName,
+                                                     'adminEmail':adminEmail,
+                                                     'siteVersion':siteVersion,
+                                                     'imsVersion':imsVersion,
+                                                })
+    
+@login_required()
+def products_add_to_site_inventory(request, siteId=1, 
                                   productToAdd=None, 
                                   productList=None, 
                                   filterBy = {}):
@@ -1376,7 +1477,7 @@ def product_add_to_site_inventory(request, siteId=1,
         if productForm.instance not in productToAdd:
             inventoryItem=siteInventory.get(information__code=productForm.instance.code)
             productForm.fields['Quantity'].initial=inventoryItem.quantity
-    return render(request, 'ims/product_add_to_site_inventory.html', {'nav_sites':1,
+    return render(request, 'ims/products_add_to_site_inventory.html', {'nav_sites':1,
                                                      'site':site,
                                                      'productForms':productForms,
                                                      'warningMessage':warningMessage,
