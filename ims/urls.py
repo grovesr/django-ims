@@ -1,4 +1,4 @@
-from django.conf.urls import patterns, url
+from django.conf.urls import url
 from ims import views
 
 urlpatterns = [
@@ -37,7 +37,7 @@ urlpatterns = [
     # this is the add site inventory
     url(r'^sites/(?P<siteId>\d+)/site_add_inventory$', views.site_add_inventory, name='site_add_inventory'),
     # this is the add site inventory confirmation page
-    url(r'^sites/(?P<siteId>\d+)/product_add_to_site_inventory$', views.product_add_to_site_inventory, name='product_add_to_site_inventory'),
+    url(r'^sites/(?P<siteId>\d+)/products_add_to_site_inventory$', views.products_add_to_site_inventory, name='products_add_to_site_inventory'),
     # this is the delete site page
     url(r'^sites/delete$', views.site_delete, name='site_delete'),
     # this is the delete all sites page
@@ -48,6 +48,10 @@ urlpatterns = [
     url(r'^products/product_detail/\s*(?P<code>[\w\d\_\-]+)\s*$', views.product_detail, name='product_detail'),
     # this is the add product page
     url(r'^products/product_add$', views.product_add, name='product_add'),
+    # this is the page to select a site to add a product to
+    url(r'^products/add/\s*(?P<code>[\w\d\_\-]+)\s*$', views.product_select_add_site, name='product_select_add_site'),
+    # this is the page to add a product to a site's inventory
+    url(r'^products/add/\s*(?P<code>[\w\d\_\-]+)\s*/site/(?P<siteId>\d+)$', views.product_add_to_site_inventory, name='product_add_to_site_inventory'),
     # this is the delete products page
     url(r'^products/delete$', views.product_delete, name='product_delete'),
     # this is the delete all products page
