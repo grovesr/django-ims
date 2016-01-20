@@ -11,11 +11,9 @@
                 <form action="{% url 'ims:products_add_to_site_inventory' siteId=site.pk %}" method="post">
                     {% csrf_token %}
                     {{ productForms.management_form }}
-                    {% for newProduct in newProductList %}
-                        <input type="hidden" name="newProduct" value="{{ newProduct.pk }}" />
-                    {% endfor %}
                     <table id="product-list-form">
                         {% for productForm in productForms %}
+                            <input type="hidden" name="codes" value="{{ productForm.instance.pk }}" />
                             {% if forloop.first %}
                                 <thead>
                                     <tr>

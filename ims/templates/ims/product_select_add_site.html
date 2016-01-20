@@ -57,7 +57,7 @@
                                 {% for site in paginatedItems %}
                                     <tr>
                                         <td class="cell-left">
-                                            <a title="add product to this site's inventory" href="{% url 'ims:product_add_to_site_inventory' code=product.code siteId=site.number %}">
+                                            <a title="add product to this site's inventory" href="{% url 'ims:products_add_to_site_inventory' siteId=site.number %}?code={{ product.code }}">
                                                 {{ site.name }}
                                             </a>
                                         </td>

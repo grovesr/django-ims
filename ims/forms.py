@@ -3,7 +3,7 @@ ModelForm, HiddenInput, BooleanField, IntegerField, TextInput, \
 Textarea, CheckboxInput
 from django.utils.safestring import mark_safe
 from django.utils.encoding import force_text
-from django.utils.html import conditional_escape, format_html
+from django.utils.html import conditional_escape
 from django.forms.utils import ErrorList
 from django.core.exceptions import ValidationError
 from django.conf import settings

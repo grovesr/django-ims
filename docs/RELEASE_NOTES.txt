@@ -44,3 +44,35 @@ Version 1.11.0:
 * c163100 (HEAD, master, filtering) Add new filtering features
 2015/12/27 Version 1.19.0:
 * c27e259 (HEAD, tag: v1.19.0, master) Update to Django 1.9 from 1.7
+2016/01/19 Version 1.19.1:
+* 7e5f581 (HEAD, master) refactor: Add lots of new tests and refactor to enhance test
+* e0c9fe3 refactor: Add view for adding a single product to site inventory. Split out site_delete to a stand-alon
+* 2f6769e feat: add new urls for adding a product directly to a site from product_details page
+* 511fa4b feat: Add template for selecting a site to which to add a product
+* f4a1f59 feat: Add new Add to Site button on product_detail page, so we can go directly to adding inventory to a
+* dcbbf78 refactor: create separate templates for adding a single product and multiple products
+* fafbda3 refactor: Separate product_detail and product_add templates
+* 7efdcef feat: re-arrange info, warning, and error announcements, so they appear in that order
+* 4b0bb1f fix: generalize readonly styling for input, select, textarea
+* 05185d9 feat: add readonly form for product_select_add_site view and inventoryItemNoSiteNoDelete for product_ad
+* bf57d84 fix: product_add view redirected with page view param, which was deprecated.  Also handle product_detail * 7e5f581 (HEAD, master) refactor: Add lots of new tests and refactor to enhance test
+* e0c9fe3 refactor: Add view for adding a single product to site inventory. Split out site_delete to a stand-alon
+* 2f6769e feat: add new urls for adding a product directly to a site from product_details page
+* 511fa4b feat: Add template for selecting a site to which to add a product
+* f4a1f59 feat: Add new Add to Site button on product_detail page, so we can go directly to adding inventory to a
+* dcbbf78 refactor: create separate templates for adding a single product and multiple products
+* fafbda3 refactor: Separate product_detail and product_add templates
+* 7efdcef feat: re-arrange info, warning, and error announcements, so they appear in that order
+* 4b0bb1f fix: generalize readonly styling for input, select, textarea
+* 05185d9 feat: add readonly form for product_select_add_site view and inventoryItemNoSiteNoDelete for product_ad
+* bf57d84 fix: product_add view redirected with page view param, which was deprecated.  Also handle product_detai* 7e5f581 (HEAD, master) refactor: Add lots of new tests and refactor to enhance test
+* e0c9fe3 refactor: Add view for adding a single product to site inventory. Split out site_delete to a stand-alon
+* 2f6769e feat: add new urls for adding a product directly to a site from product_details page
+* 511fa4b feat: Add template for selecting a site to which to add a product
+* f4a1f59 feat: Add new Add to Site button on product_detail page, so we can go directly to adding inventory to a
+* dcbbf78 refactor: create separate templates for adding a single product and multiple products
+* fafbda3 refactor: Separate product_detail and product_add templates
+* 7efdcef feat: re-arrange info, warning, and error announcements, so they appear in that order
+* 4b0bb1f fix: generalize readonly styling for input, select, textarea
+* 05185d9 feat: add readonly form for product_select_add_site view and inventoryItemNoSiteNoDelete for product_ad
+* bf57d84 fix: product_add view redirected with page view param, which was deprecated.  Also handle product_detail view when there are no sites.

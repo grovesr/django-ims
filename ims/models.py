@@ -24,7 +24,7 @@ class Site(models.Model):
                                help_text="unique site number")
     name=models.CharField(max_length=50, default="",
                             help_text="Name of this site")
-    county=models.CharField(max_length=50, default='',
+    county=models.CharField(max_length=50, default='', blank = True,
                           help_text="County where site is located")
     address1=models.CharField(max_length=50, default="",
                                   help_text="First street address of this site")
@@ -323,7 +323,7 @@ class Site(models.Model):
         inventoryList.sort(reverse=True)
         if inventoryList[0].deleted:
             return None
-        return lastInventory[0]
+        return inventoryList[0]
 
 class ProductCategory(models.Model):
     """
