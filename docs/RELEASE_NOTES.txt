@@ -78,3 +78,5 @@ Version 1.11.0:
 * bf57d84 fix: product_add view redirected with page view param, which was deprecated.  Also handle product_detail view when there are no sites.
 2016/01/21 Version 1.19.2:
 * bdfbcbc (HEAD, master) fix: Calculation of ProductInformation.num_sites_containing
+2016/01/21 Version 1.19.3:
+* e801151 (HEAD, master) style: Enhance styling of help text and field spacing in detail forms for site and product
