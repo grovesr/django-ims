@@ -26,6 +26,15 @@ select[readonly]
 
 li, #form-table th, #form-table td {
 	text-align:left;
+	padding-bottom:10px;
+}
+
+#form-table th {
+	vertical-align:top;
+}
+
+#form-table .helptext {
+	font-size:0.9em;
 }
 
 .announcement-icon {
