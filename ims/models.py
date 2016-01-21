@@ -725,9 +725,17 @@ class ProductInformation(models.Model):
                 return ''
             return filePieces[0] + 'thumb.' + filePieces[1]
         return ''
-
+    
     def num_sites_containing(self):
-        return self.inventoryitem_set.filter(deleted = False).count()
+        """
+        number of sites containing this product in current inventory
+        """
+        sites = InventoryItem.objects.filter(information = self.pk, 
+                                             deleted = False).values('site').distinct()
+        siteIds = [site['site'] for site in sites]
+        sites = Site.objects.filter(pk__in = siteIds)
+        return len([site for site  in sites \
+                    if site.latest_inventory_for_product(code = self.code)])
 
 ###########################################################
 #  The below models have relations to the base models above

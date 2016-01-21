@@ -377,6 +377,29 @@ class ProductInformationMethodTests(TestCase):
     ProductInformation class method ims_tests
     """
     
+    def test_num_sites_containing_with_3_sites(self):
+        print 'running ProductInformationMethodTests.test_num_sites_containing_with_3_sites... '
+        (__,
+         createdProducts,
+         __,
+         __)=create_products_with_inventory_items_for_sites(
+                                numSites=3,
+                                numProducts=1,
+                                numItems=1)
+        product = createdProducts[0]
+        self.assertEqual(product.num_sites_containing(), 3)
+        
+    def test_num_sites_containing_with_3_sites_after_inventory_change(self):
+        print 'running ProductInformationMethodTests.test_num_sites_containing_with_3_sites_after_inventory_change... '
+        (__,
+         createdProducts,
+         __,
+         __)=create_products_with_inventory_items_for_sites(
+                                numSites=3,
+                                numProducts=1,
+                                numItems=2)
+        product = createdProducts[0]
+        self.assertEqual(product.num_sites_containing(), 3)
         
     def test_parse_product_information_from_xls_initial(self):
         """

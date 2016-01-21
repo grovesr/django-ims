@@ -76,3 +76,5 @@ Version 1.11.0:
 * 4b0bb1f fix: generalize readonly styling for input, select, textarea
 * 05185d9 feat: add readonly form for product_select_add_site view and inventoryItemNoSiteNoDelete for product_ad
 * bf57d84 fix: product_add view redirected with page view param, which was deprecated.  Also handle product_detail view when there are no sites.
+2016/01/21 Version 1.19.2:
+* bdfbcbc (HEAD, master) fix: Calculation of ProductInformation.num_sites_containing
