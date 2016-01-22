@@ -1,4 +1,5 @@
 from django.test import TestCase, RequestFactory
+from unittest import skip
 from django.core.urlresolvers import reverse
 from django.contrib.auth.models import User, Permission
 from django.contrib.sessions.middleware import SessionMiddleware
@@ -629,6 +630,7 @@ class InventoryItemMethodTests(TestCase):
                      ('Failure to recognize a file with bad date format.\nInventoryItem.parse_inventory_from_xl returned: %s'
                       % inventoryMessage))
         
+@skip('No longer using IMS page view')
 class HomeViewTests(TestCase):
     """
     ims_tests for Home view
@@ -1015,7 +1017,7 @@ class ProductDeleteViewTests(TestCase):
         response=self.client.get(reverse('ims:product_delete') + '?' +
                                  urlencode({'code':code}),
                                   follow = False)
-        self.assertEquals(response.status_code, 200)
+        self.assertEqual(response.status_code, 200)
         resultWarning = get_announcement_from_response(response=response,
                                                        cls="warningnote")
         self.assertIn('Are you sure?',

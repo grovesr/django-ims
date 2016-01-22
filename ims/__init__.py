@@ -15,4 +15,5 @@
 #VERSION=('1.19.0','27/12/2015','Update to Django 1.9 from 1.7')
 #VERSION=('1.19.1','19/01/2016','Add lots of tests and refactor views to enhance test')
 #VERSION=('1.19.2','21/01/2016','Fix calculation of ProductInformation.num_sites_containing')
-VERSION=('1.19.3','21/01/2016','Enhance styling of help text and field spacing in detail forms for site and product')
+#VERSION=('1.19.3','21/01/2016','Enhance styling of help text and field spacing in detail forms for site and product')
+VERSION=('1.19.4','22/01/2016','Remove IMS page, its not used.  Redirect to Home if IMS page requested.')
