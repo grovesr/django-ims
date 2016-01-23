@@ -5,6 +5,7 @@ from django.core.files import File
 from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.utils import timezone
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.cache import never_cache
 from django.forms.models import modelformset_factory
 from django.utils.dateparse import parse_datetime, parse_date, date_re
 from django.conf import settings
@@ -14,7 +15,7 @@ from .forms import InventoryItemFormNoSite, InventoryItemFormAddSubtractNoSite,\
 ProductInformationForm, ProductInformationFormWithQuantity, SiteForm, \
 SiteFormReadOnly, SiteListForm,ProductListFormWithDelete, TitleErrorList, \
 ProductListFormWithAdd, UploadFileForm, ProductInformationFormReadOnly, \
-ProductListFormWithoutDelete, InventoryItemFormNoSiteNoDelete
+ProductListFormWithoutDelete
 from collections import OrderedDict
 from subprocess import check_call, check_output, CalledProcessError
 from urllib import urlencode
@@ -239,6 +240,7 @@ def home(request):
                                             })
 
 @login_required()
+@never_cache
 def imports(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     perms=request.user.get_all_permissions()
@@ -398,6 +400,7 @@ def get_sorted_inventory(request,
     return orderBy, sitesList, inventoryList, includesCategories, includesMeaningfulCodes
 
 @login_required()
+@never_cache
 def reports_dates(request, 
                   report = None, 
                   startDate = None, 
@@ -418,6 +421,7 @@ def reports_dates(request,
                                                 'imsVersion':imsVersion,})
     
 @login_required()
+@never_cache
 def reports(request):
     startDate = request.GET.get('startDate',timezone.now().strftime('%m-%d-%Y'))
     stopDate = request.GET.get('stopDate',timezone.now().strftime('%m-%d-%Y'))
@@ -425,6 +429,7 @@ def reports(request):
 
 
 @login_required()
+@never_cache
 def site_inventory_print(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     startDate = validate_date(request.GET.get('startDate',
@@ -462,6 +467,7 @@ def site_inventory_print(request):
                                                 'imsVersion':imsVersion,})
 
 @login_required()
+@never_cache
 def site_detail_print(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     startDate = validate_date(request.GET.get('startDate',
@@ -499,6 +505,7 @@ def site_detail_print(request):
                                                 'imsVersion':imsVersion,})
 
 @login_required()
+@never_cache
 def inventory_detail_print(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     startDate = validate_date(request.GET.get('startDate',
@@ -537,6 +544,7 @@ def inventory_detail_print(request):
                                                 'imsVersion':imsVersion,})
 
 @login_required()
+@never_cache
 def inventory_status_print(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     startDate = validate_date(request.GET.get('startDate',
@@ -575,6 +583,7 @@ def inventory_status_print(request):
                                                 'imsVersion':imsVersion,})
 
 @login_required()
+@never_cache
 def inventory_history_dates(request, siteId=None, code=None, startDate=None, stopDate=None):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     adjust = request.GET.get('adjust', 'False')
@@ -624,6 +633,7 @@ def inventory_history_dates(request, siteId=None, code=None, startDate=None, sto
                   'imsVersion':imsVersion,})
     
 @login_required()
+@never_cache
 def inventory_history(request, siteId=None, code=None,):
     today=timezone.now()
     startDate=today.strftime('%m-%d-%Y')
@@ -632,6 +642,7 @@ def inventory_history(request, siteId=None, code=None,):
                                    startDate=startDate, stopDate=stopDate)
 
 @login_required()
+@never_cache
 def sites(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canDelete=(request.user.has_perm('ims.delete_site') and 
@@ -687,6 +698,7 @@ def sites(request):
                                               })
 
 @login_required()
+@never_cache
 def site_detail(request, siteId=None):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     try:
@@ -845,6 +857,7 @@ def site_detail(request, siteId=None):
                                                 })
 
 @login_required()
+@never_cache
 def site_add(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canAdd=request.user.has_perm('ims.add_site')
@@ -882,6 +895,7 @@ def site_add(request):
                                                 })
     
 @login_required()
+@never_cache
 def site_add_inventory(request, siteId=1):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     try:
@@ -955,6 +969,7 @@ def site_add_inventory(request, siteId=1):
                                                 })
 
 @login_required()
+@never_cache
 def site_delete(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canDelete=(request.user.has_perm('ims.delete_site') and 
@@ -1033,6 +1048,7 @@ def site_delete(request):
                                                 })
 
 @login_required()
+@never_cache
 def site_delete_all(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     sites=Site.objects.all()
@@ -1066,6 +1082,7 @@ def site_delete_all(request):
                                                 })
 
 @login_required()
+@never_cache
 def products(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canAdd=request.user.has_perm('ims.add_productinformation')
@@ -1140,6 +1157,7 @@ def products(request):
                                               })
 
 @login_required()
+@never_cache
 def product_save_picture_rotation(request, 
                                   product = None,
                                   picture = None,
@@ -1163,6 +1181,7 @@ def product_save_picture_rotation(request,
                     + '?' + picture + '&' + filterQuery)
 
 @login_required()
+@never_cache
 def product_detail(request, code='-1',):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     try:
@@ -1300,6 +1319,7 @@ def product_detail(request, code='-1',):
                             })
 
 @login_required()
+@never_cache
 def product_select_add_site(request, code = None):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     try:
@@ -1347,6 +1367,7 @@ def product_select_add_site(request, code = None):
                             })
 
 @login_required()
+@never_cache
 def product_add(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canAdd=request.user.has_perm('ims.add_productinformation')
@@ -1403,6 +1424,7 @@ def product_add(request):
                                                 })
     
 @login_required()
+@never_cache
 def products_add_to_site_inventory(request, siteId=1,):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     try:
@@ -1474,6 +1496,7 @@ def products_add_to_site_inventory(request, siteId=1,):
                    })
     
 @login_required()
+@never_cache
 def product_delete(request, productsToDelete={}):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canDelete = (request.user.has_perm('ims.delete_productinformation') and 
@@ -1551,6 +1574,7 @@ def product_delete(request, productsToDelete={}):
                                                 })
     
 @login_required()
+@never_cache
 def product_delete_all(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canDelete=False
@@ -1597,6 +1621,7 @@ def product_delete_all(request):
                                                 })
 
 @login_required()
+@never_cache
 def inventory_delete_all(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     canDelete=False
@@ -1991,6 +2016,8 @@ def create_category_export_header(sheet=None):
         return None
     return sheet
 
+@login_required()
+@never_cache
 def import_sites(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     perms = request.user.get_all_permissions()
@@ -2063,6 +2090,8 @@ def import_sites(request):
                    'imsVersion':imsVersion,
                    })
 
+@login_required()
+@never_cache
 def import_products(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     perms = request.user.get_all_permissions()
@@ -2134,6 +2163,8 @@ def import_products(request):
                    'imsVersion':imsVersion,
                    })
 
+@login_required()
+@never_cache
 def import_categories(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     perms = request.user.get_all_permissions()
@@ -2205,6 +2236,8 @@ def import_categories(request):
                    'imsVersion':imsVersion,
                    })
 
+@login_required()
+@never_cache
 def import_inventory(request):
     errorMessage, warningMessage, infoMessage = get_session_messages(request)
     perms = request.user.get_all_permissions()
@@ -2424,6 +2457,8 @@ def import_backup_from_archive(request,
         errorMessage='You don''t have permission to restore the database'
     return infoMessage,warningMessage,errorMessage
 
+@login_required()
+@never_cache
 def restore(request):
     errorMessage, __, infoMessage = get_session_messages(request)
     perms=request.user.get_all_permissions()
