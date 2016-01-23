@@ -1206,7 +1206,10 @@ def product_detail(request, code='-1',):
     if inventorySites.count() > 0:
         for siteNumber in paginatorPage.object_list:
             site = Site.objects.get(pk=siteNumber['site'])
-            sitesList.append((site,site.inventory_quantity(code)))
+            inventoryQuantity = site.inventory_quantity(code)
+            productCodesInSite = [inventoryItem.information.code for inventoryItem in site.latest_inventory()]
+            if code in productCodesInSite:
+                sitesList.append((site, inventoryQuantity))
     if request.method == "POST":
         if 'SavePicture' in request.POST and 'rotation' in request.POST and canChange:
             if canChange:
@@ -1549,7 +1552,7 @@ def product_delete(request, productsToDelete={}):
             if not re.match(r'[\w\d\_\-]+', code):
                 codes.remove(code)
         productsToDelete = ProductInformation.objects.filter(pk__in = codes)
-        if any(product.inventoryitem_set.count() > 0  for product in productsToDelete):
+        if len([product for product in productsToDelete if product.num_sites_containing() > 0]) > 0:
             warningMessage='One or more products contain inventory.  Deleting the products will delete all inventory in all sites containing this product as well. Delete anyway?'
         else:
             warningMessage='Are you sure?'

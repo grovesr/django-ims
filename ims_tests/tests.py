@@ -1048,6 +1048,35 @@ class ProductDeleteViewTests(TestCase):
                       resultWarning,
                       'IMS product_delete view didn''t generate the correct warning.\nactual message = %s' %
                       resultWarning)
+        
+    def test_product_delete_get_after_deleting_inventory_from_site(self):
+        print 'running ProductDeleteViewTests.test_product_delete_get_after_deleting_inventory_from_site... '
+        perms = [ 'delete_productinformation', 'delete_inventoryitem']
+        permissions = Permission.objects.filter(codename__in = perms)
+        self.user.user_permissions=permissions
+        self.client.login(username='testUser', password='12345678')
+        (createdSites,
+         createdProducts,
+         __,
+         __)=create_products_with_inventory_items_for_sites(
+                                numSites=1,
+                                numProducts=1,
+                                numItems=3)
+        product = createdProducts[0]
+        site =createdSites[0]
+        site.add_inventory(product=product,
+                           deleted=True,
+                           modifier='testUesr',)
+        response=self.client.get(reverse('ims:product_delete') + '?' +
+                                 urlencode({'code':createdProducts[0].pk}),
+                                  follow = False)
+        self.assertEquals(response.status_code, 200)
+        resultWarning = get_announcement_from_response(response=response,
+                                                       cls="warningnote")
+        self.assertIn('Are you sure?',
+                      resultWarning,
+                      'IMS product_delete view didn''t generate the correct warning.\nactual message = %s' %
+                      resultWarning)
          
     def test_product_delete_get_without_delete_productinformation_perm(self):
         print 'running ProductDeleteViewTests.test_product_delete_get_without_delete_productinformation_perm... '
@@ -2784,6 +2813,48 @@ class ProductDetailViewTests(TestCase):
         self.assertRedirects(response, reverse('ims:products',), 
                              status_code = 302,
                              target_status_code = 200)
+        
+    def test_product_detail_get_when_sites_have_inventory(self):
+        print 'running ProductDetailViewTests.test_product_detail_get_when_sites_have_inventory... '
+        self.client.login(username='testUser', password='12345678')
+        (createdSites,
+         createdProducts,
+         __,
+         __)=create_products_with_inventory_items_for_sites(
+                                numSites=3,
+                                numProducts=1,
+                                numItems=1)
+        product = createdProducts[0]
+        response=self.client.get(reverse('ims:product_detail',
+                                 kwargs = 
+                                  {'code':product.code,}) +
+                                 '?searchField=site__name&searchValue=test',
+                                 follow = False)
+        self.assertEqual(response.status_code, 200,)
+        self.assertEqual(len(response.context['paginatedItems']),
+                         len(createdSites))
+        
+    def test_product_detail_get_after_deleting_inventory_from_site(self):
+        print 'running ProductDetailViewTests.test_product_detail_get_after_deleting_inventory_from_site... '
+        self.client.login(username='testUser', password='12345678')
+        (createdSites,
+         createdProducts,
+         createdInventory,
+         __)=create_products_with_inventory_items_for_sites(
+                                numSites=3,
+                                numProducts=1,
+                                numItems=1)
+        product = createdProducts[0]
+        createdInventory[0].deleted = True
+        createdInventory[0].save()
+        response=self.client.get(reverse('ims:product_detail',
+                                 kwargs = 
+                                  {'code':product.code,}) +
+                                 '?searchField=site__name&searchValue=test',
+                                 follow = False)
+        self.assertEqual(response.status_code, 200,)
+        self.assertEqual(len(response.context['paginatedItems']),
+                         len(createdSites) - 1)
         
     def test_product_detail_post_save(self):
         print 'running ProductDetailViewTests.test_product_detail_post_save... '

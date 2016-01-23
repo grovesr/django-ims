@@ -82,5 +82,7 @@ Version 1.11.0:
 * e801151 (HEAD, master) style: Enhance styling of help text and field spacing in detail forms for site and product
 2016/01/22 Version 1.19.4:
 * f51de1e (HEAD, master) feat: Skip testing of HomeView since we no longer use IMS page
-2016/01/23 Version 1.19.4:
+2016/01/23 Version 1.19.5:
 * ce97188 (HEAD, master) fix: Add @never_cache decorator to all views to override W3TC plugin .htaccess overrides
+2016/01/23 Version 1.19.6:
+fix: Fix check of inventory when deleting products, so deleted inventory is ignored
