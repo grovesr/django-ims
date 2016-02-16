@@ -1231,6 +1231,7 @@ def product_detail(request, code='-1',):
                 if productForm.has_changed():
                     if productForm.is_valid():
                         productForm.instance.modifier=request.user.username
+                        productForm.instance.modified = timezone.now()
                         originalPicture = product.picture.name
                         try:
                             with transaction.atomic():

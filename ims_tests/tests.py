@@ -5,6 +5,8 @@ from django.contrib.auth.models import User, Permission
 from django.contrib.sessions.middleware import SessionMiddleware
 from collections import OrderedDict
 from urllib import urlencode
+from django.utils import timezone
+from datetime import timedelta
 import os 
 import StringIO
 import re
@@ -2971,6 +2973,41 @@ class ProductDetailViewTests(TestCase):
                       resultError,
                       'IMS product detail view didn''t generate the correct error.\nactual message = %s' %
                       resultError)
+        
+    def test_product_detail_post_save_check_modification_date(self):
+        print 'running ProductDetailViewTests.test_product_detail_post_save_check_modification_date... '
+        perms = ['change_productinformation']
+        permissions = Permission.objects.filter(codename__in = perms)
+        self.user.user_permissions=permissions
+        self.client.login(username='testUser', password='12345678')
+        code = 'D11'
+        productName = 'test product'
+        product = ProductInformation(name = productName,
+                                     code = code)
+        # back date the modified field
+        product.modified = timezone.now() - timedelta(days = 1)
+        creationDate = product.modified.date()
+        product.save()
+        # now we change th eproduct and see if the modified date changes
+        postData = {'quantityOfMeasure': 1, 
+                    'unitOfMeasure': 'EACH', 
+                    'code': code, 
+                    'Save': 'Save', 
+                    'name': productName}
+        request=self.factory.post(reverse('ims:product_detail',
+                                  kwargs = 
+                                  {'code':code,}),
+                                  postData,
+                                  follow=False)
+        request.user = self.user
+        add_session_to_request(request)
+        product_detail(request, code = code)
+        product = ProductInformation.objects.get(pk = code)
+        changeDate = product.modified.date()
+        deltaDays = (changeDate - creationDate).days
+        self.assertEqual(deltaDays, 
+                      1,
+                      'IMS product detail view didn''t change the modification date after change')
 
 class ProductSelectAddSiteViewTests(TestCase):
     """
