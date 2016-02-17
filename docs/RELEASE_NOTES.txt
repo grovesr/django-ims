@@ -1,49 +1,15 @@
-Version 1.11.0:
-- add template variables adminName, adminEmail, siteVersion, imsVersion  to display on each page
-- add VERSION to __init__.py to provide single source for version
-- reference VERSION in setup.py so distribution automatically gets new version
-- remove unused variables or replace with __
-- create RELEASE_NOTES.txt
-2015/11/07 Version 1.11.1:
-* 0d95ddb change ProductCategory relationship to Product from OneToOne to ForeignKey
-2015/11/10 Version 1.11.2:
-* 9461e4c remove extraneous ]> from product_detail.html
-* 931c03c change expiration notes to notes in ProductInformationForm
-* 23f5373 add ability to auto-generate a random unique product code, and allow 32 char product codes
-2015/11/12 Version 1.12.1:
-* ff580ea (HEAD, master) make generate code button of type button to keep from submitting
-2015/11/12 Version 1.13.0:
-* b48053f (HEAD, master) make product code 36 char and auto generate uuid4 compliant codes in js
-2015/11/15 Version 1.14.0:
-* 0a4a1ff (HEAD, master) add category to various pages showing lists of product/inventory
-2015/11/15 Version 1.14.1:
-* fadf785 (HEAD, master) left justify category and code in products list
-2015/11/21 Version 1.15.0:
-* f2190db (HEAD, master) enable restore of archive backups including images.  add error checking for missing picture files
-2015/11/22 Version 1.15.1:
-* 09e05ce (HEAD, master) fix backup of thumbnail file
-* 19ee201 save ProductInformation.originalPictureName relative to MEDIA_ROOT instead of absolute path
-2015/11/22 Version 1.15.2:
-* 485b72f (HEAD, master) fix restore of originalPictureName
-2015/11/22 Version 1.15.3:
-* 248e289 (HEAD, master) handle backups without picture files
-2015/12/14 Version 1.16.0:
-* e744490 (pagination) refactor Update pagination to reference paginatedItems.  Refactor pagination methods
-* eb28854 feat replace laquo and raquo with font-awesome.  replace page navigation with new pagination class based approach.
-* 94a00d6 style unify page display style across site.  Also add pagination css.
-* 5b74185 feat remove PAGE_SIZE from settings
-* 3230ee0 feat use pagination class and session for paging now
-* ef789e9 feat remove paging information frm URLs, use session and pagination now
-* e84ae03 feat pass in pageSize information to changed inventory methods
-* b14fc01 add font-awesome css to ims/static
-* 93931c2 fix link to style.css in report print popup javascript function
-* 4c6f0ec added category creation to tests
-2015/12/21 Version 1.17.0:
-* 99df58b (HEAD, master) Add new sorting features
-2015/12/26 Version 1.18.0:
-* c163100 (HEAD, master, filtering) Add new filtering features
-2015/12/27 Version 1.19.0:
-* c27e259 (HEAD, tag: v1.19.0, master) Update to Django 1.9 from 1.7
+2016/02/17 Verion 1.19.7:
+fix: Set modified when changing ProductInformation. Handle unicode coming in from spreadsheet restores. Reverse order of RELEASE_NOTES and __init__.py version tuples.. Change date format of __init__.py version info
+2016/01/23 Version 1.19.6:
+fix: Fix check of inventory when deleting products, so deleted inventory is ignored
+2016/01/23 Version 1.19.5:
+* ce97188 (HEAD, master) fix: Add @never_cache decorator to all views to override W3TC plugin .htaccess overrides
+2016/01/22 Version 1.19.4:
+* f51de1e (HEAD, master) feat: Skip testing of HomeView since we no longer use IMS page
+2016/01/21 Version 1.19.3:
+* e801151 (HEAD, master) style: Enhance styling of help text and field spacing in detail forms for site and product
+2016/01/21 Version 1.19.2:
+* bdfbcbc (HEAD, master) fix: Calculation of ProductInformation.num_sites_containing
 2016/01/19 Version 1.19.1:
 * 7e5f581 (HEAD, master) refactor: Add lots of new tests and refactor to enhance test
 * e0c9fe3 refactor: Add view for adding a single product to site inventory. Split out site_delete to a stand-alon
@@ -76,13 +42,49 @@ Version 1.11.0:
 * 4b0bb1f fix: generalize readonly styling for input, select, textarea
 * 05185d9 feat: add readonly form for product_select_add_site view and inventoryItemNoSiteNoDelete for product_ad
 * bf57d84 fix: product_add view redirected with page view param, which was deprecated.  Also handle product_detail view when there are no sites.
-2016/01/21 Version 1.19.2:
-* bdfbcbc (HEAD, master) fix: Calculation of ProductInformation.num_sites_containing
-2016/01/21 Version 1.19.3:
-* e801151 (HEAD, master) style: Enhance styling of help text and field spacing in detail forms for site and product
-2016/01/22 Version 1.19.4:
-* f51de1e (HEAD, master) feat: Skip testing of HomeView since we no longer use IMS page
-2016/01/23 Version 1.19.5:
-* ce97188 (HEAD, master) fix: Add @never_cache decorator to all views to override W3TC plugin .htaccess overrides
-2016/01/23 Version 1.19.6:
-fix: Fix check of inventory when deleting products, so deleted inventory is ignored
+2015/12/27 Version 1.19.0:
+* c27e259 (HEAD, tag: v1.19.0, master) Update to Django 1.9 from 1.7
+2015/12/26 Version 1.18.0:
+* c163100 (HEAD, master, filtering) Add new filtering features
+2015/12/21 Version 1.17.0:
+* 99df58b (HEAD, master) Add new sorting features
+2015/12/14 Version 1.16.0:
+* e744490 (pagination) refactor Update pagination to reference paginatedItems.  Refactor pagination methods
+* eb28854 feat replace laquo and raquo with font-awesome.  replace page navigation with new pagination class based approach.
+* 94a00d6 style unify page display style across site.  Also add pagination css.
+* 5b74185 feat remove PAGE_SIZE from settings
+* 3230ee0 feat use pagination class and session for paging now
+* ef789e9 feat remove paging information frm URLs, use session and pagination now
+* e84ae03 feat pass in pageSize information to changed inventory methods
+* b14fc01 add font-awesome css to ims/static
+* 93931c2 fix link to style.css in report print popup javascript function
+* 4c6f0ec added category creation to tests
+2015/11/22 Version 1.15.3:
+* 248e289 (HEAD, master) handle backups without picture files
+2015/11/22 Version 1.15.2:
+* 485b72f (HEAD, master) fix restore of originalPictureName
+2015/11/22 Version 1.15.1:
+* 09e05ce (HEAD, master) fix backup of thumbnail file
+* 19ee201 save ProductInformation.originalPictureName relative to MEDIA_ROOT instead of absolute path
+2015/11/21 Version 1.15.0:
+* f2190db (HEAD, master) enable restore of archive backups including images.  add error checking for missing picture files
+2015/11/15 Version 1.14.1:
+* fadf785 (HEAD, master) left justify category and code in products list
+2015/11/15 Version 1.14.0:
+* 0a4a1ff (HEAD, master) add category to various pages showing lists of product/inventory
+2015/11/12 Version 1.13.0:
+* b48053f (HEAD, master) make product code 36 char and auto generate uuid4 compliant codes in js
+2015/11/12 Version 1.12.1:
+* ff580ea (HEAD, master) make generate code button of type button to keep from submitting
+2015/11/10 Version 1.11.2:
+* 9461e4c remove extraneous ]> from product_detail.html
+* 931c03c change expiration notes to notes in ProductInformationForm
+* 23f5373 add ability to auto-generate a random unique product code, and allow 32 char product codes
+2015/11/07 Version 1.11.1:
+* 0d95ddb change ProductCategory relationship to Product from OneToOne to ForeignKey
+Version 1.11.0:
+- add template variables adminName, adminEmail, siteVersion, imsVersion  to display on each page
+- add VERSION to __init__.py to provide single source for version
+- reference VERSION in setup.py so distribution automatically gets new version
+- remove unused variables or replace with __
+- create RELEASE_NOTES.txt
