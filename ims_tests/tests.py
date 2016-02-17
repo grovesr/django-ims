@@ -375,6 +375,22 @@ class SiteMethodTests(TestCase):
                      ('Failure to recognize a file with bad date format.\nSite.parse_sites_from_xls returned: %s'
                       % siteMessage))
     
+    def test_parse_sites_from_xls_unicode(self):
+        print 'running SiteMethodTests.test_parse_sites_from_xls_unicode... '
+        filename=os.path.join(APP_DIR,
+                              'testData/sites_add_site1_unicode.xls')
+        try:
+            (__,
+             siteMessage) =  Site.parse_sites_from_xls(filename=filename, 
+                                                            modifier='none',
+                                                            save=True)
+        except UnicodeEncodeError as e:
+            self.fail("Import of spreadsheet containing unicode caused UnicodeEncodeError: %s" % e)
+        self.assertEqual(siteMessage,
+                         '',
+                         ('Import of spreadsheet containing unicode generated warnings %s'
+                          % siteMessage))
+    
 class ProductInformationMethodTests(TestCase):
     """
     ProductInformation class method ims_tests
@@ -491,7 +507,67 @@ class ProductInformationMethodTests(TestCase):
         self.assert_('Xlrdutils' in productMessage,
                      ('Failure to recognize a file with bad date format.\nProductInformation.parse_product_information_from_xls returned: %s'
                       % productMessage))
+    
+    def test_parse_product_information_from_xls_with_unicode(self):
+        print 'running ProductInformationMethodTests.test_parse_product_information_from_xls_with_unicode... '
+        filename=os.path.join(
+                        APP_DIR,
+                        'testData/products_add_prod1_unicode.xls')
+        try:
+            (__,
+             productMessage)=ProductInformation.parse_product_information_from_xls(
+                          filename=filename, 
+                          modifier='none',
+                          save=True)
+        except UnicodeEncodeError as e:
+            self.fail("Import of spreadsheet containing unicode caused UnicodeEncodeError: %s" % e)
+        self.assertEqual(productMessage,
+                         '',
+                         ('Import of spreadsheet containing unicode generated warnings %s'
+                          % productMessage))
+
+class ProductCategoryMethodTests(TestCase):
+    """
+    ProductCategory class method ims_tests
+    """
+
+    def test_parse_product_category_from_xls_initial(self):
+        print 'running ProductInformationMethodTests.test_parse_product_category_from_xls_initial... '
+        filename=os.path.join(APP_DIR,
+                              'testData/category_add_3.xls')
+        (importedCategories,
+         __)=ProductCategory.parse_product_categories_from_xls(
+                         filename=filename, 
+                         modifier='none',
+                         save=True)
+        self.assertNotEqual(importedCategories,
+                            None,
+                            'Failure to import categories from Excel')
+        queriedCategories=ProductCategory.objects.all()
+        # check that we saved 3 sites
+        self.assertEqual(queriedCategories.count(),
+                         3,
+                         'Number of imported categories mismatch. \
+                         Some categories didn''t get stored.')
         
+    def test_parse_product_category_from_xls_with_unicode(self):
+        print 'running ProductInformationMethodTests.test_parse_product_category_from_xls_with_unicode... '
+        filename=os.path.join(
+                        APP_DIR,
+                        'testData/category_add_3_unicode.xls')
+        try:
+            (__,
+             categoryMessage)=ProductCategory.parse_product_categories_from_xls(
+                          filename=filename, 
+                          modifier='none',
+                          save=True)
+        except UnicodeEncodeError as e:
+            self.fail("Import of spreadsheet containing unicode caused UnicodeEncodeError: %s" % e)
+        self.assertEqual(categoryMessage,
+                         '',
+                         ('Import of spreadsheet containing unicode generated warnings %s'
+                          % categoryMessage))
+
 class InventoryItemMethodTests(TestCase):
     """
     InventoryItem class method ims_tests
@@ -631,7 +707,7 @@ class InventoryItemMethodTests(TestCase):
         self.assert_('Xlrdutils' in inventoryMessage,
                      ('Failure to recognize a file with bad date format.\nInventoryItem.parse_inventory_from_xl returned: %s'
                       % inventoryMessage))
-        
+    
 @skip('No longer using IMS page view')
 class HomeViewTests(TestCase):
     """

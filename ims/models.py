@@ -198,7 +198,7 @@ class Site(models.Model):
         elif isinstance(getattr(self,key),long):
             return long(value)
         elif isinstance(getattr(self,key),str):
-            return str(value)
+            return str(unicode(value.strip().encode('ascii','replace')))
         elif isinstance(getattr(self,key),unicode):
             if key == 'contactPhone' and isinstance(value,float):
                 return unicode(int(value))
@@ -408,7 +408,7 @@ class ProductCategory(models.Model):
         elif isinstance(getattr(self,key),float):
             return float(value)
         elif isinstance(getattr(self,key),str):
-            return str(value.strip())
+            return str(unicode(value.strip().encode('ascii','replace')))
         elif isinstance(getattr(self,key),unicode):
             return unicode(value.strip())
         elif re.match('pk',key,re.IGNORECASE):
@@ -654,7 +654,7 @@ class ProductInformation(models.Model):
         elif re.match('^originalpicturename$', key, re.IGNORECASE):
             return value.strip()
         elif isinstance(getattr(self,key),str):
-            return str(value.strip())
+            return str(unicode(value.strip().encode('ascii','replace')))
         elif isinstance(getattr(self,key),unicode):
             return unicode(value.strip())
         elif re.match('^.*date',key,re.IGNORECASE):
@@ -928,7 +928,7 @@ class InventoryItem(models.Model):
         elif isinstance(getattr(self,key),int):
             return int(value)
         elif isinstance(getattr(self,key),str):
-            return str(value)
+            return str(value.strip())
         elif isinstance(getattr(self,key),unicode):
             return unicode(value)
         elif re.match('^.*date',key,re.IGNORECASE):
