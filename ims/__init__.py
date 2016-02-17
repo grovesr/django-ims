@@ -1,4 +1,4 @@
-VERSION=('1.19.7','2016/02/17','Fix check of inventory when deleting products, so deleted inventory is ignored')
+VERSION=('1.19.7','2016/02/17','fix: Set modified when changing ProductInformation. Handle unicode coming in from spreadsheet restores. Reverse order of RELEASE_NOTES and __init__.py version tuples.. Change date format of __init__.py version info')
 #VERSION=('1.19.6','2016/01/23','Fix check of inventory when deleting products, so deleted inventory is ignored')
 #VERSION=('1.19.5','2016/01/23','Add @never_cache decorator to all views to override W3TC plugin .htaccess overrides')
 #VERSION=('1.19.4','2016/01/22','Remove IMS page, its not used.  Redirect to Home if IMS page requested.')
