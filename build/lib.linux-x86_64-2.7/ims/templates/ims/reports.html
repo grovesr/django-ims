@@ -1,0 +1,96 @@
+{% extends "ims/home.html" %}
+{% load staticfiles %}
+{% block extra_scripts %}
+    {{ block.super }}
+    <link rel="stylesheet" href="http://code.jquery.com/ui/1.11.0/themes/smoothness/jquery-ui.css"> 
+    <script src="http://code.jquery.com/ui/1.11.0/jquery-ui.js"></script>
+    <script src="{% static 'ims/js/date_picker.js' %}" ></script>
+{% endblock extra_scripts %}
+{% block breadcrumbs %}
+    {{ block.super }}
+    <i class="fa fa-angle-double-right"></i>
+    <a href="{% url 'ims:reports' %}">reports</a>
+{% endblock breadcrumbs %}
+{% block content %}
+    <table id="report-table">
+        <tr>
+            <th colspan="2">
+                Report Dates
+            </th>
+        </tr>
+        <tr>
+            <td>
+                <tr style="display:none;" >
+                    <th>
+                        <label for="startDate" >begin date:</label>
+                    </th>
+                    <td>
+                        <input id="startDate" name="startDate" type="text" value="{{ startDate }}" />
+                    </td>
+                </tr>
+                <tr>
+                    <th>
+                        <label for="stopDate">end date:</label>
+                    </th>
+                    <td>
+                        <input id="stopDate" name="stopDate" type="text" value="{{ stopDate }}" />
+                    </td>
+                </tr>
+            </td>
+        </tr>
+    </table>
+    <table id="report-table">
+        <tr>
+            <th colspan="2">
+                <h3>Reports:</h3>
+            </th>
+        </tr>
+        <tr>
+            <td class="cell-frame">
+                <table id="report-table">
+                    <tr class="bottom-bordered-row">
+                        <th class="left-column report-column">
+                            Site Reports
+                        </th>
+                        <th class="report-column">
+                            Product Reports
+                        </th>
+                    </tr>
+                    <tr>
+                        <th class="left-column cell-center-btn">
+                            Site Inventory
+                        </th>
+                        <th class="cell-center-btn">
+                            Inventory Detail
+                        </th>
+                    </tr>
+                    <tr class="bottom-bordered-row">
+                        <td class="left-column report-column">
+                            <a id="site-inventory-print" title="create site inventory print view" class="report-sort" href="{% url 'ims:site_inventory_print'%}">print view</a>
+                        </td>
+                        <td>
+                            <a id="inventory-detail-print" title="create inventory detail print view" class="report-sort" href="{% url 'ims:inventory_detail_print' %}">print view</a>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th class="left-column cell-center-btn">
+                            Site Detail
+                        </th>
+                        <th class="cell-center-btn">
+                            Inventory Status
+                        </th>
+                    </tr>
+                    <tr>
+                        <td class="left-column">
+                            <a id="site-detail-print" title="create site detail print view" class="report-sort" href="{% url 'ims:site_detail_print' %}">print view</a>
+                        </td>
+                        <td>
+                            <a id="inventory-status-print" title="create inventory status print view" class="report-sort" href="{% url 'ims:inventory_status_print' %}">print view</a>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+    <br />
+{% endblock content %}

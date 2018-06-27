@@ -4,5 +4,11 @@
 <path>/${PROJECT_DIR_NAME}</path>
 </pydev_pathproperty>
 <pydev_property name="org.python.pydev.PYTHON_PROJECT_VERSION">python 2.7</pydev_property>
-<pydev_property name="org.python.pydev.PYTHON_PROJECT_INTERPRETER">rims-django1.9</pydev_property>
+<pydev_property name="org.python.pydev.PYTHON_PROJECT_INTERPRETER">rims-django-1.9</pydev_property>
+<pydev_variables_property name="org.python.pydev.PROJECT_VARIABLE_SUBSTITUTION">
+<key>DJANGO_MANAGE_LOCATION</key>
+<value>manage.py</value>
+<key>DJANGO_SETTINGS_MODULE</key>
+<value>ims.settings.py</value>
+</pydev_variables_property>
 </pydev_project>

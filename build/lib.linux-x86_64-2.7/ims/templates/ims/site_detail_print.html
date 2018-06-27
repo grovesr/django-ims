@@ -1,0 +1,85 @@
+{% extends "ims/reports.html" %}
+{% load staticfiles %}
+{% block extra_scripts %}
+    {{ block.super }}
+    {% include "ims/print_page.html" %}
+{% endblock extra_scripts %}
+{% block breadcrumbs %}
+    {{ block.super }}
+    <i class="fa fa-angle-double-right"></i>
+    <a href="{% url 'ims:site_detail_print' %}?startDate={{ startDate }}&stopDate={{ stopDate }}">site_detail</a>
+{% endblock breadcrumbs %}
+{% block content %}
+    <div id="ims-report-container"  class="cell-frame" >
+        <button title="print report" id="printButton" class="report-sort">Print</button>
+        <div title="print report" id="ims-report">
+             <h3>Site Detail Report </h3>
+             <h4>as of {{ stopDate }}</h4>
+            <table id="report-table">
+                <tr class="bottom-bordered-row">
+                    <th class="sort-header">Site&nbsp;
+                        <a title="{% if "-" in orderBy.name %}sort ascending{% elif orderBy.name == 'name' %}sort descending{% else %}sort ascending{% endif %}"
+                        href="?startDate={{ startDate }}&stopDate={{ stopDate }}{% if "-" in orderBy.name %}&orderBy=name{% elif orderBy.name == 'name' %}&orderBy=-name{%else %}&orderBy=name{% endif %}" 
+                        ><i
+                        class="fa {% if "-" in orderBy.name %}fa-sort-desc{% elif orderBy.name == 'name' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
+                    </th>
+                    <th colspan="2">
+                        Details
+                    </th>
+                </tr>
+                {% for site in sitesList %}
+                    <tr>
+                        <td colspan="3">
+                             <h4>{{ site.name }}</h4>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>
+                            Address1:
+                        </td>
+                        <td>
+                            {{ site.address1 }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>
+                            Address2:
+                        </td>
+                        <td>
+                            {{ site.address2 }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>
+                            Address3:
+                        </td>
+                        <td>
+                            {{ site.address3 }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>
+                            Contact Name:
+                        </td>
+                        <td>
+                            {{ site.contactName }}
+                        </td>
+                    </tr>
+                    <tr>
+                        <td></td>
+                        <td>
+                            Contact Phone:
+                        </td>
+                        <td>
+                            {{ site.contactPhone }}
+                        </td>
+                    </tr>
+                {% endfor %}
+            </table>
+        </div>
+    </div>
+{% endblock content %}

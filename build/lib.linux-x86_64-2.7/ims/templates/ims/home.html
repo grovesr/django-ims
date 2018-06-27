@@ -1,0 +1,88 @@
+{% extends "base/base.html" %}
+{% load staticfiles %}
+{% block extrastyle %}
+    {{ block.super }}
+    <link rel="stylesheet" href="{% static 'font-awesome/css/font-awesome.min.css' %}" type="text/css" >
+    <link rel="stylesheet" href="{% static 'ims/css/style.css' %}" type="text/css" >
+{% endblock extrastyle %}
+{% block breadcrumbs %}
+    {{ block.super }}
+    <i class="fa fa-angle-double-right"></i>
+    <a href="{% url 'ims:home' %}">IMS</a>
+{% endblock breadcrumbs %}
+{% block announcement %}
+    <div id="announcement">
+        {% if infoMessage %}
+            <p id="info-note" class="infonote">
+                <i class="fa fa-times fa-lg announcement-close"></i>
+                <i class="fa fa-info-circle fa-lg announcement-icon"></i>
+                {{ infoMessage | safe }}
+            </p>
+        {%endif %}
+        {% if warningMessage %}
+            <p id="warning-note" class="warningnote">
+                <i class="fa fa-times fa-lg announcement-close"></i>
+                <i class="fa fa-exclamation-circle fa-lg announcement-icon"></i>
+                {{ warningMessage | safe }}
+            </p>
+        {%endif %}
+        {% if errorMessage %}
+            <p id="error-note" class="errornote">
+                <i class="fa fa-times fa-lg announcement-close"></i>
+                <i class="fa fa-minus-circle fa-lg announcement-icon"></i>
+                {{ errorMessage | safe }}
+            </p>
+        {%endif %}
+    </div>
+{% endblock announcement %}
+{% block content %}
+    {% if sitesList or inventoryList %}
+        <table id="report-table">
+            <tr>
+                <td colspan="2">
+                    {% include "ims/page_size_selection.html" %}
+                </td>
+            </tr>
+            <tr>
+                <th>
+                    <h3>Sites with Recently Edited Inventory</h3>
+                </th>
+                <th>
+                    <h3>Recently Edited Inventory</h3>
+                </th>
+            </tr>
+            <tr>
+                <td class="cell-frame">
+                    <table class="home-list-cell-frame">
+                        <tr>
+                            <td  class="report-column">
+                                <ul>
+                                    {% for site in sitesList %}
+                                        <li class="home-list">
+                                            <a title="edit site" href="{% url 'ims:site_detail' siteId=site.pk %}">{{ site.name }}</a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+                <td class="cell-frame" >
+                    <table class="home-list-cell-frame">
+                        <tr>
+                            <td  class="report-column">
+                                <ul>
+                                    {% for item in inventoryList %}
+                                        <li class="home-list">
+                                            <a title="edit site containing this inventory" href="{% url 'ims:site_detail' siteId=item.site.pk %}">{{ item.information }}</a>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+    {% endif %}
+{% endblock content %}

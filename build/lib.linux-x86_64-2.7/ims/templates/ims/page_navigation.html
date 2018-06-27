@@ -1,0 +1,44 @@
+{% if paginatorPage.paginator.count > 0 %}
+    {% include "ims/page_size_selection.html" %}
+    <div class="table-nav-pages
+    {% if pageSize >= paginatorPage.paginator.count %}
+        hidden
+    {% endif %}
+    ">
+        <a class="
+        {% if paginatorPage.has_previous %}
+            " href="?page=1&pageSize={{ paginatorPage.paginator.per_page }}&{{ filterQuery }}"
+        {% else %}
+            disabled" href="#"
+        {% endif %}
+        title="first page"
+        ><i class="fa fa-angle-double-left fa-lg"></i></a>
+        <a class="
+        {% if paginatorPage.has_previous %}
+            " href="?page={{ paginatorPage.previous_page_number }}&pageSize={{ paginatorPage.paginator.per_page }}&{{ filterQuery }}"
+        {% else %}
+            disabled" href="#"
+        {% endif %}
+        title="previous page"
+        ><i class="fa fa-angle-left fa-lg"></i></a>
+        <span class="page-list">
+            Page {{ paginatorPage.number }} of {{ paginatorPage.paginator.num_pages }}
+        </span>
+        <a class="
+        {% if paginatorPage.has_next %}
+            " href="?page={{ paginatorPage.next_page_number }}&pageSize={{ paginatorPage.paginator.per_page }}&{{ filterQuery }}"
+        {% else %}
+            disabled" href="#"
+        {% endif %}
+        title="next page"
+        ><i class="fa fa-angle-right fa-lg"></i></a>
+        <a class="
+        {% if paginatorPage.has_next %}
+            " href="?page={{ paginatorPage.paginator.num_pages }}&pageSize={{ paginatorPage.paginator.per_page }}&{{ filterQuery }}"
+        {% else %}
+            disabled" href="#"
+        {% endif %}
+        title="last page"
+        ><i class="fa fa-angle-double-right fa-lg"></i></a>
+    </div>
+{% endif %}

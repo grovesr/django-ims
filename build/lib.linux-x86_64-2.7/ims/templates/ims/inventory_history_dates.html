@@ -1,0 +1,64 @@
+{% extends "ims/site_detail.html" %}
+{% block breadcrumbs %}
+    {{ block.super }}
+    <i class="fa fa-angle-double-right"></i>
+    <a href="{% url 'ims:inventory_history_dates' siteId=site.pk code=product.pk startDate=startDate stopDate=stopDate %}">inventory history</a>
+{% endblock breadcrumbs %}
+{% block content %}
+    <table id="report-table">
+        <tr>
+            <th>
+                <h3>Inventory history for {{ product }} at {{ site }}:</h3>
+            </th>
+        </tr>
+        <tr>
+            <td>
+                {% include "ims/page_navigation.html" %}
+            </td>
+        </tr>
+        <tr>
+            <td class="cell-frame">
+                <div class="detail-form">
+                    <table id="inventory-detail-form">
+                    <thead>
+                        <tr class="detail-form-header">
+                            <th>
+                                Item
+                            </th>
+                            <th>
+                                Quantity
+                            </th>
+                            <th>
+                                Modifier
+                            </th>
+                            <th>
+                                Modification Date
+                            </th>
+                        </tr>
+                    </thead>
+                    {% for item in paginatedItems %}
+                        <tr>
+                            <td class="detail-table-text cell-left">
+                                {{ item.information }}
+                            </td>
+                            <td class="detail-table-text cell-left">
+                                {% if item.deleted %}
+                                    x
+                                {% else %}
+                                    {{ item.quantity }}
+                                {% endif %}
+                            </td>
+                            <td class="cell-left">
+                                {{ item.modifier }}
+                            </td>
+                            <td class="cell-left">
+                                {{ item.modified }}
+                            </td>
+                        </tr>
+                    {% endfor %}
+                    </table>
+                </div>
+            </td>
+        </tr>
+    </table>
+{% endblock content %}

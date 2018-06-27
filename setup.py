@@ -18,7 +18,7 @@ setup(
     long_description=README,
     url='http://www.example.com/',
     author='Rob Groves',
-    author_email='grovesr1@yahoo.com',
+    author_email='robgroves0@gmail.com',
     classifiers=[
         'Environment :: Web Environment',
         'Framework :: Python',

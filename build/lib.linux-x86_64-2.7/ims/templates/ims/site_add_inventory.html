@@ -1,0 +1,135 @@
+{% extends "ims/sites.html" %}
+{% block breadcrumbs %}
+    {{ block.super }}
+    <i class="fa fa-angle-double-right"></i>
+    <a href="{% url 'ims:site_detail' siteId=site.number %}">site details</a>
+    <i class="fa fa-angle-double-right"></i>
+    <a href="{% url 'ims:site_add_inventory' siteId=site.number %}">add new inventory</a>
+{% endblock breadcrumbs %}
+{% block content %}
+    <table id="report-table">
+        <tr>
+            <th>
+                <h3>Site: {{ site.name }}</h3>
+            </th>
+            {% if paginatedItems.total_form_count and canAdd %}
+                <th><h3>Products to Add:<i class="fa fa-search fa-lg search search-off" ></i></h3></th>
+            {% endif %}
+        </tr>
+        {% if paginatedItems.total_form_count and canAdd %}
+            <tr>
+                <td></td>
+                <td>
+                    {% include "ims/page_navigation.html" %}
+                </td>
+            </tr>
+       {% endif %}
+        <tr class="cell-frame">
+            <td id="site-detail-cell-frame" class="cell-frame">
+                <table id="form-table">
+                    {{ siteForm }}
+                </table>
+            </td>
+            {% if paginatedItems.total_form_count and canAdd %}
+                <td id="product-add-cell-frame"  class="cell-frame">
+                    <form action="{% url 'ims:site_add_inventory' siteId=site.number %}?page={{ paginatorPage.number }}&pageSize={{ paginatorPage.paginator.per_page }}&{{ filterQuery }}" method="post">
+                        {% csrf_token  %}
+                        <table id="product-list-form" class="form-table">
+                        {{ paginatedItems.management_form }}
+                        {% for productForm in paginatedItems %}
+                            {% if forloop.first %}
+                                <thead>
+                                    <tr class="detail-form-header">
+                                        <th colspan='3'>
+                                            {% if canAdd %}
+                                                <input title="add checked product(s) to site inventory" class="cell-right-btn" type="submit" value="Add Products" name="Add Products">
+                                            {% endif %}
+                                        </th>
+                                    </tr>
+                                    <tr class="detail-form-header">
+                                    <th class="sort-header">Item&nbsp;
+                                        <a title="{% if "-" in orderBy.name %}sort ascending{% elif orderBy.name == 'name' %}sort descending{% else %}sort ascending{% endif %}"
+                                        href="?page=1{% if "-" in orderBy.name %}&orderBy=name{% elif orderBy.name == 'name' %}&orderBy=-name{%else %}&orderBy=name{% endif %}&{{ filterQuery }}" 
+                                        ><i
+                                        class="fa {% if "-" in orderBy.name %}fa-sort-desc{% elif orderBy.name == 'name' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
+                                    </th>
+                                    {% if addCode %}
+                                        <th class="sort-header">Code&nbsp;
+                                            <a title="{% if "-" in orderBy.code %}sort ascending{% elif orderBy.code == 'code' %}sort descending{% else %}sort ascending{% endif %}"
+                                            href="?page=1{% if "-" in orderBy.code %}&orderBy=code{% elif orderBy.code == 'code' %}&orderBy=-code{%else %}&orderBy=code{% endif %}&{{ filterQuery }}" 
+                                            ><i
+                                            class="fa {% if "-" in orderBy.code %}fa-sort-desc{% elif orderBy.code == 'code' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
+                                        </th>
+                                    {% endif %}
+                                    {% if addCategory %}
+                                        <th class="sort-header">Category&nbsp;
+                                            <a title="{% if "-" in orderBy.category %}sort ascending{% elif orderBy.category == 'category' %}sort descending{% else %}sort ascending{% endif %}"
+                                            href="?page=1{% if "-" in orderBy.category %}&orderBy=category{% elif orderBy.category == 'category' %}&orderBy=-category{%else %}&orderBy=category{% endif %}&{{ filterQuery }}" 
+                                            ><i
+                                            class="fa {% if "-" in orderBy.category %}fa-sort-desc{% elif orderBy.category == 'category' %}fa-sort-asc{% else %}fa-sort{% endif %}"></i></a>
+                                        </th>
+                                    {% endif %}
+                                    {% for field in productForm.visible_fields %}
+                                        <th>{{ field.name | lower | capfirst }}</th>
+                                    {% endfor %}
+                                    </tr>
+                                    <tr class="filter-row">
+                                        <th id="filter-name" >
+                                            <input class="filter-field">
+                                            </input>
+                                            <div class="filter-btn" title="filter" ><i class="fa fa-search"></i></div>
+                                        </th>
+                                        {% if addCode %}
+                                            <th id="filter-code" >
+                                                <input class="filter-field">
+                                                </input>
+                                                <div class="filter-btn" title="filter" ><i class="fa fa-search"></i></div>
+                                            </th>
+                                        {% endif %}
+                                        {% if addCategory %}
+                                            <th id="filter-category__category" >
+                                                <select class="filter-field">
+                                                    {% for category in categoriesList %}
+                                                        <option value="{{ category }}">{{ category }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                                <div class="filter-btn" title="filter" ><i class="fa fa-search"></i></div>
+                                            </th>
+                                        {% endif %}
+                                    </tr>
+                                </thead>
+                            {% endif %}
+                            <tr>
+                                <td class="detail-table-text cell-left">
+                                    {{ productForm.instance.name }}
+                                </td>
+                                {% if addCode %}
+                                    <td class="detail-table-text cell-left">
+                                        {{ productForm.instance.meaningful_code }}
+                                    </td>
+                                {% endif %}
+                                {% if addCategory %}
+                                    <td class="detail-table-text cell-left">
+                                        {{ productForm.instance.category }}
+                                    </td>
+                                {% endif %}
+                                {% for field in productForm.visible_fields %}
+                                    <td class="{{ field.css_classes }} cell-left" title="{{ field.errors | escape}}">
+                                        {# Include the hidden fields in the form #}
+                                        {% if forloop.first %}
+                                            {% for hidden in productForm.hidden_fields %}
+                                                {{ hidden }}
+                                            {% endfor %}
+                                        {% endif %}
+                                        {{ field }}
+                                    </td>
+                                {% endfor %}
+                            </tr>
+                        {% endfor %}
+                        </table>
+                    </form>
+                </td>
+            {% endif %}
+        </tr>
+    </table>
+{% endblock content %}

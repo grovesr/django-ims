@@ -1,0 +1,32 @@
+{% extends "ims/products.html" %}
+{% block breadcrumbs %}
+    {{ block.super }}
+{% endblock breadcrumbs %}
+{% block content %}
+    <form action="{% url 'ims:product_delete' %}?page={{ page }}&pageSize={{ pageSize }}" method="post">
+        {% csrf_token %}
+        {% if canDelete %}
+            <input title="delete product from database" type="submit" value="Delete" name="Delete">
+        {% endif %}
+        <input id="cancel-product-delete" type="submit" value="Cancel" name="Cancel">
+        <div id="delete-list">
+            <ul>
+                {% for product in productsToDelete %}
+                    <input type="hidden" name="products" value="{{ product.pk }}" />
+                    <li>{{ product.name }}
+                        {% if product.inventoryitem_set.count > 0 %}
+                            <ul>
+                                {%for item in product.inventoryitem_set.all %}
+                                    <li>
+                                        {{ item.information.name }} at {{ item.site.name }} ({{ item.quantity }})
+                                    </li>
+                                {% endfor %}
+                            </ul>
+                        {% endif %}
+                    </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </form>
+    
+{% endblock content %}
